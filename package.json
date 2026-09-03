@@ -1,0 +1,38 @@
+{
+  "name": "hyoribot",
+  "version": "1.0.0",
+  "description": "Bot Discord Hyori - Service d'exécution et de synchronisation pour Hyori Atlas",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "deploy-commands": "node scripts/deploy-commands.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "keywords": [
+    "discord",
+    "discordjs",
+    "hyori",
+    "fastify",
+    "bot"
+  ],
+  "author": "Hyori RP Team",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@fastify/cors": "^9.0.1",
+    "discord.js": "^14.17.3",
+    "dotenv": "^16.4.7",
+    "fastify": "^4.28.1",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
+    "zod": "^3.24.1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6"
+  }
+}
