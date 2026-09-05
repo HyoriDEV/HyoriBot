@@ -21,7 +21,7 @@ export const banCommand = {
         .setRequired(false)
     ),
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const targetUser = interaction.options.getUser('utilisateur');
     const reason = interaction.options.getString('motif') || 'Non précisé';
     const purgeDays = interaction.options.getInteger('purge_jours') || 0;

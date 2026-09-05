@@ -5,6 +5,8 @@ import { roleBackupRepository } from './persistence/roleBackupRepository.js';
 import { warnRepository } from './persistence/warnRepository.js';
 import { suspensionScheduler } from './scheduler/suspensionScheduler.js';
 import { createHttpServer } from './http/server.js';
+import { timeoutScheduler } from './services/timeoutScheduler.js';
+
 async function main() {
   logger.info('Starting Hyori Discord Bot service...');
   const env = getEnv();
@@ -19,7 +21,10 @@ async function main() {
   await roleBackupRepository.init();
   await warnRepository.init();
   logger.info('Persistence storage initialized');
-  discordBot.start().catch(error => {
+
+  discordBot.start().then(() => {
+    timeoutScheduler.start(discordBot.client);
+  }).catch(error => {
     logger.error(
       {
         error,
@@ -27,6 +32,7 @@ async function main() {
       'Failed to connect to Discord Gateway. Running HTTP server in degraded mode...'
     );
   });
+
   suspensionScheduler.start();
   const server = await createHttpServer();
   await server.listen({
@@ -36,6 +42,7 @@ async function main() {
   logger.info(
     `🚀 Hyori Discord Bot HTTP server listening at http://${env.HTTP_HOST}:${env.HTTP_PORT}/api/v1`
   );
+
   let isShuttingDown = false;
   const shutdown = async signal => {
     if (isShuttingDown) {
@@ -51,12 +58,17 @@ async function main() {
       'Graceful shutdown initiated...'
     );
 
-    // Safety timeout: force exit if resources fail to close within 10s (Docker stop timeout)
     const forceExitTimer = setTimeout(() => {
       logger.error('Graceful shutdown timed out (10s), forcing exit');
       process.exit(1);
     }, 10000);
     forceExitTimer.unref();
+
+    try {
+      timeoutScheduler.stop();
+    } catch (err) {
+      logger.error({ err }, 'Error stopping timeout scheduler');
+    }
 
     try {
       suspensionScheduler.stop();

@@ -22,7 +22,7 @@ export const slowmodeCommand = {
         .setRequired(false)
     ),
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const seconds = interaction.options.getInteger('secondes');
     const targetChannel = interaction.options.getChannel('salon') || interaction.channel;
     const result = await modActions.executeSlowmode({

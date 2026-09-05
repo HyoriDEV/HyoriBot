@@ -5,7 +5,7 @@ export const serverinfoCommand = {
     .setName('serverinfo')
     .setDescription('Affiche les informations et statistiques du serveur Discord'),
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const result = await modActions.executeServerinfo({
       guild: interaction.guild,
     });

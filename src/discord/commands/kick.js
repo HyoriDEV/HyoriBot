@@ -13,7 +13,7 @@ export const kickCommand = {
       opt.setName('motif').setDescription("Raison de l'expulsion").setRequired(false)
     ),
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const targetMember = interaction.options.getMember('utilisateur');
     const reason = interaction.options.getString('motif') || 'Non précisé';
     const result = await modActions.executeKick({

@@ -14,7 +14,7 @@ export const unlockCommand = {
         .setRequired(false)
     ),
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const targetChannel = interaction.options.getChannel('salon') || interaction.channel;
     const result = await modActions.executeUnlock({
       channel: targetChannel,

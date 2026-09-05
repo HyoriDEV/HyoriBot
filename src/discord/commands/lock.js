@@ -17,7 +17,7 @@ export const lockCommand = {
       opt.setName('motif').setDescription('Raison du verrouillage').setRequired(false)
     ),
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const targetChannel = interaction.options.getChannel('salon') || interaction.channel;
     const reason = interaction.options.getString('motif') || 'Salon verrouillé par la modération';
     const result = await modActions.executeLock({

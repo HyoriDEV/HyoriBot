@@ -10,7 +10,7 @@ export const clearwarnsCommand = {
       opt.setName('utilisateur').setDescription('Le membre ciblé').setRequired(true)
     ),
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const targetUser = interaction.options.getUser('utilisateur');
     const result = await modActions.executeClearwarns({
       guild: interaction.guild,

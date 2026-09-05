@@ -13,7 +13,7 @@ export const warnCommand = {
       opt.setName('motif').setDescription("Raison de l'avertissement").setRequired(true)
     ),
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const targetUser = interaction.options.getUser('utilisateur');
     const reason = interaction.options.getString('motif');
     const result = await modActions.executeWarn({

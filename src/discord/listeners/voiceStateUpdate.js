@@ -1,4 +1,5 @@
 import { memberLogService } from '../services/memberLogService.js';
+import { tempVoiceService } from '../../services/tempVoiceService.js';
 import { logger } from '../../logger/index.js';
 
 export async function handleVoiceStateUpdate(oldState, newState) {
@@ -8,6 +9,13 @@ export async function handleVoiceStateUpdate(oldState, newState) {
   const guild = newState.guild || oldState.guild;
   const oldChannel = oldState.channel;
   const newChannel = newState.channel;
+
+  // Gestion des salons vocaux temporaires (Join to Create et auto-suppression quand vide)
+  try {
+    await tempVoiceService.handleVoiceStateUpdate(oldState, newState);
+  } catch (err) {
+    logger.error({ error: err.message }, 'Erreur dans tempVoiceService.handleVoiceStateUpdate');
+  }
 
   // Case 1: Member joined a voice channel
   if (!oldChannel && newChannel) {

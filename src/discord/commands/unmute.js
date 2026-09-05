@@ -13,7 +13,7 @@ export const unmuteCommand = {
       opt.setName('motif').setDescription('Raison de la levée').setRequired(false)
     ),
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const targetMember = interaction.options.getMember('utilisateur');
     const reason = interaction.options.getString('motif') || 'Levée manuelle';
     const result = await modActions.executeUnmute({

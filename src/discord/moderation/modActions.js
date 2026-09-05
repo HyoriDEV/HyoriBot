@@ -289,67 +289,59 @@ export class ModActions {
     if (!channel || !channel.isTextBased()) {
       return {
         success: false,
-        error: 'Ce salon ne supporte pas la suppression de messages.',
+        error: 'Salon textuel invalide pour la suppression de messages.',
       };
     }
-    const totalToClear = Math.min(Math.max(parseInt(amount, 10) || 10, 1), 50);
-    let deletedTotal = 0;
-    let remaining = totalToClear;
+    const totalToClear = Math.min(Math.max(parseInt(amount, 10) || 10, 1), 100);
     try {
-      while (remaining > 0) {
-        const batchSize = Math.min(remaining, 100);
-        const fetchedMessages = await channel.messages.fetch({
-          limit: batchSize,
-        });
-        if (fetchedMessages.size === 0) break;
-        let toDelete = fetchedMessages;
-        if (filterUser) {
-          toDelete = fetchedMessages.filter(m => m.author.id === filterUser.id);
-        }
-        const twoWeeksAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
-        const validToDelete = toDelete.filter(m => m.createdTimestamp > twoWeeksAgo);
-        if (validToDelete.size === 0) break;
-        const deletedBatch = await channel.bulkDelete(validToDelete, true);
-        deletedTotal += deletedBatch.size;
-        if (deletedBatch.size < batchSize) break;
-        remaining -= batchSize;
-        if (remaining > 0) {
-          await new Promise(r => setTimeout(r, 800));
-        }
+      let fetched = await channel.messages.fetch({ limit: 100 });
+      if (filterUser) {
+        fetched = fetched.filter(m => m.author.id === filterUser.id);
       }
+
+      const twoWeeksAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
+      const valid = fetched.filter(m => m.createdTimestamp > twoWeeksAgo);
+
+      const toDelete = valid.first(totalToClear);
+      if (!toDelete || toDelete.length === 0) {
+        return {
+          success: true,
+          deletedCount: 0,
+          message: '🧹 Aucun message récent (de moins de 14 jours) à supprimer.',
+        };
+      }
+
+      let deletedCount = 0;
+      if (toDelete.length === 1) {
+        await toDelete[0].delete();
+        deletedCount = 1;
+      } else {
+        const deleted = await channel.bulkDelete(toDelete, true);
+        deletedCount = deleted.size;
+      }
+
       await modLogService.sendModLog({
         guild: channel.guild,
-        action: 'NETTOYAGE (CLEAR)',
-        target: filterUser || {
-          tag: 'Tous les membres',
-          id: 'N/A',
-        },
+        action: 'NETTOYAGE (CLEAR / PURGE)',
+        target: filterUser || { tag: 'Tous les messages récents', id: 'N/A' },
         moderator,
-        reason: `Suppression de ${deletedTotal} message(s) dans #${channel.name}`,
+        reason: `${deletedCount} message(s) supprimé(s)`,
         extraFields: [
-          {
-            name: 'Salon',
-            value: `<#${channel.id}>`,
-            inline: true,
-          },
+          { name: 'Salon', value: `<#${channel.id}> (\`#${channel.name}\`)`, inline: true },
+          { name: 'Messages supprimés', value: `\`${deletedCount}\``, inline: true },
         ],
       });
+
       return {
         success: true,
-        deletedCount: deletedTotal,
-        message: `🧹 **${deletedTotal}** message(s) supprimé(s) avec succès${filterUser ? ` de **${filterUser.tag || filterUser.username}**` : ''}.`,
+        deletedCount,
+        message: `🧹 **${deletedCount}** message(s) supprimé(s) avec succès${filterUser ? ` de **${filterUser.tag || filterUser.username}**` : ''}.`,
       };
-    } catch (error) {
-      logger.error(
-        {
-          error,
-          channelId: channel.id,
-        },
-        'Error executing clear'
-      );
+    } catch (err) {
+      logger.error({ err, channelId: channel.id }, 'Erreur lors du clear/purge de messages');
       return {
         success: false,
-        error: `Échec du nettoyage : ${error.message}`,
+        error: `Impossible de supprimer les messages : ${err.message}`,
       };
     }
   }
@@ -442,6 +434,64 @@ export class ModActions {
       return {
         success: false,
         error: `Échec du déverrouillage : ${error.message}`,
+      };
+    }
+  }
+  async executeClear({ channel, moderator, amount = 10, filterUser = null, commandName = 'clear' }) {
+    if (!channel || !channel.isTextBased()) {
+      return {
+        success: false,
+        error: 'Salon textuel invalide.',
+      };
+    }
+    try {
+      recentPurges.set(channel.id, {
+        moderator,
+        commandName,
+        filterUser,
+        timestamp: Date.now(),
+      });
+
+      const fetched = await channel.messages.fetch({ limit: Math.min(Math.max(amount, 1), 100) });
+      const toDelete = filterUser
+        ? fetched.filter(m => m.author.id === filterUser.id)
+        : fetched;
+
+      if (toDelete.size === 0) {
+        return {
+          success: true,
+          message: 'ℹ️ Aucun message récent correspondant à supprimer.',
+        };
+      }
+
+      const deleted = await channel.bulkDelete(toDelete, true);
+
+      await modLogService.sendModLog({
+        guild: channel.guild,
+        action: `PURGE (${commandName.toUpperCase()})`,
+        target: {
+          tag: `#${channel.name}`,
+          id: channel.id,
+        },
+        moderator,
+        reason: filterUser
+          ? `Suppression ciblée de ${deleted.size} message(s) de ${filterUser.tag}`
+          : `Suppression de ${deleted.size} message(s)`,
+        extraFields: [
+          { name: 'Nombre supprimé', value: `${deleted.size}`, inline: true },
+          { name: 'Cible', value: filterUser ? `<@${filterUser.id}>` : 'Tous les messages', inline: true },
+        ],
+      });
+
+      return {
+        success: true,
+        message: `🧹 **${deleted.size}** message(s) supprimé(s) avec succès par <@${moderator.id}>.`,
+      };
+    } catch (error) {
+      logger.error({ error, channelId: channel.id }, 'Error executing clear');
+      return {
+        success: false,
+        error: `Échec de la suppression : ${error.message}`,
       };
     }
   }
@@ -783,4 +833,5 @@ export class ModActions {
     };
   }
 }
+export const recentPurges = new Map();
 export const modActions = new ModActions();
