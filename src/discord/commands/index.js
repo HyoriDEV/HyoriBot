@@ -23,7 +23,6 @@ import configLogsCommand from '../../commands/admin/config-logs.js';
 import setupLogsCommand from '../../commands/admin/setup-logs.js';
 import configWelcomeCommand from '../../commands/admin/config-welcome.js';
 import configtempbanCommand from '../../commands/admin/configtempban.js';
-import rulesetupCommand from '../../commands/admin/rulesetup.js';
 import setupVocalCommand from '../../commands/admin/setup-vocal.js';
 import cmdsCommand from '../../commands/general/cmds.js';
 import { setpermCommand, spCommand } from '../../commands/admin/setperm.js';
@@ -66,7 +65,6 @@ export const allSlashCommands = [
   configLogsCommand,
   configWelcomeCommand,
   configtempbanCommand,
-  rulesetupCommand,
   setupVocalCommand,
   cmdsCommand,
 ];

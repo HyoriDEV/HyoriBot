@@ -15,7 +15,7 @@ export const COMMAND_CATEGORIES = {
     'setperm', 'sp', 'spr', 'spl', 'setperm-cmds'
   ],
   '📁 Déploiement & Configuration': [
-    'setup-logs', 'config-logs', 'config-welcome', 'configtempban', 'rulesetup'
+    'setup-logs', 'config-logs', 'config-welcome', 'configtempban', 'setup-vocal'
   ],
   'ℹ️ Utilitaires & Informations': [
     'cmds', 'help', 'ping', 'userinfo', 'serverinfo'

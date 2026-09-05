@@ -51,15 +51,10 @@ export const DEFAULT_COMMAND_LEVELS = {
   'config-welcome': 3,
   'configtempban': 3,
   'config-tempban': 3,
-  rulesetup: 3,
   'setup-vocal': 3,
   'setupvocal': 3,
   'config-vocal': 3,
   'jointocreate': 3,
-  permsaw: 3,
-  prefixpermsaw: 3,
-  prefixtestall: 3,
-  testall: 3,
 };
 
 const COMMAND_ALIASES = {
@@ -69,8 +64,6 @@ const COMMAND_ALIASES = {
   untb: 'untempban',
   purge: 'clear',
   commands: 'cmds',
-  prefixpermsaw: 'permsaw',
-  testall: 'prefixtestall',
   sp: 'setperm',
   setupvocal: 'setup-vocal',
   'config-vocal': 'setup-vocal',

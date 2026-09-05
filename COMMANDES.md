@@ -78,12 +78,6 @@ Affiche un **panneau interactif complet** récapitulant toutes les commandes et 
   4. Cliquez directement sur le bouton du niveau souhaité :  
      `[ 👥 Niveau 0 ]  [ 👤 Niveau 1 ]  [ 🛡️ Niveau 2 ]  [ 👑 Niveau 3 ]`
   5. **L'affichage et la base de données se mettent à jour instantanément** sans avoir besoin de retaper de commande.
-
-### 🔹 Auditer les permissions de chaque rôle dans tous les salons : `?prefixpermsaw` *(ou `?permsaw`)*
-Commande préfixe exclusive réservée aux administrateurs pour scanner et analyser en direct les permissions de chaque rôle à travers l'ensemble des salons du serveur :
-* **`?prefixpermsaw`** *(ou `?permsaw`)* : Scanne tous les rôles (hors bots) et affiche pour chacun les salons où il a l'accès complet (🟢 Voir + Écrire/Parler), la lecture seule (👁️) ou l'accès interdit/masqué (🔴).
-* **`?permsaw @Rôle`** : Filtre et audite les accès d'un rôle précis dans tous les salons.
-
 ---
 
 ## 4. 📁 Déploiement & Configuration des Logs
@@ -125,7 +119,6 @@ Ouvre un panneau interactif complet avec boutons et menu à cocher pour créer e
 | :--- | :--- | :--- |
 | **`/config-welcome`** | `/config-welcome channel salon:<#salon>`<br>`/config-welcome test`<br>`/config-welcome autorole [role:<@Role>]`<br>`/config-welcome toggle actif:<Vrai\|Faux>`<br>`/config-welcome view` | Configure le système de bienvenue avec génération d'image dynamique (DA Hyori), incrustation de l'avatar et auto-role. |
 | **`/configtempban`** | `/configtempban` *(ou `?configtempban`)* | Panneau interactif complet : sélection directe du **rôle Tempban/Isolement** et des **salons autorisés** avec bouton d'application instantanée des permissions sur tout le serveur. |
-| **`/rulesetup`** | `/rulesetup [salon:<#salon>]`<br>`?rulesetup [#salon]` | Lit le fichier de règlement du bot (`data/reglement.md`) et le publie sous forme de **messages texte purs (aucun embed)** découpés chronologiquement (< 2 000 caractères). |
 | **`/setup-vocal`** *(ou `?setup-vocal`)* | `/setup-vocal [salon:<#salon>] [categorie:<Catégorie>]`<br>`?setup-vocal [ID_Salon]` | Déploie le système **Join to Create** (salons vocaux temporaires automatiques). Crée un salon déclencheur `➕・Créer un salon`. Dès qu'un joueur le rejoint, un salon privé est généré avec ses permissions (nom, taille) et un **panneau interactif dans le chat vocal** (Renommer, Changer limite, Verrouiller, Expulser, Transférer). Auto-suppression quand vide. |
 
 ---
@@ -139,4 +132,3 @@ Ouvre un panneau interactif complet avec boutons et menu à cocher pour créer e
 | **`/ping`** | `/ping` | Mesure et affiche la latence WebSocket du bot et le temps de réponse de l'API Discord. |
 | **`/userinfo`** | `/userinfo [membre:<@membre>]` | Affiche la fiche détaillée d'un joueur (date de création, rôles, permissions). |
 | **`/serverinfo`** | `/serverinfo` | Affiche les statistiques globales du serveur Hyori RP (membres, salons, rôles). |
-| **`?prefixtestall`** *(alias `?testall`)* | `?prefixtestall` *(ou `?testall`)* | **Commande préfixe exclusive** : Diagnostic en direct de l'intégralité du bot (intégrité des 33 commandes, accès aux stockages JSON, moteur de bienvenue Canvas, service de tempban/dé-tempban, fichier du règlement et permissions Discord). |

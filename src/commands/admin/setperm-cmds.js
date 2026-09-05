@@ -32,7 +32,7 @@ const CONFIGURABLE_COMMANDS = [
   { name: 'config-logs', label: '/config-logs', desc: 'Configurer les salons de logs' },
   { name: 'configtempban', label: '/configtempban', desc: 'Configurer rôle et salons autorisés du tempban' },
   { name: 'config-welcome', label: '/config-welcome', desc: 'Configurer le système d\'image de bienvenue' },
-  { name: 'rulesetup', label: '/rulesetup', desc: 'Déployer le règlement multi-messages' },
+  { name: 'setup-vocal', label: '/setup-vocal', desc: 'Déployer les salons vocaux temporaires (Join to Create)' },
   { name: 'cmds', label: '/cmds', desc: 'Liste des commandes pour les joueurs' },
   { name: 'help', label: '/help', desc: 'Aide générale' },
   { name: 'ping', label: '/ping', desc: 'Vérifier la latence du bot' },

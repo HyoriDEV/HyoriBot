@@ -22,9 +22,6 @@ import { LogSetupService, LOG_TYPES } from '../../services/logSetupService.js';
 import configtempbanCommand from '../../commands/admin/configtempban.js';
 import tempbanCommand from '../../commands/moderation/tempban.js';
 import untempbanCommand from '../../commands/moderation/untempban.js';
-import rulesetupCommand from '../../commands/admin/rulesetup.js';
-import permsawCommand from '../../commands/admin/permsaw.js';
-import prefixtestallCommand from '../../commands/admin/prefixtestall.js';
 import setupVocalCommand from '../../commands/admin/setup-vocal.js';
 import { logger } from '../../logger/index.js';
 
@@ -241,16 +238,6 @@ export async function handleMessageCreate(message) {
         return message.reply('💡 Pour utiliser le panneau interactif en direct avec boutons, utilisez la slash command : **/setperm-cmds**');
       }
 
-      case 'permsaw':
-      case 'prefixpermsaw': {
-        return permsawCommand.execute(message, args);
-      }
-
-      case 'prefixtestall':
-      case 'testall': {
-        return prefixtestallCommand.execute(message, args);
-      }
-
       // ──────────────────────────────────────────────
       // 3. DÉPLOIEMENT & LOGS
       // ──────────────────────────────────────────────
@@ -321,9 +308,6 @@ export async function handleMessageCreate(message) {
         return configtempbanCommand.execute(message, args);
       }
 
-      case 'rulesetup': {
-        return rulesetupCommand.execute(message, args);
-      }
 
       case 'setup-vocal':
       case 'setupvocal':
