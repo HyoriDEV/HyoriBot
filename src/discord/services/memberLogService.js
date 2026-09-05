@@ -1,16 +1,37 @@
-import { ChannelType, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
+import { ChannelType, PermissionFlagsBits, EmbedBuilder, AuditLogEvent } from 'discord.js';
 import { getEnv } from '../../config/env.js';
+import { configStore } from '../../storage/index.js';
 import { createHyoriEmbed } from '../embeds.js';
 import { logger } from '../../logger/index.js';
+import { recentPurges } from '../moderation/modActions.js';
 
 export class MemberLogService {
   /**
-   * Finds or creates the member activity log channel
+   * Finds or creates the member activity log channel based on target category
    */
-  async getMemberLogChannel(guild) {
+  async getMemberLogChannel(guild, targetKey = 'members') {
+    const config = await configStore.read().catch(() => ({}));
+    const logs = config.logs || {};
+
+    const keyMapping = {
+      messages_delete: [logs.messagesDeleteChannelId, logs.messagesChannelId],
+      messages_edit: [logs.messagesEditChannelId, logs.messagesChannelId],
+      joins_leaves: [logs.joinsLeavesChannelId, logs.membersChannelId],
+      voice: [logs.voiceChannelId],
+      members: [logs.joinsLeavesChannelId, logs.membersChannelId]
+    };
+
+    const candidates = keyMapping[targetKey] || [logs[targetKey]];
+    for (const id of candidates) {
+      if (id) {
+        const ch = guild.channels.cache.get(id) || await guild.channels.fetch(id).catch(() => null);
+        if (ch && ch.isTextBased()) return ch;
+      }
+    }
+
     const env = getEnv();
 
-    // 1. Try by configured ID
+    // 1. Try by configured ID in env
     if (env.CHANNEL_MEMBER_LOGS_ID) {
       const channel = guild.channels.cache.get(env.CHANNEL_MEMBER_LOGS_ID);
       if (channel && channel.isTextBased()) return channel;
@@ -20,6 +41,7 @@ export class MemberLogService {
     const channelByName = guild.channels.cache.find(
       c =>
         (c.name === 'logs-membres' ||
+          c.name.includes('logs-messages') ||
           c.name === 'member-logs' ||
           c.name === 'logs-serveur' ||
           c.name === 'logs-audit') &&
@@ -51,26 +73,76 @@ export class MemberLogService {
   }
 
   /**
-   * Logs deleted message
+   * Logs deleted message with author, deletor (command or audit log) and Hyori Brand Guidelines DA
    */
   async sendDeletedMessageLog({ message }) {
     if (!message || !message.guild) return;
 
     try {
-      const channel = await this.getMemberLogChannel(message.guild);
+      const channel = await this.getMemberLogChannel(message.guild, 'messages_delete');
       if (!channel) return;
 
       const author = message.author;
-      const content = message.content ? message.content.slice(0, 1020) : '*Aucun contenu textuel*';
+      const authorText = author
+        ? `<@${author.id}> (**${author.tag || author.username}** — \`${author.id}\`)`
+        : '*Auteur inconnu*';
 
-      const embed = createHyoriEmbed()
+      // 1. Détection de l'exécuteur de la suppression
+      let deletedByText = null;
+
+      // Cas A : Suppression via commande /clear ou /purge
+      const purge = recentPurges.get(message.channel.id);
+      if (purge && Date.now() - purge.timestamp < 15000) {
+        deletedByText = `🛠️ Modérateur <@${purge.moderator.id}> (**${purge.moderator.tag || purge.moderator.username}**) via la commande \`${purge.commandName || '/clear'}\``;
+      }
+
+      // Cas B : Recherche dans l'Audit Log Discord (suppression manuelle par un modérateur)
+      if (!deletedByText && message.guild.members.me?.permissions.has(PermissionFlagsBits.ViewAuditLog)) {
+        try {
+          const auditLogs = await message.guild.fetchAuditLogs({
+            type: AuditLogEvent.MessageDelete,
+            limit: 1,
+          }).catch(() => null);
+
+          const entry = auditLogs?.entries.first();
+          if (entry && entry.target?.id === author?.id && (Date.now() - entry.createdTimestamp < 15000)) {
+            deletedByText = `🛡️ Modérateur <@${entry.executor.id}> (**${entry.executor.tag || entry.executor.username}**)`;
+          }
+        } catch {
+          // Ignore audit log fetch failure
+        }
+      }
+
+      // Cas C : Aucune trace dans l'Audit Log => L'auteur a supprimé son propre message
+      if (!deletedByText) {
+        deletedByText = author
+          ? `👤 L'auteur lui-même (<@${author.id}>)`
+          : '*Inconnu / Non détecté*';
+      }
+
+      const content = message.content && message.content.trim().length > 0
+        ? `>>> ${message.content.slice(0, 1000)}`
+        : '*Aucun contenu textuel (message vide ou média seul)*';
+
+      const createdTime = message.createdTimestamp
+        ? `<t:${Math.floor(message.createdTimestamp / 1000)}:f> (<t:${Math.floor(message.createdTimestamp / 1000)}:R>)`
+        : '*Date inconnue*';
+
+      // DA Hyori Brand Guidelines (Or chaud #e9d15c)
+      const embed = new EmbedBuilder()
+        .setColor(0xe9d15c)
         .setTitle('🗑️ Message Supprimé')
-        .setColor(0xeb5757) // Red for deletion
+        .setDescription('Un message a été supprimé des salons textuels du serveur.')
         .addFields(
           {
-            name: '👤 Auteur',
-            value: author ? `${author.tag} (<@${author.id}> — \`${author.id}\`)` : 'Auteur inconnu',
-            inline: true,
+            name: '👤 Auteur du Message',
+            value: authorText,
+            inline: false,
+          },
+          {
+            name: '🛠️ Supprimé par',
+            value: deletedByText,
+            inline: false,
           },
           {
             name: '💬 Salon',
@@ -78,7 +150,12 @@ export class MemberLogService {
             inline: true,
           },
           {
-            name: '📝 Contenu',
+            name: '📅 Date d\'Envoi Original',
+            value: createdTime,
+            inline: true,
+          },
+          {
+            name: '📝 Contenu Supprimé',
             value: content,
             inline: false,
           }
@@ -89,11 +166,14 @@ export class MemberLogService {
           .map(a => `• [${a.name || 'Fichier'}](${a.url})`)
           .join('\n');
         embed.addFields({
-          name: `📎 Pièces jointes (${message.attachments.size})`,
+          name: `📎 Pièce(s) Jointe(s) (${message.attachments.size})`,
           value: fileNames.slice(0, 1024),
           inline: false,
         });
       }
+
+      embed.setFooter({ text: 'HYORI RP • Surveillance & Audit de Sécurité' });
+      embed.setTimestamp();
 
       await channel.send({ embeds: [embed] });
       logger.debug(
@@ -106,30 +186,37 @@ export class MemberLogService {
   }
 
   /**
-   * Logs edited message
+   * Logs edited message with Hyori Brand Guidelines DA
    */
   async sendEditedMessageLog({ oldMessage, newMessage }) {
     if (!newMessage || !newMessage.guild) return;
 
     try {
-      const channel = await this.getMemberLogChannel(newMessage.guild);
+      const channel = await this.getMemberLogChannel(newMessage.guild, 'messages_edit');
       if (!channel) return;
 
       const author = newMessage.author;
-      const oldContent = oldMessage.content
-        ? oldMessage.content.slice(0, 1020)
+      const authorText = author
+        ? `<@${author.id}> (**${author.tag || author.username}** — \`${author.id}\`)`
+        : '*Auteur inconnu*';
+
+      const oldContent = oldMessage.content && oldMessage.content.trim().length > 0
+        ? `>>> ${oldMessage.content.slice(0, 1000)}`
         : '*Non disponible (non mis en cache)*';
-      const newContent = newMessage.content
-        ? newMessage.content.slice(0, 1020)
+
+      const newContent = newMessage.content && newMessage.content.trim().length > 0
+        ? `>>> ${newMessage.content.slice(0, 1000)}`
         : '*Aucun contenu textuel*';
 
-      const embed = createHyoriEmbed()
+      // DA Hyori Brand Guidelines (Or chaud #e9d15c)
+      const embed = new EmbedBuilder()
+        .setColor(0xe9d15c)
         .setTitle('✏️ Message Modifié')
-        .setColor(0xf2994a) // Orange for edit
+        .setDescription('Un message a été édité dans un salon textuel.')
         .addFields(
           {
-            name: '👤 Auteur',
-            value: author ? `${author.tag} (<@${author.id}> — \`${author.id}\`)` : 'Auteur inconnu',
+            name: '👤 Auteur du Message',
+            value: authorText,
             inline: true,
           },
           {
@@ -138,21 +225,23 @@ export class MemberLogService {
             inline: true,
           },
           {
-            name: '🔗 Accès direct',
-            value: `[Aller au message](${newMessage.url})`,
+            name: '🔗 Accès Rapide',
+            value: `[Accéder au message](${newMessage.url})`,
             inline: true,
           },
           {
-            name: '⬅️ Avant',
+            name: '⬅️ Contenu Avant Modification',
             value: oldContent,
             inline: false,
           },
           {
-            name: '➡️ Après',
+            name: '➡️ Contenu Après Modification',
             value: newContent,
             inline: false,
           }
-        );
+        )
+        .setFooter({ text: 'HYORI RP • Surveillance & Audit de Sécurité' })
+        .setTimestamp();
 
       await channel.send({ embeds: [embed] });
       logger.debug(
@@ -171,7 +260,7 @@ export class MemberLogService {
     if (!guild || !member) return;
 
     try {
-      const channel = await this.getMemberLogChannel(guild);
+      const channel = await this.getMemberLogChannel(guild, 'voice');
       if (!channel) return;
 
       const embed = createHyoriEmbed();
@@ -254,7 +343,7 @@ export class MemberLogService {
     if (!member || !member.guild) return;
 
     try {
-      const channel = await this.getMemberLogChannel(member.guild);
+      const channel = await this.getMemberLogChannel(member.guild, 'joins_leaves');
       if (!channel) return;
 
       const user = member.user;
@@ -312,7 +401,7 @@ export class MemberLogService {
     if (!targetUser || !targetGuild) return;
 
     try {
-      const channel = await this.getMemberLogChannel(targetGuild);
+      const channel = await this.getMemberLogChannel(targetGuild, 'joins_leaves');
       if (!channel) return;
 
       const embed = createHyoriEmbed()

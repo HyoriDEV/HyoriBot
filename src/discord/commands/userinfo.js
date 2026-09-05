@@ -11,7 +11,7 @@ export const userinfoCommand = {
         .setRequired(false)
     ),
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const targetUser = interaction.options.getUser('utilisateur') || interaction.user;
     const result = await modActions.executeUserinfo({
       guild: interaction.guild,

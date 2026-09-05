@@ -8,6 +8,8 @@ import { handleMessageUpdate } from './listeners/messageUpdate.js';
 import { handleVoiceStateUpdate } from './listeners/voiceStateUpdate.js';
 import { handleGuildMemberAdd } from './listeners/guildMemberAdd.js';
 import { handleGuildMemberRemove } from './listeners/guildMemberRemove.js';
+import { DeepAuditLogger } from './listeners/deepAuditLogger.js';
+import { allSlashCommands } from './commands/index.js';
 
 export class DiscordBotClient {
   constructor() {
@@ -15,6 +17,9 @@ export class DiscordBotClient {
       intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildModeration,
+        GatewayIntentBits.GuildEmojisAndStickers,
+        GatewayIntentBits.GuildInvites,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.DirectMessages,
         GatewayIntentBits.MessageContent,
@@ -26,6 +31,7 @@ export class DiscordBotClient {
     this.registerEventHandlers();
   }
   registerEventHandlers() {
+    DeepAuditLogger.register(this.client);
     this.client.on(Events.ClientReady, readyClient => {
       this.isReady = true;
       logger.info(
@@ -36,6 +42,9 @@ export class DiscordBotClient {
         },
         'Discord Bot client is online and ready'
       );
+      this.syncAndCleanCommands(readyClient).catch(err => {
+        logger.warn({ error: err.message }, 'Erreur lors de la synchronisation des commandes');
+      });
     });
     this.client.on(Events.InteractionCreate, async interaction => {
       await handleInteractionCreate(interaction);
@@ -109,6 +118,51 @@ export class DiscordBotClient {
       throw new Error(`Guild with ID ${env.DISCORD_GUILD_ID} not found`);
     }
     return guild;
+  }
+  async syncAndCleanCommands(readyClient) {
+    try {
+      logger.info('Vérification et purge automatique des commandes obsolètes sur les serveurs...');
+      const validNames = new Set(allSlashCommands.map(c => c.data.name));
+      const commandsData = allSlashCommands.map(c => c.data.toJSON());
+
+      // 1. Purge des commandes globales obsolètes
+      if (readyClient.application) {
+        const globalCmds = await readyClient.application.commands.fetch().catch(() => null);
+        if (globalCmds && globalCmds.size > 0) {
+          for (const [id, cmd] of globalCmds) {
+            if (!validNames.has(cmd.name)) {
+              logger.info({ command: cmd.name }, 'Suppression automatique d\'une commande globale obsolète');
+              await cmd.delete().catch(() => {});
+            }
+          }
+        }
+      }
+
+      // 2. Vérification et purge pour chaque serveur où le bot est présent
+      for (const [guildId, guild] of readyClient.guilds.cache) {
+        try {
+          const guildCmds = await guild.commands.fetch().catch(() => null);
+          if (guildCmds && guildCmds.size > 0) {
+            for (const [id, cmd] of guildCmds) {
+              if (!validNames.has(cmd.name)) {
+                logger.info({ guild: guild.name, command: cmd.name }, 'Suppression automatique d\'une commande obsolète sur le serveur');
+                await cmd.delete().catch(() => {});
+              }
+            }
+          }
+
+          // Synchronisation des commandes officielles
+          await guild.commands.set(commandsData).catch(err => {
+            logger.warn({ guild: guild.name, error: err.message }, 'Erreur synchronisation commandes serveur');
+          });
+          logger.info({ guild: guild.name, count: commandsData.length }, 'Commandes du serveur synchronisées avec succès');
+        } catch (err) {
+          logger.warn({ guild: guild.name, error: err.message }, 'Erreur traitement commandes sur serveur');
+        }
+      }
+    } catch (err) {
+      logger.error({ error: err.message }, 'Erreur lors de la synchronisation automatique des commandes au démarrage');
+    }
   }
   get ready() {
     return this.isReady;

@@ -16,7 +16,7 @@ export const unbanCommand = {
       opt.setName('motif').setDescription('Raison du débannissement').setRequired(false)
     ),
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const userId = interaction.options.getString('id_discord');
     const reason = interaction.options.getString('motif') || 'Débannissement manuel';
     const result = await modActions.executeUnban({

@@ -61,7 +61,7 @@ export const muteCommand = {
       opt.setName('motif').setDescription('Raison du mute').setRequired(false)
     ),
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const targetMember = interaction.options.getMember('utilisateur');
     const durationStr = interaction.options.getString('duree');
     const reason = interaction.options.getString('motif') || 'Non précisé';
