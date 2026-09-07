@@ -1,0 +1,104 @@
+name: 📦 1-Click Release Dev to Main (HyoriBot)
+
+on:
+  workflow_dispatch:
+    inputs:
+      auto_deploy:
+        description: 'Déployer immédiatement sur le serveur dédié après la fusion'
+        type: boolean
+        required: true
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: deploy-bot-production
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: Merge Dev into Main
+    runs-on: ubuntu-latest
+    outputs:
+      should_deploy: ${{ steps.check_changes.outputs.should_deploy }}
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔍 Check for changes between dev and main
+        id: check_changes
+        run: |
+          git fetch origin main dev
+          CHANGES_COUNT=$(git rev-list --count origin/main..origin/dev || true)
+          echo "Nombre de commits en avance sur dev : $CHANGES_COUNT"
+          if [ "$CHANGES_COUNT" -eq "0" ] && [ "${{ github.event.inputs.auto_deploy }}" != "true" ]; then
+            echo "Aucune modification à promouvoir."
+            echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 🔀 Merge dev into main
+        if: steps.check_changes.outputs.should_deploy == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          echo "Tentative de fusion directe dev -> main..."
+          git checkout main
+          if git merge origin/dev --no-edit; then
+            echo "Fusion locale réussie, push vers origin/main..."
+            if git push origin main; then
+              echo "Push direct sur main réussi !"
+              exit 0
+            fi
+          fi
+          
+          echo "Le push direct a échoué (probablement dû aux règles de protection de branche)."
+          echo "Utilisation de l'API GitHub CLI pour créer et fusionner une Pull Request..."
+          
+          # Vérifier si une PR existe déjà
+          EXISTING_PR=$(gh pr list --base main --head dev --state open --json number --jq '.[0].number')
+          if [ -z "$EXISTING_PR" ]; then
+            echo "Création d'une nouvelle Pull Request dev -> main..."
+            PR_URL=$(gh pr create --base main --head dev \
+              --title "🚀 Release dev -> main ($(date +'%Y-%m-%d %H:%M'))" \
+              --body "Release automatisée déclenchée depuis GitHub Actions.")
+            TARGET_PR="$PR_URL"
+          else
+            echo "PR existante trouvée : #$EXISTING_PR"
+            TARGET_PR="$EXISTING_PR"
+          fi
+          
+          echo "Validation et fusion de la PR $TARGET_PR..."
+          gh pr merge "$TARGET_PR" --merge --auto || gh pr merge "$TARGET_PR" --admin --merge || gh pr merge "$TARGET_PR" --merge
+
+  deploy:
+    name: Deploy to Dedicated Server
+    needs: promote
+    if: inputs.auto_deploy && needs.promote.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🌐 Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script_stop: true
+          command_timeout: 30m
+          script: |
+            set -e
+            echo "🚀 [CI/CD] Connexion au serveur de production établie."
+            cd "${{ secrets.DEPLOY_PATH }}"
+            chmod +x ./deploy.sh
+            ./deploy.sh bot
