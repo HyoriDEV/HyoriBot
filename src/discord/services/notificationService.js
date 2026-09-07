@@ -77,7 +77,7 @@ export class NotificationService {
     });
   }
   async notifyRegistrationStatus(discordId, status, playerSpaceUrl) {
-    if (status === 'NEW' || status === 'WAITLIST') {
+    if (status === 'NEW') {
       logger.debug(
         {
           discordId,

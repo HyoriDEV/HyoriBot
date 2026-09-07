@@ -10,11 +10,12 @@ export function createHyoriEmbed() {
     })
     .setTimestamp();
 }
-export function createPlayerSpaceButton(customUrl) {
+export function createPlayerSpaceButton(customUrl, customLabel) {
   const env = getEnv();
   const url = customUrl || env.ATLAS_PLAYER_SPACE_URL;
+  const label = customLabel || 'Accéder à mon espace joueur';
   const button = new ButtonBuilder()
-    .setLabel('Accéder à mon espace joueur')
+    .setLabel(label)
     .setStyle(ButtonStyle.Link)
     .setURL(url);
   return new ActionRowBuilder().addComponents(button);
@@ -26,36 +27,31 @@ export function buildRegistrationStatusEmbed(status, customUrl) {
   switch (status) {
     case 'WHITELIST_IN_PROGRESS':
       embed
-        .setTitle('Inscription — Candidature Acceptée')
+        .setTitle('Inscription — Candidature acceptée')
         .setDescription(
-          'Tu as été accepté sur le projet **Hyori RP**.\n\nAccède à ton espace joueur pour suivre les prochaines étapes.'
-        )
-        .addFields({
-          name: 'Espace Joueur',
-          value: `[Cliquer ici pour y accéder](${url})`,
-        });
+          'Votre candidature pour rejoindre **Hyori RP** a été acceptée par l\'équipe staff.\n\nVous pouvez dès à présent accéder à votre espace joueur pour préparer votre fiche personnage et réserver votre entretien vocal.'
+        );
       break;
     case 'WHITELISTED':
       embed
-        .setTitle('Whitelist — Validation Définitive')
+        .setTitle('Whitelist — Validation définitive')
         .setDescription(
-          'Bienvenue à Hyori !\n\nTa candidature à la whitelist a été validée. Tu as désormais un accès complet au site, au serveur Discord et au serveur Minecraft.'
-        )
-        .addFields({
-          name: 'Espace Joueur',
-          value: `[Cliquer ici pour y accéder](${url})`,
-        });
+          'Félicitations, votre inscription sur **Hyori RP** a été validée !\n\nVous disposez désormais d\'un accès complet au site, au serveur Discord et au serveur Minecraft.'
+        );
       break;
     case 'REJECTED':
       embed
-        .setTitle('Inscription — Statut Mis à Jour')
+        .setTitle('Inscription — Candidature non retenue')
         .setDescription(
-          "Ton statut d'inscription a été mis à jour.\n\nAccède à ton espace joueur pour obtenir les détails."
-        )
-        .addFields({
-          name: 'Espace Joueur',
-          value: `[Cliquer ici pour y accéder](${url})`,
-        });
+          'Votre candidature pour rejoindre **Hyori RP** n\'a pas été retenue par l\'équipe staff.\n\nVous pouvez consulter les détails depuis votre espace joueur.'
+        );
+      break;
+    case 'WAITLIST':
+      embed
+        .setTitle('Inscription — Liste d\'attente')
+        .setDescription(
+          'Votre candidature a été réintégrée sur la liste d\'attente de **Hyori RP** par l\'équipe staff.\n\nVous pouvez suivre l\'évolution de votre statut depuis votre espace joueur.'
+        );
       break;
   }
   const row = createPlayerSpaceButton(url);
@@ -68,15 +64,11 @@ export function buildCharacterSheetStatusEmbed(status, customUrl) {
   const env = getEnv();
   const url = customUrl || env.ATLAS_PLAYER_SPACE_URL;
   const embed = createHyoriEmbed()
-    .setTitle('Fiche Personnage — Retours Disponibles')
+    .setTitle('Fiche Personnage — Retours disponibles')
     .setDescription(
-      'Des retours ont été déposés sur ta fiche personnage.\n\nAccède à ton espace joueur pour les découvrir.'
-    )
-    .addFields({
-      name: 'Espace Joueur',
-      value: `[Cliquer ici pour consulter les retours](${url})`,
-    });
-  const row = createPlayerSpaceButton(url);
+      'Des retours ont été déposés sur votre fiche personnage par l\'équipe staff.\n\nConsultez les remarques directement sur votre fiche pour apporter les ajustements demandés.'
+    );
+  const row = createPlayerSpaceButton(url, 'Consulter ma fiche personnage');
   return {
     embed,
     components: [row],
