@@ -10,12 +10,13 @@ export const PERMISSION_LEVELS = {
 };
 
 export const DEFAULT_COMMAND_LEVELS = {
-  // Niveau 0 : Tout le monde (Public)
-  help: 0,
-  cmds: 0,
-  ping: 0,
-  userinfo: 0,
-  serverinfo: 0,
+  // Niveau 2 : Staff & Modération (toutes les commandes nécessitent au minimum le staff)
+  help: 2,
+  cmds: 2,
+  ping: 2,
+  userinfo: 2,
+  whois: 2,
+  serverinfo: 2,
 
   // Niveau 2 : Modération & Staff
   warn: 2,
@@ -55,6 +56,8 @@ export const DEFAULT_COMMAND_LEVELS = {
   'setupvocal': 3,
   'config-vocal': 3,
   'jointocreate': 3,
+  setprefix: 3,
+  prefix: 3,
 };
 
 const COMMAND_ALIASES = {

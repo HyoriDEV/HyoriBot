@@ -93,9 +93,10 @@ export async function handleMessageCreate(message) {
   };
 
   // Contrôle des permissions personnalisées (RBAC / ACL)
+  // Silence total : aucune réponse si la personne n'a pas les droits ou si la commande n'existe pas
   const permCheck = await PermissionService.canExecute(message.member, commandName);
   if (!permCheck.allowed) {
-    return message.reply(`❌ **Accès Refusé :** ${permCheck.reason}`);
+    return; // Ignorer silencieusement : pas de message d'erreur visible
   }
 
   try {
