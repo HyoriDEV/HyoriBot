@@ -63,11 +63,33 @@ export function buildRegistrationStatusEmbed(status, customUrl) {
 export function buildCharacterSheetStatusEmbed(status, customUrl) {
   const env = getEnv();
   const url = customUrl || env.ATLAS_PLAYER_SPACE_URL;
-  const embed = createHyoriEmbed()
-    .setTitle('Fiche Personnage — Retours disponibles')
-    .setDescription(
-      'Des retours ont été déposés sur votre fiche personnage par l\'équipe staff.\n\nConsultez les remarques directement sur votre fiche pour apporter les ajustements demandés.'
-    );
+  const embed = createHyoriEmbed();
+
+  switch (status) {
+    case 'VALIDATED':
+      embed
+        .setTitle('Fiche Personnage — Validée')
+        .setDescription(
+          'Félicitations, votre fiche personnage a été validée par l\'équipe staff !\n\nVous pouvez dès à présent la consulter dans votre espace joueur et poursuivre les étapes de votre inscription.'
+        );
+      break;
+    case 'REOPENED':
+      embed
+        .setTitle('Fiche Personnage — Réouverture')
+        .setDescription(
+          'Votre fiche personnage a été rouverte par l\'équipe staff.\n\nVous pouvez dès à présent la modifier et la soumettre à nouveau depuis votre espace joueur.'
+        );
+      break;
+    case 'PENDING_PLAYER':
+    default:
+      embed
+        .setTitle('Fiche Personnage — Retours disponibles')
+        .setDescription(
+          'Des retours ont été déposés sur votre fiche personnage par l\'équipe staff.\n\nConsultez les remarques directement sur votre fiche pour apporter les ajustements demandés.'
+        );
+      break;
+  }
+
   const row = createPlayerSpaceButton(url, 'Consulter ma fiche personnage');
   return {
     embed,

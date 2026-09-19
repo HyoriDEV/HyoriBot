@@ -186,11 +186,13 @@ Notifie le joueur en message privé lors de l'évolution de son inscription sur 
 
 ### 4.3. `POST /api/v1/notifications/character-sheet-status`
 
-Notifie le joueur lorsque des retours ont été déposés sur sa fiche personnage par l'équipe staff.
+Notifie le joueur par message privé des retours, de la validation ou de la réouverture de sa fiche personnage par l'équipe staff.
 
 - **Comportement métier** :
+  - `VALIDATED` : Envoie l'embed de validation de la fiche personnage.
+  - `REOPENED` : Envoie l'embed de réouverture de la fiche personnage.
   - `PENDING_PLAYER` : Envoie l'embed de retours disponibles.
-  - `DRAFT` / `PENDING_STAFF` / `VALIDATED` : N'envoie aucun DM (`notified: false`), retourne HTTP 200.
+  - `DRAFT` / `PENDING_STAFF` : N'envoie aucun DM (`notified: false`), retourne HTTP 200.
 
 #### Corps de la requête (JSON) :
 

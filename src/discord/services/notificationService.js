@@ -98,7 +98,8 @@ export class NotificationService {
     });
   }
   async notifyCharacterSheetStatus(discordId, status, playerSpaceUrl) {
-    if (status !== 'PENDING_PLAYER') {
+    const notifyStatuses = ['PENDING_PLAYER', 'VALIDATED', 'REOPENED'];
+    if (!notifyStatuses.includes(status)) {
       logger.debug(
         {
           discordId,
