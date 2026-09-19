@@ -7,7 +7,7 @@ export const RegistrationStatusNotificationSchema = z.object({
 });
 export const CharacterSheetStatusNotificationSchema = z.object({
   discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format'),
-  status: z.enum(['DRAFT', 'PENDING_STAFF', 'VALIDATED', 'PENDING_PLAYER']),
+  status: z.enum(['DRAFT', 'PENDING_STAFF', 'VALIDATED', 'PENDING_PLAYER', 'REOPENED']),
   playerSpaceUrl: z.string().url('playerSpaceUrl must be a valid URL').optional(),
 });
 export const SanctionNotificationSchema = z.object({
