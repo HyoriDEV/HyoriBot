@@ -81,7 +81,8 @@ export async function callDiscordBot<TResponse = unknown>(
 | `GET`   | `/health`                               | Diagnostic de l'état du bot et de la passerelle Discord                    | Système    |
 | `POST`  | `/notifications/registration-status`    | Notifie le joueur de l'avancement de son inscription                       | Module 1.a |
 | `POST`  | `/notifications/character-sheet-status` | Notifie le joueur de retours sur sa fiche personnage                       | Module 1.b |
-| `POST`  | `/notifications/sanction`               | Envoie une notification de sanction (Avertissement, Suspension, Exclusion) | Module 1.c |
+| `POST`  | `/notifications/interview-reminder`    | Relance le(s) joueur(s) pour réserver leur créneau d'entretien             | Module 1.c |
+| `POST`  | `/notifications/sanction`               | Envoie une notification de sanction (Avertissement, Suspension, Exclusion) | Module 1.d |
 | `POST`  | `/sanctions/apply`                      | Applique une sanction, sauvegarde les rôles et attribue le rôle sanctionné | Module 2   |
 | `POST`  | `/sanctions/rollback`                   | Lève une sanction, retire le rôle sanctionné et restaure les rôles         | Module 2   |
 | `GET`   | `/sanctions/backups`                    | Liste l'historique et les sauvegardes actives de rôles                     | Module 2   |
@@ -216,7 +217,49 @@ Notifie le joueur par message privé des retours, de la validation ou de la réo
 
 ---
 
-### 4.4. `POST /api/v1/notifications/sanction`
+### 4.4. `POST /api/v1/notifications/interview-reminder`
+
+Notifie un ou plusieurs joueurs par message privé pour les inviter à réserver leur créneau d'entretien de whitelist une fois leur fiche RP validée.
+
+#### Corps de la requête (JSON) :
+
+Envoi groupé :
+```json
+{
+  "discordIds": ["123456789012345678", "234567890123456789"],
+  "interviewUrl": "https://hyori-rp.fr/player/interview"
+}
+```
+
+Envoi individuel :
+```json
+{
+  "discordId": "123456789012345678",
+  "interviewUrl": "https://hyori-rp.fr/player/interview"
+}
+```
+
+#### Champs :
+
+- `discordId` (string, optionnel) : ID Discord unique (16-21 chiffres).
+- `discordIds` (array[string], optionnel) : Tableau d'IDs Discord (au moins l'un des deux doit être renseigné).
+- `interviewUrl` (string, optionnel) : URL vers la page de réservation d'entretien (par défaut `${ATLAS_PLAYER_SPACE_URL}/interview`).
+
+#### Réponse HTTP 200 :
+
+```json
+{
+  "success": true,
+  "total": 2,
+  "sent": 2,
+  "dmClosed": 0,
+  "failed": 0
+}
+```
+
+---
+
+### 4.5. `POST /api/v1/notifications/sanction`
 
 Envoie une notification de sanction disciplinaire par message privé.
 
