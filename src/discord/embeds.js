@@ -14,10 +14,7 @@ export function createPlayerSpaceButton(customUrl, customLabel) {
   const env = getEnv();
   const url = customUrl || env.ATLAS_PLAYER_SPACE_URL;
   const label = customLabel || 'Accéder à mon espace joueur';
-  const button = new ButtonBuilder()
-    .setLabel(label)
-    .setStyle(ButtonStyle.Link)
-    .setURL(url);
+  const button = new ButtonBuilder().setLabel(label).setStyle(ButtonStyle.Link).setURL(url);
   return new ActionRowBuilder().addComponents(button);
 }
 export function buildRegistrationStatusEmbed(status, customUrl) {
@@ -29,28 +26,28 @@ export function buildRegistrationStatusEmbed(status, customUrl) {
       embed
         .setTitle('Inscription — Candidature acceptée')
         .setDescription(
-          'Votre candidature pour rejoindre **Hyori RP** a été acceptée par l\'équipe staff.\n\nVous pouvez dès à présent accéder à votre espace joueur pour préparer votre fiche personnage et réserver votre entretien vocal.'
+          "Votre candidature pour rejoindre **Hyori RP** a été acceptée par l'équipe staff.\n\nVous pouvez dès à présent accéder à votre espace joueur pour préparer votre fiche personnage et réserver votre entretien vocal."
         );
       break;
     case 'WHITELISTED':
       embed
         .setTitle('Whitelist — Validation définitive')
         .setDescription(
-          'Félicitations, votre inscription sur **Hyori RP** a été validée !\n\nVous disposez désormais d\'un accès complet au site, au serveur Discord et au serveur Minecraft.'
+          "Félicitations, votre inscription sur **Hyori RP** a été validée !\n\nVous disposez désormais d'un accès complet au site, au serveur Discord et au serveur Minecraft."
         );
       break;
     case 'REJECTED':
       embed
         .setTitle('Inscription — Candidature non retenue')
         .setDescription(
-          'Votre candidature pour rejoindre **Hyori RP** n\'a pas été retenue par l\'équipe staff.\n\nVous pouvez consulter les détails depuis votre espace joueur.'
+          "Votre candidature pour rejoindre **Hyori RP** n'a pas été retenue par l'équipe staff.\n\nVous pouvez consulter les détails depuis votre espace joueur."
         );
       break;
     case 'WAITLIST':
       embed
-        .setTitle('Inscription — Liste d\'attente')
+        .setTitle("Inscription — Liste d'attente")
         .setDescription(
-          'Votre candidature a été réintégrée sur la liste d\'attente de **Hyori RP** par l\'équipe staff.\n\nVous pouvez suivre l\'évolution de votre statut depuis votre espace joueur.'
+          "Votre candidature a été réintégrée sur la liste d'attente de **Hyori RP** par l'équipe staff.\n\nVous pouvez suivre l'évolution de votre statut depuis votre espace joueur."
         );
       break;
   }
@@ -70,14 +67,14 @@ export function buildCharacterSheetStatusEmbed(status, customUrl) {
       embed
         .setTitle('Fiche Personnage — Validée')
         .setDescription(
-          'Félicitations, votre fiche personnage a été validée par l\'équipe staff !\n\nVous pouvez dès à présent la consulter dans votre espace joueur et poursuivre les étapes de votre inscription.'
+          "Félicitations, votre fiche personnage a été validée par l'équipe staff !\n\nVous pouvez dès à présent la consulter dans votre espace joueur et poursuivre les étapes de votre inscription."
         );
       break;
     case 'REOPENED':
       embed
         .setTitle('Fiche Personnage — Réouverture')
         .setDescription(
-          'Votre fiche personnage a été rouverte par l\'équipe staff.\n\nVous pouvez dès à présent la modifier et la soumettre à nouveau depuis votre espace joueur.'
+          "Votre fiche personnage a été rouverte par l'équipe staff.\n\nVous pouvez dès à présent la modifier et la soumettre à nouveau depuis votre espace joueur."
         );
       break;
     case 'PENDING_PLAYER':
@@ -85,12 +82,28 @@ export function buildCharacterSheetStatusEmbed(status, customUrl) {
       embed
         .setTitle('Fiche Personnage — Retours disponibles')
         .setDescription(
-          'Des retours ont été déposés sur votre fiche personnage par l\'équipe staff.\n\nConsultez les remarques directement sur votre fiche pour apporter les ajustements demandés.'
+          "Des retours ont été déposés sur votre fiche personnage par l'équipe staff.\n\nConsultez les remarques directement sur votre fiche pour apporter les ajustements demandés."
         );
       break;
   }
 
   const row = createPlayerSpaceButton(url, 'Consulter ma fiche personnage');
+  return {
+    embed,
+    components: [row],
+  };
+}
+export function buildInterviewReminderEmbed(customUrl) {
+  const env = getEnv();
+  const url = customUrl || `${env.ATLAS_PLAYER_SPACE_URL}/interview`;
+  const embed = createHyoriEmbed();
+  embed
+    .setTitle('Entretien Whitelist — Réserve ton créneau')
+    .setDescription(
+      "Bonne nouvelle ! Ta fiche personnage a été validée par l'équipe staff et tu es désormais invité·e à passer ton entretien vocal de whitelist.\n\nDes créneaux sont actuellement ouverts. Rends-toi sur ton espace joueur pour choisir et réserver le créneau qui te convient le mieux !"
+    );
+
+  const row = createPlayerSpaceButton(url, 'Réserver un créneau');
   return {
     embed,
     components: [row],

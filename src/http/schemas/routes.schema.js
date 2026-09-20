@@ -10,6 +10,15 @@ export const CharacterSheetStatusNotificationSchema = z.object({
   status: z.enum(['DRAFT', 'PENDING_STAFF', 'VALIDATED', 'PENDING_PLAYER', 'REOPENED']),
   playerSpaceUrl: z.string().url('playerSpaceUrl must be a valid URL').optional(),
 });
+export const InterviewReminderNotificationSchema = z
+  .object({
+    discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format').optional(),
+    discordIds: z.array(z.string().regex(discordIdRegex, 'Invalid Discord ID format')).optional(),
+    interviewUrl: z.string().url('interviewUrl must be a valid URL').optional(),
+  })
+  .refine(data => Boolean(data.discordId || (data.discordIds && data.discordIds.length > 0)), {
+    message: 'Either discordId or discordIds must be provided',
+  });
 export const SanctionNotificationSchema = z.object({
   discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format'),
   type: z.enum(['WARNING', 'SUSPENSION', 'EXCLUSION']),

@@ -4,6 +4,7 @@ import { logger } from '../../logger/index.js';
 import {
   buildRegistrationStatusEmbed,
   buildCharacterSheetStatusEmbed,
+  buildInterviewReminderEmbed,
   buildSanctionNotificationEmbed,
 } from '../embeds.js';
 export class NotificationService {
@@ -125,6 +126,61 @@ export class NotificationService {
       embeds: [embed],
       components,
     });
+  }
+  async notifyInterviewReminder(target, interviewUrl) {
+    const discordIds = Array.isArray(target) ? target : [target];
+    const { embed, components } = buildInterviewReminderEmbed(interviewUrl);
+
+    let sent = 0;
+    let failed = 0;
+    let dmClosed = 0;
+    const errors = [];
+
+    const results = await Promise.allSettled(
+      discordIds.map(discordId =>
+        this.sendDirectMessage(discordId, 'notifyInterviewReminder', {
+          embeds: [embed],
+          components,
+        })
+      )
+    );
+
+    for (let i = 0; i < results.length; i++) {
+      const res = results[i];
+      const discordId = discordIds[i];
+      if (res.status === 'fulfilled') {
+        if (res.value.success && res.value.notified) {
+          sent++;
+        } else if (res.value.dmClosed) {
+          dmClosed++;
+        } else {
+          failed++;
+          if (res.value.error) errors.push(`${discordId}: ${res.value.error}`);
+        }
+      } else {
+        failed++;
+        errors.push(`${discordId}: ${res.reason?.message || 'Unknown error'}`);
+      }
+    }
+
+    logger.info(
+      {
+        total: discordIds.length,
+        sent,
+        dmClosed,
+        failed,
+      },
+      'Completed interview reminder notifications batch'
+    );
+
+    return {
+      success: true,
+      total: discordIds.length,
+      sent,
+      dmClosed,
+      failed,
+      errors: errors.length > 0 ? errors : undefined,
+    };
   }
 }
 export const notificationService = new NotificationService();
