@@ -6,6 +6,7 @@ import {
   buildCharacterSheetStatusEmbed,
   buildInterviewReminderEmbed,
   buildSanctionNotificationEmbed,
+  buildTicketMessageNotificationEmbed,
 } from '../embeds.js';
 export class NotificationService {
   async sendDirectMessage(discordId, actionName, messagePayload) {
@@ -181,6 +182,25 @@ export class NotificationService {
       failed,
       errors: errors.length > 0 ? errors : undefined,
     };
+  }
+  async notifyTicketMessage({
+    discordId,
+    ticketId,
+    ticketSubject,
+    authorName,
+    messagePreview,
+    ticketUrl,
+  }) {
+    const { embed, components } = buildTicketMessageNotificationEmbed(
+      ticketSubject,
+      authorName,
+      messagePreview,
+      ticketUrl
+    );
+    return this.sendDirectMessage(discordId, `notifyTicketMessage:${ticketId}`, {
+      embeds: [embed],
+      components,
+    });
   }
 }
 export const notificationService = new NotificationService();

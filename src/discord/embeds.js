@@ -142,3 +142,31 @@ export function buildSanctionNotificationEmbed(type, reason, duration, appealUrl
     components: [row],
   };
 }
+export function buildTicketMessageNotificationEmbed(
+  ticketSubject,
+  authorName,
+  messagePreview,
+  ticketUrl
+) {
+  const env = getEnv();
+  const url = ticketUrl || `${env.ATLAS_PLAYER_SPACE_URL}/tickets`;
+  const embed = createHyoriEmbed();
+
+  embed.setTitle('Ticket — Nouveau message');
+
+  let description = `Un nouveau message a été posté par **${authorName}** dans votre ticket **« ${ticketSubject} »**.`;
+  if (messagePreview && messagePreview.trim()) {
+    const cleanPreview =
+      messagePreview.length > 300 ? `${messagePreview.slice(0, 297)}...` : messagePreview;
+    description += `\n\n> ${cleanPreview.replace(/\n+/g, '\n> ')}`;
+  }
+  description += "\n\nRendez-vous sur votre espace joueur pour consulter l'échange et y répondre.";
+
+  embed.setDescription(description);
+
+  const row = createPlayerSpaceButton(url, 'Consulter le ticket');
+  return {
+    embed,
+    components: [row],
+  };
+}

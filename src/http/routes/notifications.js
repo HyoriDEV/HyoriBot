@@ -4,6 +4,7 @@ import {
   CharacterSheetStatusNotificationSchema,
   InterviewReminderNotificationSchema,
   SanctionNotificationSchema,
+  TicketMessageNotificationSchema,
 } from '../schemas/routes.schema.js';
 import { notificationService } from '../../discord/services/notificationService.js';
 import { logger } from '../../logger/index.js';
@@ -106,6 +107,26 @@ export async function notificationRoutes(fastify) {
     const { discordId, discordIds, interviewUrl } = parseResult.data;
     const target = discordIds && discordIds.length > 0 ? discordIds : discordId;
     const result = await notificationService.notifyInterviewReminder(target, interviewUrl);
+    return reply.status(200).send(result);
+  });
+  fastify.post('/notifications/ticket-message', async (request, reply) => {
+    const parseResult = TicketMessageNotificationSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      logger.warn(
+        {
+          errors: parseResult.error.format(),
+        },
+        'Invalid payload for ticket-message notification'
+      );
+      return reply.status(400).send({
+        success: false,
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'Invalid request payload',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const result = await notificationService.notifyTicketMessage(parseResult.data);
     return reply.status(200).send(result);
   });
 }

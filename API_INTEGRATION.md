@@ -82,7 +82,8 @@ export async function callDiscordBot<TResponse = unknown>(
 | `POST`  | `/notifications/registration-status`    | Notifie le joueur de l'avancement de son inscription                       | Module 1.a |
 | `POST`  | `/notifications/character-sheet-status` | Notifie le joueur de retours sur sa fiche personnage                       | Module 1.b |
 | `POST`  | `/notifications/interview-reminder`    | Relance le(s) joueur(s) pour réserver leur créneau d'entretien             | Module 1.c |
-| `POST`  | `/notifications/sanction`               | Envoie une notification de sanction (Avertissement, Suspension, Exclusion) | Module 1.d |
+| `POST`  | `/notifications/ticket-message`        | Notifie le joueur d'un nouveau message dans un ticket dont il fait partie  | Module 1.d |
+| `POST`  | `/notifications/sanction`               | Envoie une notification de sanction (Avertissement, Suspension, Exclusion) | Module 1.e |
 | `POST`  | `/sanctions/apply`                      | Applique une sanction, sauvegarde les rôles et attribue le rôle sanctionné | Module 2   |
 | `POST`  | `/sanctions/rollback`                   | Lève une sanction, retire le rôle sanctionné et restaure les rôles         | Module 2   |
 | `GET`   | `/sanctions/backups`                    | Liste l'historique et les sauvegardes actives de rôles                     | Module 2   |
@@ -285,7 +286,45 @@ Envoie une notification de sanction disciplinaire par message privé.
 
 ---
 
-### 4.5. `POST /api/v1/sanctions/apply`
+### 4.6. `POST /api/v1/notifications/ticket-message`
+
+Notifie le joueur par message privé Discord lorsqu'un nouveau message apparaît dans un ticket dont il fait partie.
+
+#### Corps de la requête (JSON) :
+
+```json
+{
+  "discordId": "123456789012345678",
+  "ticketId": "cm1234567890",
+  "ticketSubject": "Question sur le métier d'érudit",
+  "authorName": "Staff_Kenshin",
+  "messagePreview": "Bonjour ! Voici les précisions demandées...",
+  "ticketUrl": "https://hyori-rp.fr/player/tickets/cm1234567890"
+}
+```
+
+#### Champs :
+
+- `discordId` (string, requis) : ID Discord de l'utilisateur (16-21 chiffres).
+- `ticketId` (string, requis) : Identifiant unique du ticket Atlas.
+- `ticketSubject` (string, requis) : Sujet du ticket (max 200 caractères).
+- `authorName` (string, requis) : Pseudo ou nom d'affichage de l'auteur du message.
+- `messagePreview` (string, optionnel) : Aperçu textuel du message.
+- `ticketUrl` (string, optionnel) : URL directe vers le ticket dans l'espace joueur.
+
+#### Réponse HTTP 200 :
+
+```json
+{
+  "success": true,
+  "notified": true,
+  "message": "Notification sent successfully via DM"
+}
+```
+
+---
+
+### 4.7. `POST /api/v1/sanctions/apply`
 
 Applique une sanction lourde (`SUSPENSION` ou `EXCLUSION`) sur Discord avec le cycle complet :
 

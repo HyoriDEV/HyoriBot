@@ -26,6 +26,14 @@ export const SanctionNotificationSchema = z.object({
   duration: z.string().max(100).optional(),
   appealUrl: z.string().url('appealUrl must be a valid URL').optional(),
 });
+export const TicketMessageNotificationSchema = z.object({
+  discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format'),
+  ticketId: z.string().min(1, 'ticketId must not be empty'),
+  ticketSubject: z.string().min(1, 'ticketSubject must not be empty').max(200),
+  authorName: z.string().min(1, 'authorName must not be empty').max(100),
+  messagePreview: z.string().max(1000).optional().nullable(),
+  ticketUrl: z.string().url('ticketUrl must be a valid URL').optional(),
+});
 export const ApplySanctionSchema = z.object({
   discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format'),
   type: z.enum(['SUSPENSION', 'EXCLUSION']),
