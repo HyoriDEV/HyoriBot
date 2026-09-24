@@ -131,7 +131,10 @@ export class DiscordBotClient {
         if (globalCmds && globalCmds.size > 0) {
           for (const [id, cmd] of globalCmds) {
             if (!validNames.has(cmd.name)) {
-              logger.info({ command: cmd.name }, 'Suppression automatique d\'une commande globale obsolète');
+              logger.info(
+                { command: cmd.name },
+                "Suppression automatique d'une commande globale obsolète"
+              );
               await cmd.delete().catch(() => {});
             }
           }
@@ -139,6 +142,7 @@ export class DiscordBotClient {
       }
 
       // 2. Vérification et purge pour chaque serveur où le bot est présent
+      const env = getEnv();
       const communityGuildId = env.DISCORD_GUILD_ID;
       for (const [guildId, guild] of readyClient.guilds.cache) {
         try {
@@ -147,7 +151,10 @@ export class DiscordBotClient {
             if (guildCmds && guildCmds.size > 0) {
               for (const [id, cmd] of guildCmds) {
                 if (!validNames.has(cmd.name)) {
-                  logger.info({ guild: guild.name, command: cmd.name }, 'Suppression automatique d\'une commande obsolète sur le serveur communauté');
+                  logger.info(
+                    { guild: guild.name, command: cmd.name },
+                    "Suppression automatique d'une commande obsolète sur le serveur communauté"
+                  );
                   await cmd.delete().catch(() => {});
                 }
               }
@@ -155,25 +162,43 @@ export class DiscordBotClient {
 
             // Synchronisation des commandes officielles sur le serveur communauté
             await guild.commands.set(commandsData).catch(err => {
-              logger.warn({ guild: guild.name, error: err.message }, 'Erreur synchronisation commandes serveur communauté');
+              logger.warn(
+                { guild: guild.name, error: err.message },
+                'Erreur synchronisation commandes serveur communauté'
+              );
             });
-            logger.info({ guild: guild.name, count: commandsData.length }, 'Commandes du serveur communauté synchronisées avec succès');
+            logger.info(
+              { guild: guild.name, count: commandsData.length },
+              'Commandes du serveur communauté synchronisées avec succès'
+            );
           } else {
             // Serveurs secondaires (serveur Staff, etc.) : aucune commande slash ne doit être active
             const guildCmds = await guild.commands.fetch().catch(() => null);
             if (guildCmds && guildCmds.size > 0) {
-              logger.info({ guild: guild.name, count: guildCmds.size }, 'Purge des commandes slash sur le serveur secondaire (staff)');
+              logger.info(
+                { guild: guild.name, count: guildCmds.size },
+                'Purge des commandes slash sur le serveur secondaire (staff)'
+              );
               await guild.commands.set([]).catch(err => {
-                logger.warn({ guild: guild.name, error: err.message }, 'Erreur purge commandes sur serveur secondaire');
+                logger.warn(
+                  { guild: guild.name, error: err.message },
+                  'Erreur purge commandes sur serveur secondaire'
+                );
               });
             }
           }
         } catch (err) {
-          logger.warn({ guild: guild.name, error: err.message }, 'Erreur traitement commandes sur serveur');
+          logger.warn(
+            { guild: guild.name, error: err.message },
+            'Erreur traitement commandes sur serveur'
+          );
         }
       }
     } catch (err) {
-      logger.error({ error: err.message }, 'Erreur lors de la synchronisation automatique des commandes au démarrage');
+      logger.error(
+        { error: err.message },
+        'Erreur lors de la synchronisation automatique des commandes au démarrage'
+      );
     }
   }
   get ready() {
