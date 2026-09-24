@@ -31,10 +31,13 @@ const DISCORD_INVITE_REGEX =
 export async function handleMessageCreate(message) {
   if (message.author.bot || !message.guild) return;
 
+  const env = getEnv();
+  // Les commandes textuelles, l'anti-spam et l'anti-invitation ne s'appliquent qu'au serveur communautaire
+  if (message.guild.id !== env.DISCORD_GUILD_ID) return;
+
   // Détection et sanction Anti-Spam automatique
   await antiSpamService.handleMessage(message);
 
-  const env = getEnv();
   const prefix = env.PREFIX || '!';
   const isStaff = message.member?.permissions.has(PermissionFlagsBits.ManageMessages);
 

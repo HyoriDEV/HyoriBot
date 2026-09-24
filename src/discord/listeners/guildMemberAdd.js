@@ -3,10 +3,15 @@ import { memberLogService } from '../services/memberLogService.js';
 import { antiRaidService } from '../../services/antiRaidService.js';
 import { WelcomeCardService } from '../../services/welcomeCardService.js';
 import { configStore } from '../../storage/index.js';
+import { getEnv } from '../../config/env.js';
 import { logger } from '../../logger/index.js';
 
 export async function handleGuildMemberAdd(member) {
   if (member.user.bot) return;
+
+  const env = getEnv();
+  // Anti-raid, logs d'arrivée, auto-rôle et carte de bienvenue réservés au serveur communautaire
+  if (member.guild.id !== env.DISCORD_GUILD_ID) return;
 
   // 1. Contrôle Anti-Raid automatique
   await antiRaidService.handleMemberJoin(member);

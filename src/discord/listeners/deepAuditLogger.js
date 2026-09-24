@@ -19,6 +19,7 @@ export class DeepAuditLogger {
    * Résout le salon de destination selon la catégorie demandée avec fallback hiérarchique.
    */
   static async getLogChannel(guild, categoryKey) {
+    if (!guild || guild.id !== getEnv().DISCORD_GUILD_ID) return null;
     try {
       const config = await configStore.read().catch(() => ({}));
       const logs = config.logs || {};
@@ -71,7 +72,7 @@ export class DeepAuditLogger {
    * Envoie un embed vers le salon de destination approprié.
    */
   static async send(guild, categoryKey, embed) {
-    if (!guild) return;
+    if (!guild || guild.id !== getEnv().DISCORD_GUILD_ID) return;
     try {
       const channel = await this.getLogChannel(guild, categoryKey);
       if (channel) {
@@ -86,6 +87,7 @@ export class DeepAuditLogger {
    * Récupère l'exécuteur d'une action depuis l'Audit Log de Discord.
    */
   static async fetchExecutor(guild, auditLogType, targetId = null) {
+    if (!guild || guild.id !== getEnv().DISCORD_GUILD_ID) return null;
     try {
       if (!guild.members.me?.permissions.has(PermissionsBitField.Flags.ViewAuditLog)) {
         return null;
