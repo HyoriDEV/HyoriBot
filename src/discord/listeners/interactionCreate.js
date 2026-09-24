@@ -1,9 +1,16 @@
 import { slashCommandsMap } from '../commands/index.js';
 import { PermissionService } from '../../services/permissionService.js';
 import { tempVoiceService } from '../../services/tempVoiceService.js';
+import { getEnv } from '../../config/env.js';
 import { logger } from '../../logger/index.js';
 
 export async function handleInteractionCreate(interaction) {
+  const env = getEnv();
+  // Seul le serveur communautaire gère les interactions (commandes, boutons de tickets/rôles, vocal temporaire)
+  if (interaction.guildId && interaction.guildId !== env.DISCORD_GUILD_ID) {
+    return;
+  }
+
   // Gestionnaires des interactions vocales temporaires (Boutons, Modales, Menus déroulants)
   if (
     interaction.customId?.startsWith('tempvoice_') ||

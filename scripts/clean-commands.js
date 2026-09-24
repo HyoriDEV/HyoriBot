@@ -54,20 +54,28 @@ async function cleanAllCommands() {
   for (const guild of guilds) {
     console.log(`\n   📌 Serveur : ${guild.name} (${guild.id})`);
     try {
-      // Récupération des commandes existantes
-      const existingCmds = await rest.get(Routes.applicationGuildCommands(clientId, guild.id));
-      const oldCmds = existingCmds.filter(c => !validCommandNames.has(c.name));
+      if (guild.id === process.env.DISCORD_GUILD_ID) {
+        // Récupération des commandes existantes sur la communauté
+        const existingCmds = await rest.get(Routes.applicationGuildCommands(clientId, guild.id));
+        const oldCmds = existingCmds.filter(c => !validCommandNames.has(c.name));
 
-      if (oldCmds.length > 0) {
-        console.log(`      ⚠️ ${oldCmds.length} ancienne(s) commande(s) obsolète(s) détectée(s) :`, oldCmds.map(c => c.name));
+        if (oldCmds.length > 0) {
+          console.log(`      ⚠️ ${oldCmds.length} ancienne(s) commande(s) obsolète(s) détectée(s) :`, oldCmds.map(c => c.name));
+        }
+
+        // Remplacement direct par les commandes propres
+        const updated = await rest.put(Routes.applicationGuildCommands(clientId, guild.id), {
+          body: commandsData,
+        });
+
+        console.log(`      ✅ ${updated.length} commandes officielles enregistrées avec succès sur le serveur Communauté "${guild.name}" !`);
+      } else {
+        // Serveur Staff / secondaire : purge complète des commandes
+        await rest.put(Routes.applicationGuildCommands(clientId, guild.id), {
+          body: [],
+        });
+        console.log(`      🧹 Commandes purgées sur le serveur secondaire "${guild.name}" (aucun slash command actif).`);
       }
-
-      // Remplacement direct par les commandes propres
-      const updated = await rest.put(Routes.applicationGuildCommands(clientId, guild.id), {
-        body: commandsData,
-      });
-
-      console.log(`      ✅ ${updated.length} commandes officielles enregistrées avec succès sur "${guild.name}" !`);
     } catch (err) {
       console.warn(`      ❌ Erreur sur ${guild.name} : ${err.message}`);
     }

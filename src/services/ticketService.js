@@ -152,6 +152,22 @@ export class TicketService {
         components: [closeRow]
       });
 
+      // 8. Notification vers le salon staff configuré (si présent)
+      try {
+        const { notificationService } = await import('../discord/services/notificationService.js');
+        await notificationService.notifyTicketCreated({
+          ticketId: formattedId,
+          ticketSubject: `Ticket #${formattedId} (${categoryType})`,
+          ticketCategory: categoryType,
+          authorName: user.tag,
+          ticketDescription: `Nouveau ticket ouvert par ${user} sur le serveur Discord.`,
+        }).catch(err => {
+          logger.warn({ error: err.message }, 'Notification ticket vers le salon staff non envoyée');
+        });
+      } catch (notifyErr) {
+        logger.warn({ error: notifyErr.message }, 'Erreur import notificationService pour ticket');
+      }
+
       return interaction.editReply({
         content: `✅ Votre ticket a été créé avec succès dans <#${ticketChannel.id}>.`
       });
