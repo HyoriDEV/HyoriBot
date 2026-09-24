@@ -16,6 +16,8 @@ const envSchema = z
     CHANNEL_LOGS_MODERATION_ID: z.string().optional(),
     CHANNEL_MEMBER_LOGS_ID: z.string().optional(),
     CHANNEL_LOGS_MEMBERS_ID: z.string().optional(),
+    CHANNEL_TICKET_NOTIFICATIONS_ID: z.string().optional(),
+    ROLE_TICKET_NOTIFICATIONS_ID: z.string().optional(),
     INTERNAL_BOT_API_KEY: z.string().min(8, 'INTERNAL_BOT_API_KEY must be at least 8 characters'),
     HTTP_PORT: z.coerce.number().int().positive().default(4000),
     HTTP_HOST: z.string().default('127.0.0.1'),

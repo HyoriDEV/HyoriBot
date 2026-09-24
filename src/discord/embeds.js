@@ -17,7 +17,7 @@ export function createPlayerSpaceButton(customUrl, customLabel) {
   const button = new ButtonBuilder().setLabel(label).setStyle(ButtonStyle.Link).setURL(url);
   return new ActionRowBuilder().addComponents(button);
 }
-export function buildRegistrationStatusEmbed(status, customUrl) {
+export function buildRegistrationStatusEmbed(status, customUrl, override = null) {
   const env = getEnv();
   const url = customUrl || env.ATLAS_PLAYER_SPACE_URL;
   const embed = createHyoriEmbed();
@@ -51,13 +51,21 @@ export function buildRegistrationStatusEmbed(status, customUrl) {
         );
       break;
   }
-  const row = createPlayerSpaceButton(url);
+  if (override?.title) {
+    embed.setTitle(override.title);
+  }
+  if (override?.description) {
+    embed.setDescription(override.description);
+  }
+  const buttonUrl = override?.buttonUrl || url;
+  const buttonLabel = override?.buttonLabel || undefined;
+  const row = createPlayerSpaceButton(buttonUrl, buttonLabel);
   return {
     embed,
     components: [row],
   };
 }
-export function buildCharacterSheetStatusEmbed(status, customUrl) {
+export function buildCharacterSheetStatusEmbed(status, customUrl, override = null) {
   const env = getEnv();
   const url = customUrl || env.ATLAS_PLAYER_SPACE_URL;
   const embed = createHyoriEmbed();
@@ -87,13 +95,22 @@ export function buildCharacterSheetStatusEmbed(status, customUrl) {
       break;
   }
 
-  const row = createPlayerSpaceButton(url, 'Consulter ma fiche personnage');
+  if (override?.title) {
+    embed.setTitle(override.title);
+  }
+  if (override?.description) {
+    embed.setDescription(override.description);
+  }
+
+  const buttonUrl = override?.buttonUrl || url;
+  const buttonLabel = override?.buttonLabel || 'Consulter ma fiche personnage';
+  const row = createPlayerSpaceButton(buttonUrl, buttonLabel);
   return {
     embed,
     components: [row],
   };
 }
-export function buildInterviewReminderEmbed(customUrl) {
+export function buildInterviewReminderEmbed(customUrl, override = null) {
   const env = getEnv();
   const url = customUrl || `${env.ATLAS_PLAYER_SPACE_URL}/interview`;
   const embed = createHyoriEmbed();
@@ -103,7 +120,16 @@ export function buildInterviewReminderEmbed(customUrl) {
       "Bonne nouvelle ! Ta fiche personnage a été validée par l'équipe staff et tu es désormais invité·e à passer ton entretien vocal de whitelist.\n\nDes créneaux sont actuellement ouverts. Rends-toi sur ton espace joueur pour choisir et réserver le créneau qui te convient le mieux !"
     );
 
-  const row = createPlayerSpaceButton(url, 'Réserver un créneau');
+  if (override?.title) {
+    embed.setTitle(override.title);
+  }
+  if (override?.description) {
+    embed.setDescription(override.description);
+  }
+
+  const buttonUrl = override?.buttonUrl || url;
+  const buttonLabel = override?.buttonLabel || 'Réserver un créneau';
+  const row = createPlayerSpaceButton(buttonUrl, buttonLabel);
   return {
     embed,
     components: [row],
@@ -137,6 +163,83 @@ export function buildSanctionNotificationEmbed(type, reason, duration, appealUrl
       break;
   }
   const row = createPlayerSpaceButton(url);
+  return {
+    embed,
+    components: [row],
+  };
+}
+export function buildTicketMessageNotificationEmbed(
+  ticketSubject,
+  authorName,
+  messagePreview,
+  ticketUrl,
+  override = null
+) {
+  const env = getEnv();
+  const url = ticketUrl || `${env.ATLAS_PLAYER_SPACE_URL}/tickets`;
+  const embed = createHyoriEmbed();
+
+  embed.setTitle('Ticket — Nouveau message');
+
+  let description = `Un nouveau message a été posté par **${authorName}** dans votre ticket **« ${ticketSubject} »**.`;
+  if (messagePreview && messagePreview.trim()) {
+    const cleanPreview =
+      messagePreview.length > 300 ? `${messagePreview.slice(0, 297)}...` : messagePreview;
+    description += `\n\n> ${cleanPreview.replace(/\n+/g, '\n> ')}`;
+  }
+  description += "\n\nRendez-vous sur votre espace joueur pour consulter l'échange et y répondre.";
+
+  embed.setDescription(description);
+
+  if (override?.title) {
+    embed.setTitle(override.title);
+  }
+  if (override?.description) {
+    embed.setDescription(override.description);
+  }
+
+  const buttonUrl = override?.buttonUrl || url;
+  const buttonLabel = override?.buttonLabel || 'Consulter le ticket';
+  const row = createPlayerSpaceButton(buttonUrl, buttonLabel);
+  return {
+    embed,
+    components: [row],
+  };
+}
+export function buildTicketCreatedNotificationEmbed({
+  ticketSubject,
+  ticketCategory,
+  authorName,
+  ticketDescription,
+  ticketStaffUrl,
+  override = null,
+}) {
+  const env = getEnv();
+  const url = ticketStaffUrl || `${env.ATLAS_BASE_URL}/staff/tickets`;
+  const embed = createHyoriEmbed();
+
+  embed.setTitle(`Nouveau Ticket — ${ticketCategory || 'Support'}`);
+
+  let description = `Un nouveau ticket a été ouvert par **${authorName}**.\n\n**Catégorie :** ${ticketCategory}\n**Sujet :** ${ticketSubject}`;
+  if (ticketDescription && ticketDescription.trim()) {
+    const excerpt =
+      ticketDescription.length > 300 ? `${ticketDescription.slice(0, 297)}...` : ticketDescription;
+    description += `\n\n> ${excerpt.replace(/\n+/g, '\n> ')}`;
+  }
+  description += "\n\nConsultez et prenez en charge le ticket depuis l'espace staff.";
+
+  embed.setDescription(description);
+
+  if (override?.title) {
+    embed.setTitle(override.title);
+  }
+  if (override?.description) {
+    embed.setDescription(override.description);
+  }
+
+  const buttonUrl = override?.buttonUrl || url;
+  const buttonLabel = override?.buttonLabel || 'Consulter le ticket';
+  const row = createPlayerSpaceButton(buttonUrl, buttonLabel);
   return {
     embed,
     components: [row],

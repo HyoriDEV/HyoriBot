@@ -81,8 +81,10 @@ export async function callDiscordBot<TResponse = unknown>(
 | `GET`   | `/health`                               | Diagnostic de l'état du bot et de la passerelle Discord                    | Système    |
 | `POST`  | `/notifications/registration-status`    | Notifie le joueur de l'avancement de son inscription                       | Module 1.a |
 | `POST`  | `/notifications/character-sheet-status` | Notifie le joueur de retours sur sa fiche personnage                       | Module 1.b |
-| `POST`  | `/notifications/interview-reminder`    | Relance le(s) joueur(s) pour réserver leur créneau d'entretien             | Module 1.c |
-| `POST`  | `/notifications/sanction`               | Envoie une notification de sanction (Avertissement, Suspension, Exclusion) | Module 1.d |
+| `POST`  | `/notifications/interview-reminder`     | Relance le(s) joueur(s) pour réserver leur créneau d'entretien             | Module 1.c |
+| `POST`  | `/notifications/ticket-message`         | Notifie le joueur d'un nouveau message dans un ticket dont il fait partie  | Module 1.d |
+| `POST`  | `/notifications/ticket-created`         | Alerte sur un salon Discord externe lors de l'ouverture d'un ticket        | Module 1.e |
+| `POST`  | `/notifications/sanction`               | Envoie une notification de sanction (Avertissement, Suspension, Exclusion) | Module 1.f |
 | `POST`  | `/sanctions/apply`                      | Applique une sanction, sauvegarde les rôles et attribue le rôle sanctionné | Module 2   |
 | `POST`  | `/sanctions/rollback`                   | Lève une sanction, retire le rôle sanctionné et restaure les rôles         | Module 2   |
 | `GET`   | `/sanctions/backups`                    | Liste l'historique et les sauvegardes actives de rôles                     | Module 2   |
@@ -224,6 +226,7 @@ Notifie un ou plusieurs joueurs par message privé pour les inviter à réserver
 #### Corps de la requête (JSON) :
 
 Envoi groupé :
+
 ```json
 {
   "discordIds": ["123456789012345678", "234567890123456789"],
@@ -232,6 +235,7 @@ Envoi groupé :
 ```
 
 Envoi individuel :
+
 ```json
 {
   "discordId": "123456789012345678",
@@ -285,7 +289,93 @@ Envoie une notification de sanction disciplinaire par message privé.
 
 ---
 
-### 4.5. `POST /api/v1/sanctions/apply`
+### 4.6. `POST /api/v1/notifications/ticket-message`
+
+Notifie le joueur par message privé Discord lorsqu'un nouveau message apparaît dans un ticket dont il fait partie.
+
+#### Corps de la requête (JSON) :
+
+```json
+{
+  "discordId": "123456789012345678",
+  "ticketId": "cm1234567890",
+  "ticketSubject": "Question sur le métier d'érudit",
+  "authorName": "Staff_Kenshin",
+  "messagePreview": "Bonjour ! Voici les précisions demandées...",
+  "ticketUrl": "https://hyori-rp.fr/player/tickets/cm1234567890"
+}
+```
+
+#### Champs :
+
+- `discordId` (string, requis) : ID Discord de l'utilisateur (16-21 chiffres).
+- `ticketId` (string, requis) : Identifiant unique du ticket Atlas.
+- `ticketSubject` (string, requis) : Sujet du ticket (max 200 caractères).
+- `authorName` (string, requis) : Pseudo ou nom d'affichage de l'auteur du message.
+- `messagePreview` (string, optionnel) : Aperçu textuel du message.
+- `ticketUrl` (string, optionnel) : URL directe vers le ticket dans l'espace joueur.
+
+#### Réponse HTTP 200 :
+
+```json
+{
+  "success": true,
+  "notified": true,
+  "message": "Notification sent successfully via DM"
+}
+```
+
+---
+
+### 4.7. `POST /api/v1/notifications/ticket-created`
+
+Envoie une notification dans un salon Discord (pouvant être situé sur un autre serveur/guilde que le serveur principal du bot) lors de l'ouverture d'un nouveau ticket sur Atlas, avec mention d'un rôle par ID optionnelle.
+
+#### Corps de la requête (JSON) :
+
+```json
+{
+  "channelId": "123456789012345678",
+  "mentionRoleId": "987654321098765432",
+  "ticketId": "cm1234567890",
+  "ticketSubject": "Demande de concession de terrain",
+  "ticketCategory": "Demande RP",
+  "authorName": "Joueur_Alex",
+  "ticketDescription": "Bonjour, je sollicite un terrain pour implanter une forge...",
+  "ticketStaffUrl": "https://hyori-rp.fr/staff/tickets/cm1234567890",
+  "override": {
+    "title": "Nouveau Ticket — {category}",
+    "description": "Un ticket a été ouvert par {author}...",
+    "buttonLabel": "Consulter le ticket"
+  }
+}
+```
+
+#### Champs :
+
+- `channelId` (string, optionnel) : ID du salon Discord cible (16-21 chiffres). S'il n'est pas fourni, le bot utilise `CHANNEL_TICKET_NOTIFICATIONS_ID` défini dans son environnement.
+- `mentionRoleId` (string, optionnel) : ID du rôle Discord à mentionner (16-21 chiffres). S'il n'est pas fourni, le bot utilise `ROLE_TICKET_NOTIFICATIONS_ID` défini dans son environnement. Si configuré, le bot préfixe le message par `<@&roleId>`.
+- `ticketId` (string, requis) : Identifiant unique du ticket.
+- `ticketSubject` (string, requis) : Sujet du ticket.
+- `ticketCategory` (string, requis) : Libellé de la catégorie du ticket.
+- `authorName` (string, requis) : Pseudo ou nom de l'auteur créateur du ticket.
+- `ticketDescription` (string, optionnel) : Contenu du premier message d'ouverture.
+- `ticketStaffUrl` (string, optionnel) : URL directe vers le ticket dans l'espace staff.
+- `override` (objet, optionnel) : Objet de personnalisation dynamique de l'embed (`title`, `description`, `buttonLabel`, `buttonUrl`).
+
+#### Réponse HTTP 200 :
+
+```json
+{
+  "success": true,
+  "notified": true,
+  "message": "Ticket creation notification sent successfully to channel 123456789012345678"
+}
+```
+
+---
+
+### 4.8. `POST /api/v1/sanctions/apply`
 
 Applique une sanction lourde (`SUSPENSION` ou `EXCLUSION`) sur Discord avec le cycle complet :
 
@@ -333,7 +423,7 @@ Applique une sanction lourde (`SUSPENSION` ou `EXCLUSION`) sur Discord avec le c
 
 ---
 
-### 4.6. `POST /api/v1/sanctions/rollback`
+### 4.9. `POST /api/v1/sanctions/rollback`
 
 Lève manuellement une sanction sur Discord :
 
@@ -366,7 +456,7 @@ Lève manuellement une sanction sur Discord :
 
 ---
 
-### 4.7. `POST /api/v1/roles/whitelist-class`
+### 4.10. `POST /api/v1/roles/whitelist-class`
 
 Synchronise le statut Whitelist et la classe RP d'un joueur après son entretien.
 
@@ -403,7 +493,7 @@ Synchronise le statut Whitelist et la classe RP d'un joueur après son entretien
 
 ---
 
-### 4.8. `POST /api/v1/roles/staff`
+### 4.11. `POST /api/v1/roles/staff`
 
 Synchronise le rôle Staff d'un utilisateur en appliquant **strictement la règle du rôle unique (non-cumul)** :
 
@@ -445,7 +535,7 @@ Synchronise le rôle Staff d'un utilisateur en appliquant **strictement la règl
 
 ---
 
-### 4.9. `GET /api/v1/members/:discordId`
+### 4.12. `GET /api/v1/members/:discordId`
 
 Inspecte l'état complet d'un membre sur le serveur Discord (rôles attribués, statut whitelisté, statut sanctionné, dernière sauvegarde active).
 

@@ -4,6 +4,8 @@ import {
   CharacterSheetStatusNotificationSchema,
   InterviewReminderNotificationSchema,
   SanctionNotificationSchema,
+  TicketMessageNotificationSchema,
+  TicketCreatedNotificationSchema,
 } from '../schemas/routes.schema.js';
 import { notificationService } from '../../discord/services/notificationService.js';
 import { logger } from '../../logger/index.js';
@@ -26,11 +28,12 @@ export async function notificationRoutes(fastify) {
         details: parseResult.error.flatten(),
       });
     }
-    const { discordId, status, playerSpaceUrl } = parseResult.data;
+    const { discordId, status, playerSpaceUrl, override } = parseResult.data;
     const result = await notificationService.notifyRegistrationStatus(
       discordId,
       status,
-      playerSpaceUrl
+      playerSpaceUrl,
+      override
     );
     return reply.status(200).send(result);
   });
@@ -51,11 +54,12 @@ export async function notificationRoutes(fastify) {
         details: parseResult.error.flatten(),
       });
     }
-    const { discordId, status, playerSpaceUrl } = parseResult.data;
+    const { discordId, status, playerSpaceUrl, override } = parseResult.data;
     const result = await notificationService.notifyCharacterSheetStatus(
       discordId,
       status,
-      playerSpaceUrl
+      playerSpaceUrl,
+      override
     );
     return reply.status(200).send(result);
   });
@@ -103,9 +107,53 @@ export async function notificationRoutes(fastify) {
         details: parseResult.error.flatten(),
       });
     }
-    const { discordId, discordIds, interviewUrl } = parseResult.data;
+    const { discordId, discordIds, interviewUrl, override } = parseResult.data;
     const target = discordIds && discordIds.length > 0 ? discordIds : discordId;
-    const result = await notificationService.notifyInterviewReminder(target, interviewUrl);
+    const result = await notificationService.notifyInterviewReminder(
+      target,
+      interviewUrl,
+      override
+    );
+    return reply.status(200).send(result);
+  });
+  fastify.post('/notifications/ticket-message', async (request, reply) => {
+    const parseResult = TicketMessageNotificationSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      logger.warn(
+        {
+          errors: parseResult.error.format(),
+        },
+        'Invalid payload for ticket-message notification'
+      );
+      return reply.status(400).send({
+        success: false,
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'Invalid request payload',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const result = await notificationService.notifyTicketMessage(parseResult.data);
+    return reply.status(200).send(result);
+  });
+  fastify.post('/notifications/ticket-created', async (request, reply) => {
+    const parseResult = TicketCreatedNotificationSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      logger.warn(
+        {
+          errors: parseResult.error.format(),
+        },
+        'Invalid payload for ticket-created notification'
+      );
+      return reply.status(400).send({
+        success: false,
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'Invalid request payload',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const result = await notificationService.notifyTicketCreated(parseResult.data);
     return reply.status(200).send(result);
   });
 }
