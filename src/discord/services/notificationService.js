@@ -1,7 +1,7 @@
 import { discordBot } from '../client.js';
 import { discordQueue } from '../../queue/discordQueue.js';
 import { logger } from '../../logger/index.js';
-import { getEnv } from '../config/env.js';
+import { getEnv } from '../../config/env.js';
 import {
   buildRegistrationStatusEmbed,
   buildCharacterSheetStatusEmbed,
