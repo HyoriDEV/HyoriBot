@@ -122,3 +122,7 @@ export const SyncStaffRoleSchema = z.object({
     .optional()
     .nullable(),
 });
+
+export const BatchMembersRolesSchema = z.object({
+  discordIds: z.array(z.string().regex(discordIdRegex, 'Invalid Discord ID format')).optional(),
+});
