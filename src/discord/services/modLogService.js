@@ -1,12 +1,11 @@
 import { ChannelType, PermissionFlagsBits } from 'discord.js';
-import { getEnv } from '../../config/env.js';
+import { discordConfig } from '../../config/discordConfig.js';
 import { createHyoriEmbed } from '../embeds.js';
 import { logger } from '../../logger/index.js';
 export class ModLogService {
   async getModLogChannel(guild) {
-    const env = getEnv();
-    if (env.CHANNEL_MOD_LOGS_ID) {
-      const channel = guild.channels.cache.get(env.CHANNEL_MOD_LOGS_ID);
+    if (discordConfig.channels.modLogs) {
+      const channel = guild.channels.cache.get(discordConfig.channels.modLogs);
       if (channel && channel.isTextBased()) return channel;
     }
     const channelByName = guild.channels.cache.find(

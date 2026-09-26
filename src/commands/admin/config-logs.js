@@ -1,22 +1,20 @@
-import {
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-  ChannelType,
-  EmbedBuilder
-} from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder } from 'discord.js';
 import { configStore } from '../../storage/index.js';
 import { setupLogsCommand } from './setup-logs.js';
 import { LOG_TYPES } from '../../services/logSetupService.js';
+import { GuildRegistry } from '../../discord/services/guildRegistry.js';
 
 export default {
   data: new SlashCommandBuilder()
     .setName('config-logs')
-    .setDescription('Configurer ou déployer automatiquement les salons de logs d\'audit')
+    .setDescription("Configurer ou déployer automatiquement les salons de logs d'audit")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addSubcommand(sub =>
       sub
         .setName('setup')
-        .setDescription('Ouvrir l\'assistant interactif pour créer automatiquement tous les salons de logs')
+        .setDescription(
+          "Ouvrir l'assistant interactif pour créer automatiquement tous les salons de logs"
+        )
     )
     .addSubcommand(sub =>
       sub
@@ -64,15 +62,16 @@ export default {
     }
 
     const config = await configStore.read().catch(() => ({}));
-    const logs = config.logs || {};
+    const guildId = interaction.guild?.id;
+    const logs = (guildId && config.guilds?.[guildId]?.logs) || config.logs || {};
 
     if (subcommand === 'view') {
       const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
+        .setColor(0x5865f2)
         .setTitle('📑 Configuration Exhaustive des Salons de Logs')
         .setDescription(
           `Voici l'état actuel de tous les salons de surveillance d'audit configurés sur ce serveur :\n\n` +
-          `*💡 Astuce : Tapez \`/setup-logs\` ou \`/config-logs setup\` pour générer tous les salons automatiquement en un clic.*`
+            `*💡 Astuce : Tapez \`/setup-logs\` ou \`/config-logs setup\` pour générer tous les salons automatiquement en un clic.*`
         );
 
       const statusLines = LOG_TYPES.map(t => {
@@ -83,7 +82,11 @@ export default {
 
       const mid = Math.ceil(statusLines.length / 2);
       embed.addFields(
-        { name: '📋 Salons Dédiés (1/2)', value: statusLines.slice(0, mid).join('\n'), inline: true },
+        {
+          name: '📋 Salons Dédiés (1/2)',
+          value: statusLines.slice(0, mid).join('\n'),
+          inline: true,
+        },
         { name: '📋 Salons Dédiés (2/2)', value: statusLines.slice(mid).join('\n'), inline: true }
       );
 
@@ -96,15 +99,24 @@ export default {
       const channel = interaction.options.getChannel('salon');
 
       await configStore.update(data => {
-        data.logs = data.logs || {};
-        data.logs[category] = channel.id;
+        if (guildId) {
+          data.guilds = data.guilds || {};
+          data.guilds[guildId] = data.guilds[guildId] || {};
+          data.guilds[guildId].logs = data.guilds[guildId].logs || {};
+          data.guilds[guildId].logs[category] = channel.id;
+        }
+
+        if (GuildRegistry.isCommunityGuild(guildId)) {
+          data.logs = data.logs || {};
+          data.logs[category] = channel.id;
+        }
         return data;
       });
 
       return interaction.reply({
         content: `✅ Le salon <#${channel.id}> a été assigné pour la catégorie sélectionnée.`,
-        ephemeral: true
+        ephemeral: true,
       });
     }
-  }
+  },
 };

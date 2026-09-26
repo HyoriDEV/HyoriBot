@@ -1,11 +1,12 @@
 import { discordBot } from '../client.js';
 import { roleBackupRepository } from '../../persistence/roleBackupRepository.js';
 import { discordQueue } from '../../queue/discordQueue.js';
-import { getEnv } from '../../config/env.js';
+import { discordConfig } from '../../config/discordConfig.js';
 import { logger } from '../../logger/index.js';
+
 export class SanctionService {
   async applySanction({ discordId, type, reason, durationSeconds = null, metadata = {} }) {
-    const env = getEnv();
+    const sanctionedRoleId = discordConfig.roles.sanctioned;
     return discordQueue.enqueue(`applySanction:${discordId}`, async () => {
       try {
         const guild = await discordBot.fetchGuild();
@@ -33,7 +34,7 @@ export class SanctionService {
         }
         let currentRoleIds = member.roles.cache
           .filter(
-            role => role.id !== guild.id && !role.managed && role.id !== env.ROLE_SANCTIONED_ID
+            role => role.id !== guild.id && !role.managed && role.id !== sanctionedRoleId
           )
           .map(role => role.id);
         const existingActiveBackup = await roleBackupRepository.getActiveBackup(discordId);
@@ -66,7 +67,7 @@ export class SanctionService {
         });
         const rolesToRemove = member.roles.cache
           .filter(
-            role => role.id !== guild.id && !role.managed && role.id !== env.ROLE_SANCTIONED_ID
+            role => role.id !== guild.id && !role.managed && role.id !== sanctionedRoleId
           )
           .map(role => role.id);
         if (rolesToRemove.length > 0 && member.manageable) {
@@ -91,22 +92,22 @@ export class SanctionService {
           );
         }
         const sanctionedRole =
-          guild.roles.cache.get(env.ROLE_SANCTIONED_ID) ||
-          (await guild.roles.fetch(env.ROLE_SANCTIONED_ID).catch(() => null));
+          guild.roles.cache.get(sanctionedRoleId) ||
+          (await guild.roles.fetch(sanctionedRoleId).catch(() => null));
         if (!sanctionedRole) {
           logger.error(
             {
-              roleSanctionedId: env.ROLE_SANCTIONED_ID,
+              roleSanctionedId: sanctionedRoleId,
             },
             'Sanctioned role not found in Discord guild configuration'
           );
           return {
             success: false,
             backupId: backup.id,
-            error: `Configured ROLE_SANCTIONED_ID (${env.ROLE_SANCTIONED_ID}) not found in guild`,
+            error: `Configured sanctioned role (${sanctionedRoleId}) not found in guild`,
           };
         }
-        if (member.manageable && !member.roles.cache.has(env.ROLE_SANCTIONED_ID)) {
+        if (member.manageable && !member.roles.cache.has(sanctionedRoleId)) {
           await member.roles
             .add(sanctionedRole, `Sanction appliquée: ${type} - ${reason}`)
             .catch(err => {
@@ -133,7 +134,7 @@ export class SanctionService {
           backupId: backup.id,
           sanctionType: type,
           removedRoleIds: currentRoleIds,
-          assignedRoleId: env.ROLE_SANCTIONED_ID,
+          assignedRoleId: sanctionedRoleId,
           expiresAt: backup.expiresAt,
           message: 'Sanction applied and roles backed up successfully',
         };
@@ -154,7 +155,7 @@ export class SanctionService {
     });
   }
   async rollbackSanction({ discordId, backupId = null, reason = 'Levée de sanction' }) {
-    const env = getEnv();
+    const sanctionedRoleId = discordConfig.roles.sanctioned;
     return discordQueue.enqueue(`rollbackSanction:${discordId}`, async () => {
       try {
         let backup = null;
@@ -193,12 +194,12 @@ export class SanctionService {
             message: 'User is not currently in the Discord server. Backup archived.',
           };
         }
-        if (member.roles.cache.has(env.ROLE_SANCTIONED_ID)) {
-          await member.roles.remove(env.ROLE_SANCTIONED_ID, `Levée de sanction: ${reason}`);
+        if (member.roles.cache.has(sanctionedRoleId)) {
+          await member.roles.remove(sanctionedRoleId, `Levée de sanction: ${reason}`);
           logger.info(
             {
               discordId,
-              roleId: env.ROLE_SANCTIONED_ID,
+              roleId: sanctionedRoleId,
             },
             'Removed sanctioned role from member'
           );

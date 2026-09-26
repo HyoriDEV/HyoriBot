@@ -1,7 +1,7 @@
 import { authenticateBearer } from '../middleware/auth.js';
 import { discordBot } from '../../discord/client.js';
 import { roleBackupRepository } from '../../persistence/roleBackupRepository.js';
-import { getEnv } from '../../config/env.js';
+import { discordConfig } from '../../config/discordConfig.js';
 import { BatchMembersRolesSchema } from '../schemas/routes.schema.js';
 import { logger } from '../../logger/index.js';
 
@@ -21,7 +21,6 @@ export async function memberRoutes(fastify) {
     }
 
     const { discordIds = [] } = parseResult.data;
-    const env = getEnv();
 
     try {
       const guild = await discordBot.fetchGuild();
@@ -33,29 +32,16 @@ export async function memberRoutes(fastify) {
         fetchedMembers = await guild.members.fetch().catch(() => null);
       }
 
-      const staffRoleIds = [
-        env.ROLE_GC_ID,
-        env.ROLE_COMMUNICATION_ID,
-        env.ROLE_RP_TRACKING_ID,
-        env.ROLE_EVENT_ID,
-        env.ROLE_DEVELOPER_ID,
-        env.ROLE_ADMIN_ID,
-      ];
-      const classRoleIds = [
-        env.ROLE_NOBLE_ID,
-        env.ROLE_PAYSAN_ID,
-        env.ROLE_PECHEUR_ID,
-        env.ROLE_MINEUR_ID,
-        env.ROLE_ERUDIT_ID,
-      ];
+      const staffRoleIds = Object.values(discordConfig.roles.staff).filter(Boolean);
+      const classRoleIds = Object.values(discordConfig.roles.classes).filter(Boolean);
 
-      const classRoleToEnum = {
-        [env.ROLE_NOBLE_ID]: 'NOBLE',
-        [env.ROLE_PAYSAN_ID]: 'PAYSAN',
-        [env.ROLE_PECHEUR_ID]: 'PECHEUR',
-        [env.ROLE_MINEUR_ID]: 'MINEUR',
-        [env.ROLE_ERUDIT_ID]: 'ERUDIT',
-      };
+      const classRoleToEnum = {};
+      for (const [cls, id] of Object.entries(discordConfig.roles.classes)) {
+        if (id) classRoleToEnum[id] = cls;
+      }
+
+      const whitelistRoleId = discordConfig.roles.whitelist;
+      const sanctionedRoleId = discordConfig.roles.sanctioned;
 
       const results = {};
       const targetIds = discordIds.length > 0 ? discordIds : Array.from(guild.members.cache.keys());
@@ -81,8 +67,8 @@ export async function memberRoutes(fastify) {
             id: role.id,
             name: role.name,
             color: role.hexColor,
-            isWhitelist: role.id === env.ROLE_WHITELIST_ID,
-            isSanctioned: role.id === env.ROLE_SANCTIONED_ID,
+            isWhitelist: role.id === whitelistRoleId,
+            isSanctioned: role.id === sanctionedRoleId,
             isStaff: staffRoleIds.includes(role.id),
             isClass: classRoleIds.includes(role.id),
           }));
@@ -100,8 +86,8 @@ export async function memberRoutes(fastify) {
           username: member.user?.username ?? null,
           displayName: member.displayName ?? null,
           avatarUrl: member.user?.displayAvatarURL?.() ?? null,
-          hasWhitelistRole: member.roles.cache.has(env.ROLE_WHITELIST_ID),
-          hasSanctionedRole: member.roles.cache.has(env.ROLE_SANCTIONED_ID),
+          hasWhitelistRole: whitelistRoleId ? member.roles.cache.has(whitelistRoleId) : false,
+          hasSanctionedRole: sanctionedRoleId ? member.roles.cache.has(sanctionedRoleId) : false,
           classRoleEnums,
           roles,
         };
@@ -124,7 +110,6 @@ export async function memberRoutes(fastify) {
 
   fastify.get('/members/:discordId', async (request, reply) => {
     const { discordId } = request.params;
-    const env = getEnv();
     try {
       const guild = await discordBot.fetchGuild();
       const member = await guild.members.fetch(discordId).catch(() => null);
@@ -137,30 +122,21 @@ export async function memberRoutes(fastify) {
         });
       }
       const activeBackup = await roleBackupRepository.getActiveBackup(discordId);
-      const staffRoleIds = [
-        env.ROLE_GC_ID,
-        env.ROLE_COMMUNICATION_ID,
-        env.ROLE_RP_TRACKING_ID,
-        env.ROLE_EVENT_ID,
-        env.ROLE_DEVELOPER_ID,
-        env.ROLE_ADMIN_ID,
-      ];
-      const classRoleIds = [
-        env.ROLE_NOBLE_ID,
-        env.ROLE_PAYSAN_ID,
-        env.ROLE_PECHEUR_ID,
-        env.ROLE_MINEUR_ID,
-        env.ROLE_ERUDIT_ID,
-      ];
+      const staffRoleIds = Object.values(discordConfig.roles.staff).filter(Boolean);
+      const classRoleIds = Object.values(discordConfig.roles.classes).filter(Boolean);
+      const whitelistRoleId = discordConfig.roles.whitelist;
+      const sanctionedRoleId = discordConfig.roles.sanctioned;
+
       const roles = member.roles.cache.map(role => ({
         id: role.id,
         name: role.name,
         color: role.hexColor,
-        isWhitelist: role.id === env.ROLE_WHITELIST_ID,
-        isSanctioned: role.id === env.ROLE_SANCTIONED_ID,
+        isWhitelist: role.id === whitelistRoleId,
+        isSanctioned: role.id === sanctionedRoleId,
         isStaff: staffRoleIds.includes(role.id),
         isClass: classRoleIds.includes(role.id),
       }));
+
       return reply.status(200).send({
         success: true,
         member: {
@@ -170,18 +146,33 @@ export async function memberRoutes(fastify) {
           nickname: member.nickname,
           avatarUrl: member.user.displayAvatarURL(),
           joinedAt: member.joinedAt ? member.joinedAt.toISOString() : null,
-          isSanctioned: member.roles.cache.has(env.ROLE_SANCTIONED_ID),
-          isWhitelisted: member.roles.cache.has(env.ROLE_WHITELIST_ID),
+          isSanctioned: sanctionedRoleId ? member.roles.cache.has(sanctionedRoleId) : false,
+          isWhitelisted: whitelistRoleId ? member.roles.cache.has(whitelistRoleId) : false,
           roles,
-          activeBackup,
+          activeBackup: activeBackup
+            ? {
+                id: activeBackup.id,
+                sanctionType: activeBackup.sanctionType,
+                reason: activeBackup.reason,
+                expiresAt: activeBackup.expiresAt,
+                roleCount: activeBackup.roleIds.length,
+              }
+            : null,
         },
       });
     } catch (error) {
+      logger.error(
+        {
+          discordId,
+          error,
+        },
+        'Failed to fetch member details'
+      );
       return reply.status(500).send({
         success: false,
         statusCode: 500,
         error: 'Internal Server Error',
-        message: error?.message || 'Failed to fetch member details',
+        message: error?.message || 'Failed to inspect guild member',
       });
     }
   });

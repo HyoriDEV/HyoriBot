@@ -353,8 +353,8 @@ Envoie une notification dans un salon Discord (pouvant être situé sur un autre
 
 #### Champs :
 
-- `channelId` (string, optionnel) : ID du salon Discord cible (16-21 chiffres). S'il n'est pas fourni, le bot utilise `CHANNEL_TICKET_NOTIFICATIONS_ID` défini dans son environnement.
-- `mentionRoleId` (string, optionnel) : ID du rôle Discord à mentionner (16-21 chiffres). S'il n'est pas fourni, le bot utilise `ROLE_TICKET_NOTIFICATIONS_ID` défini dans son environnement. Si configuré, le bot préfixe le message par `<@&roleId>`.
+- `channelId` (string, optionnel) : ID du salon Discord cible (16-21 chiffres). S'il n'est pas fourni, le bot utilise `channels.ticketNotifications` défini dans `discordConfig.js`.
+- `mentionRoleId` (string, optionnel) : ID du rôle Discord à mentionner (16-21 chiffres). S'il n'est pas fourni, le bot utilise `roles.ticketMention` défini dans `discordConfig.js`. Si configuré, le bot préfixe le message par `<@&roleId>`.
 - `ticketId` (string, requis) : Identifiant unique du ticket.
 - `ticketSubject` (string, requis) : Sujet du ticket.
 - `ticketCategory` (string, requis) : Libellé de la catégorie du ticket.
@@ -381,7 +381,7 @@ Applique une sanction lourde (`SUSPENSION` ou `EXCLUSION`) sur Discord avec le c
 
 1. Sauvegarde persistante des rôles actuels du joueur.
 2. Retrait de tous ses rôles (hors rôles gérés).
-3. Attribution de l'unique rôle prévu pour les sanctions (`ROLE_SANCTIONED_ID`).
+3. Attribution de l'unique rôle prévu pour les sanctions (`roles.sanctioned` dans `discordConfig.js`).
 4. Notification DM optionnelle.
 5. Si `durationSeconds` est spécifié, la levée automatique sera planifiée de manière persistante par le scheduler.
 
@@ -427,7 +427,7 @@ Applique une sanction lourde (`SUSPENSION` ou `EXCLUSION`) sur Discord avec le c
 
 Lève manuellement une sanction sur Discord :
 
-1. Retire le rôle sanctionné (`ROLE_SANCTIONED_ID`).
+1. Retire le rôle sanctionné (`roles.sanctioned` dans `discordConfig.js`).
 2. Restaure l'ensemble des rôles sauvegardés lors de l'application.
 3. Si un rôle n'existe plus sur Discord, il est ignoré sans faire échouer l'opération.
 4. Archive la sauvegarde dans le stockage persistant.

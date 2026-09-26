@@ -6,7 +6,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
   StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder
+  StringSelectMenuOptionBuilder,
 } from 'discord.js';
 import ms from 'ms';
 import { getEnv } from '../../config/env.js';
@@ -23,6 +23,7 @@ import configtempbanCommand from '../../commands/admin/configtempban.js';
 import tempbanCommand from '../../commands/moderation/tempban.js';
 import untempbanCommand from '../../commands/moderation/untempban.js';
 import setupVocalCommand from '../../commands/admin/setup-vocal.js';
+import { GuildRegistry } from '../services/guildRegistry.js';
 import { logger } from '../../logger/index.js';
 
 const DISCORD_INVITE_REGEX =
@@ -32,8 +33,8 @@ export async function handleMessageCreate(message) {
   if (message.author.bot || !message.guild) return;
 
   const env = getEnv();
-  // Les commandes textuelles, l'anti-spam et l'anti-invitation ne s'appliquent qu'au serveur communautaire
-  if (message.guild.id !== env.DISCORD_GUILD_ID) return;
+  // Les commandes textuelles, l'anti-spam et l'anti-invitation s'appliquent aux 6 serveurs joueurs
+  if (!GuildRegistry.isPlayerGuild(message.guild.id)) return;
 
   // Détection et sanction Anti-Spam automatique
   await antiSpamService.handleMessage(message);
@@ -92,7 +93,11 @@ export async function handleMessageCreate(message) {
   const getTargetRole = arg => {
     if (!arg) return null;
     const cleanId = arg.replace(/[<@&>]/g, '');
-    return message.guild.roles.cache.get(cleanId) || message.guild.roles.cache.find(r => r.name.toLowerCase() === arg.toLowerCase()) || null;
+    return (
+      message.guild.roles.cache.get(cleanId) ||
+      message.guild.roles.cache.find(r => r.name.toLowerCase() === arg.toLowerCase()) ||
+      null
+    );
   };
 
   // Contrôle des permissions personnalisées (RBAC / ACL)
@@ -122,7 +127,9 @@ export async function handleMessageCreate(message) {
         const sent = await message.reply('🏓 Calcul de la latence en cours...');
         const latency = sent.createdTimestamp - message.createdTimestamp;
         const wsPing = message.client.ws.ping;
-        return sent.edit(`🏓 **Pong !**\n• Latence API : **${latency}ms**\n• Latence WebSocket : **${wsPing}ms**`);
+        return sent.edit(
+          `🏓 **Pong !**\n• Latence API : **${latency}ms**\n• Latence WebSocket : **${wsPing}ms**`
+        );
       }
 
       case 'userinfo':
@@ -150,7 +157,9 @@ export async function handleMessageCreate(message) {
       case 'sp': {
         // Syntaxe : !sp <niveau:0-3> <@role|@membre>  OU  !sp <@role|@membre> <niveau:0-3>
         if (args.length < 2) {
-          return message.reply(`❌ Utilisation : \`${prefix}sp <0-3> <@role|@membre>\` (ex: \`${prefix}sp 2 @Modérateur\` ou \`${prefix}sp 3 @Zack\`)`);
+          return message.reply(
+            `❌ Utilisation : \`${prefix}sp <0-3> <@role|@membre>\` (ex: \`${prefix}sp 2 @Modérateur\` ou \`${prefix}sp 3 @Zack\`)`
+          );
         }
 
         let level = parseInt(args[0], 10);
@@ -162,7 +171,9 @@ export async function handleMessageCreate(message) {
         }
 
         if (isNaN(level) || level < 0 || level > 3) {
-          return message.reply('❌ Le niveau de permission doit être un entier entre 0 et 3 (0=Public, 1=Membre, 2=Modo, 3=Admin).');
+          return message.reply(
+            '❌ Le niveau de permission doit être un entier entre 0 et 3 (0=Public, 1=Membre, 2=Modo, 3=Admin).'
+          );
         }
 
         const role = getTargetRole(targetArg);
@@ -174,7 +185,9 @@ export async function handleMessageCreate(message) {
           const embed = new EmbedBuilder()
             .setColor(0xe9d15c)
             .setTitle('✅ Niveau de Rôle Mis à Jour')
-            .setDescription(`Le rôle **${role.name}** (<@&${role.id}>) a désormais accès au **${lvlInfo.emoji} ${lvlInfo.name} (Niveau ${level})**.`)
+            .setDescription(
+              `Le rôle **${role.name}** (<@&${role.id}>) a désormais accès au **${lvlInfo.emoji} ${lvlInfo.name} (Niveau ${level})**.`
+            )
             .setTimestamp();
           return message.reply({ embeds: [embed] });
         } else if (memberTarget) {
@@ -182,11 +195,15 @@ export async function handleMessageCreate(message) {
           const embed = new EmbedBuilder()
             .setColor(0xe9d15c)
             .setTitle('✅ Niveau de Membre Mis à Jour')
-            .setDescription(`L'utilisateur <@${memberTarget.id}> dispose désormais du **${lvlInfo.emoji} ${lvlInfo.name} (Niveau ${level})**.`)
+            .setDescription(
+              `L'utilisateur <@${memberTarget.id}> dispose désormais du **${lvlInfo.emoji} ${lvlInfo.name} (Niveau ${level})**.`
+            )
             .setTimestamp();
           return message.reply({ embeds: [embed] });
         } else {
-          return message.reply('❌ Rôle ou membre introuvable. Mentionnez le rôle (ex: `@Modérateur`) ou le membre (ex: `@Joueur`).');
+          return message.reply(
+            '❌ Rôle ou membre introuvable. Mentionnez le rôle (ex: `@Modérateur`) ou le membre (ex: `@Joueur`).'
+          );
         }
       }
 
@@ -198,7 +215,9 @@ export async function handleMessageCreate(message) {
 
         if (targetArg === 'tout' || targetArg === 'all') {
           await PermissionService.resetAll();
-          return message.reply('🗑️ Toutes les attributions personnalisées de rôles et membres ont été réinitialisées.');
+          return message.reply(
+            '🗑️ Toutes les attributions personnalisées de rôles et membres ont été réinitialisées.'
+          );
         }
 
         const role = getTargetRole(args[0]);
@@ -230,8 +249,16 @@ export async function handleMessageCreate(message) {
           .setColor(0xe9d15c)
           .setTitle('🛡️ Répertoire des Permissions Hyori Bot')
           .addFields(
-            { name: '🎭 Rôles Configurés', value: rolesLines.length > 0 ? rolesLines.join('\n') : '*Aucun rôle spécifique*', inline: false },
-            { name: '👤 Membres Configurés', value: usersLines.length > 0 ? usersLines.join('\n') : '*Aucun membre spécifique*', inline: false }
+            {
+              name: '🎭 Rôles Configurés',
+              value: rolesLines.length > 0 ? rolesLines.join('\n') : '*Aucun rôle spécifique*',
+              inline: false,
+            },
+            {
+              name: '👤 Membres Configurés',
+              value: usersLines.length > 0 ? usersLines.join('\n') : '*Aucun membre spécifique*',
+              inline: false,
+            }
           )
           .setTimestamp();
 
@@ -239,7 +266,9 @@ export async function handleMessageCreate(message) {
       }
 
       case 'setperm-cmds': {
-        return message.reply('💡 Pour utiliser le panneau interactif en direct avec boutons, utilisez la slash command : **/setperm-cmds**');
+        return message.reply(
+          '💡 Pour utiliser le panneau interactif en direct avec boutons, utilisez la slash command : **/setperm-cmds**'
+        );
       }
 
       // ──────────────────────────────────────────────
@@ -248,12 +277,18 @@ export async function handleMessageCreate(message) {
       case 'setup-logs': {
         const actionArg = args[0]?.toLowerCase();
         if (actionArg === 'create' || actionArg === 'all') {
-          const sent = await message.reply('🚀 Création de la catégorie et des 12 salons de logs en cours...');
+          const sent = await message.reply(
+            '🚀 Création de la catégorie et des 12 salons de logs en cours...'
+          );
           const { category, results } = await LogSetupService.setupChannels(message.guild, null);
-          return sent.edit(`✅ **Déploiement terminé !** ${results.length} salons de surveillance créés dans la catégorie **${category.name}**.`);
+          return sent.edit(
+            `✅ **Déploiement terminé !** ${results.length} salons de surveillance créés dans la catégorie **${category.name}**.`
+          );
         }
 
-        return message.reply(`💡 Tapez \`${prefix}setup-logs all\` pour tout générer directement, ou utilisez **/setup-logs** pour ouvrir l'assistant interactif avec boutons.`);
+        return message.reply(
+          `💡 Tapez \`${prefix}setup-logs all\` pour tout générer directement, ou utilisez **/setup-logs** pour ouvrir l'assistant interactif avec boutons.`
+        );
       }
 
       case 'config-logs': {
@@ -274,7 +309,9 @@ export async function handleMessageCreate(message) {
           return message.reply({ embeds: [embed] });
         }
 
-        return message.reply(`💡 Utilisez \`${prefix}config-logs view\` ou la commande slash **/config-logs**.`);
+        return message.reply(
+          `💡 Utilisez \`${prefix}config-logs view\` ou la commande slash **/config-logs**.`
+        );
       }
 
       case 'config-welcome': {
@@ -286,7 +323,7 @@ export async function handleMessageCreate(message) {
           const attachment = new AttachmentBuilder(cardBuffer, { name: 'welcome-hyori.png' });
           return sent.edit({
             content: `Bienvenue sur **Hyori RP**, <@${message.author.id}> !`,
-            files: [attachment]
+            files: [attachment],
           });
         }
 
@@ -304,14 +341,15 @@ export async function handleMessageCreate(message) {
           return message.reply(`✅ Salon de bienvenue configuré sur <#${channel.id}>.`);
         }
 
-        return message.reply(`💡 Commandes : \`${prefix}config-welcome test\` ou \`${prefix}config-welcome channel #salon\`.`);
+        return message.reply(
+          `💡 Commandes : \`${prefix}config-welcome test\` ou \`${prefix}config-welcome channel #salon\`.`
+        );
       }
 
       case 'configtempban':
       case 'config-tempban': {
         return configtempbanCommand.execute(message, args);
       }
-
 
       case 'setup-vocal':
       case 'setupvocal':
@@ -347,7 +385,9 @@ export async function handleMessageCreate(message) {
           commandName,
         });
 
-        const replyMsg = await message.channel.send(result.success ? result.message : `❌ ${result.error}`);
+        const replyMsg = await message.channel.send(
+          result.success ? result.message : `❌ ${result.error}`
+        );
         setTimeout(() => replyMsg.delete().catch(() => null), 4000);
         return;
       }
@@ -394,7 +434,9 @@ export async function handleMessageCreate(message) {
         const reason = args.slice(2).join(' ') || 'Non précisé';
 
         if (!memberArg || !durationArg) {
-          return message.reply(`❌ Utilisation : \`${prefix}timeout <@membre|ID> <durée> [motif]\` (ex: \`${prefix}timeout @joueur 1h Spam\`)`);
+          return message.reply(
+            `❌ Utilisation : \`${prefix}timeout <@membre|ID> <durée> [motif]\` (ex: \`${prefix}timeout @joueur 1h Spam\`)`
+          );
         }
 
         const durationMs = ms(durationArg);
@@ -413,7 +455,9 @@ export async function handleMessageCreate(message) {
           reason,
         });
 
-        const sentTimeout = await message.reply(`⏳ **${targetMember.user.tag}** a été mis en timeout pour **${durationArg}**.\n> **Motif :** ${reason}`);
+        const sentTimeout = await message.reply(
+          `⏳ **${targetMember.user.tag}** a été mis en timeout pour **${durationArg}**.\n> **Motif :** ${reason}`
+        );
         setTimeout(() => {
           sentTimeout.delete().catch(() => {});
           message.delete().catch(() => {});
@@ -424,13 +468,20 @@ export async function handleMessageCreate(message) {
       case 'untimeout': {
         const memberArg = args[0];
         const reason = args.slice(1).join(' ') || 'Levée manuelle';
-        if (!memberArg) return message.reply(`❌ Utilisation : \`${prefix}untimeout <@membre|ID> [motif]\``);
+        if (!memberArg)
+          return message.reply(`❌ Utilisation : \`${prefix}untimeout <@membre|ID> [motif]\``);
 
         const targetMember = await getTargetMember(memberArg);
         if (!targetMember) return message.reply('❌ Membre introuvable.');
 
-        await timeoutScheduler.removeTimeout(message.guild, targetMember.id, `Levé par ${message.author.tag} (${reason})`);
-        return message.reply(`🔊 Le timeout de **${targetMember.user.tag}** a été levé avec succès.`);
+        await timeoutScheduler.removeTimeout(
+          message.guild,
+          targetMember.id,
+          `Levé par ${message.author.tag} (${reason})`
+        );
+        return message.reply(
+          `🔊 Le timeout de **${targetMember.user.tag}** a été levé avec succès.`
+        );
       }
 
       case 'tempban':
@@ -466,7 +517,8 @@ export async function handleMessageCreate(message) {
       case 'unmute': {
         const memberArg = args[0];
         const reason = args.slice(1).join(' ') || 'Levée manuelle';
-        if (!memberArg) return message.reply(`❌ Utilisation : \`${prefix}unmute <@membre|ID> [motif]\``);
+        if (!memberArg)
+          return message.reply(`❌ Utilisation : \`${prefix}unmute <@membre|ID> [motif]\``);
         const targetMember = await getTargetMember(memberArg);
         const result = await modActions.executeUnmute({
           guild: message.guild,
@@ -480,7 +532,8 @@ export async function handleMessageCreate(message) {
       case 'kick': {
         const memberArg = args[0];
         const reason = args.slice(1).join(' ') || 'Non précisé';
-        if (!memberArg) return message.reply(`❌ Utilisation : \`${prefix}kick <@membre|ID> [motif]\``);
+        if (!memberArg)
+          return message.reply(`❌ Utilisation : \`${prefix}kick <@membre|ID> [motif]\``);
         const targetMember = await getTargetMember(memberArg);
         const result = await modActions.executeKick({
           guild: message.guild,
@@ -493,7 +546,10 @@ export async function handleMessageCreate(message) {
 
       case 'ban': {
         const userArg = args[0];
-        if (!userArg) return message.reply(`❌ Utilisation : \`${prefix}ban <@utilisateur|ID> <motif> [purge_jours]\``);
+        if (!userArg)
+          return message.reply(
+            `❌ Utilisation : \`${prefix}ban <@utilisateur|ID> <motif> [purge_jours]\``
+          );
         let purgeDays = 0;
         let reason = args.slice(1).join(' ');
         const lastArgNum = parseInt(args[args.length - 1], 10);
@@ -515,7 +571,8 @@ export async function handleMessageCreate(message) {
       case 'unban': {
         const userId = args[0];
         const reason = args.slice(1).join(' ') || 'Débannissement manuel';
-        if (!userId) return message.reply(`❌ Utilisation : \`${prefix}unban <ID_Discord> [motif]\``);
+        if (!userId)
+          return message.reply(`❌ Utilisation : \`${prefix}unban <ID_Discord> [motif]\``);
         const result = await modActions.executeUnban({
           guild: message.guild,
           userId,
@@ -528,7 +585,8 @@ export async function handleMessageCreate(message) {
       case 'warn': {
         const userArg = args[0];
         const reason = args.slice(1).join(' ');
-        if (!userArg || !reason) return message.reply(`❌ Utilisation : \`${prefix}warn <@utilisateur|ID> <motif>\``);
+        if (!userArg || !reason)
+          return message.reply(`❌ Utilisation : \`${prefix}warn <@utilisateur|ID> <motif>\``);
         const targetUser = await getTargetUser(userArg);
         const result = await modActions.executeWarn({
           guild: message.guild,
@@ -550,7 +608,8 @@ export async function handleMessageCreate(message) {
 
       case 'clearwarns': {
         const userArg = args[0];
-        if (!userArg) return message.reply(`❌ Utilisation : \`${prefix}clearwarns <@utilisateur|ID>\``);
+        if (!userArg)
+          return message.reply(`❌ Utilisation : \`${prefix}clearwarns <@utilisateur|ID>\``);
         const targetUser = await getTargetUser(userArg);
         const result = await modActions.executeClearwarns({
           guild: message.guild,

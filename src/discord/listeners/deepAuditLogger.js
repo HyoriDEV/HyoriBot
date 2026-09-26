@@ -1,34 +1,38 @@
-import {
-  Events,
-  AuditLogEvent,
-  EmbedBuilder,
-  ChannelType,
-  PermissionsBitField
-} from 'discord.js';
+import { Events, AuditLogEvent, EmbedBuilder, ChannelType, PermissionsBitField } from 'discord.js';
 import { configStore } from '../../storage/index.js';
-import { getEnv } from '../../config/env.js';
+import { discordConfig } from '../../config/discordConfig.js';
+import { GuildRegistry } from '../services/guildRegistry.js';
 import { logger } from '../../logger/index.js';
 import { recentPurges } from '../moderation/modActions.js';
 
 /**
  * Moteur de Deep Logging exhaustif pour Discord.js v14.
  * Écoute et journalise l'intégralité des événements du serveur avec recherche d'auteur dans l'Audit Log.
+ * Fonctionne de manière uniforme sur tous les serveurs joueurs (Hyori RP + 5 villages).
  */
 export class DeepAuditLogger {
   /**
-   * Résout le salon de destination selon la catégorie demandée avec fallback hiérarchique.
+   * Résout le salon de destination selon la catégorie demandée avec fallback hiérarchique et résolution locale.
    */
   static async getLogChannel(guild, categoryKey) {
-    if (!guild || guild.id !== getEnv().DISCORD_GUILD_ID) return null;
+    if (!guild || !GuildRegistry.isPlayerGuild(guild.id)) return null;
     try {
       const config = await configStore.read().catch(() => ({}));
-      const logs = config.logs || {};
+      // Support de configuration par serveur ou globale
+      const guildConfig =
+        config.guilds?.[guild.id]?.logs ||
+        (GuildRegistry.isCommunityGuild(guild.id) ? config.logs : {});
+      const logs = guildConfig || {};
 
-      // Table de correspondance clé cible -> clés de fallback
+      // 1. Table de correspondance clé cible -> clés de fallback dans la config
       const keyMapping = {
         messages_delete: [logs.messagesDeleteChannelId, logs.messagesChannelId],
         messages_edit: [logs.messagesEditChannelId, logs.messagesChannelId],
-        messages_bulk: [logs.messagesBulkChannelId, logs.messagesDeleteChannelId, logs.messagesChannelId],
+        messages_bulk: [
+          logs.messagesBulkChannelId,
+          logs.messagesDeleteChannelId,
+          logs.messagesChannelId,
+        ],
         joins_leaves: [logs.joinsLeavesChannelId, logs.membersChannelId],
         member_profile: [logs.memberProfileChannelId, logs.membersChannelId],
         member_roles: [logs.memberRolesChannelId, logs.membersChannelId],
@@ -44,23 +48,62 @@ export class DeepAuditLogger {
 
       for (const candidateId of candidates) {
         if (candidateId) {
-          const channel = guild.channels.cache.get(candidateId) ||
-                          await guild.channels.fetch(candidateId).catch(() => null);
+          const channel =
+            guild.channels.cache.get(candidateId) ||
+            (await guild.channels.fetch(candidateId).catch(() => null));
           if (channel && channel.isTextBased()) return channel;
         }
       }
 
-      // Fallback variables d'environnement
-      const env = getEnv();
-      const fallbackId = (categoryKey === 'joins_leaves' || categoryKey === 'member_profile' || categoryKey === 'member_roles')
-        ? env.CHANNEL_MEMBER_LOGS_ID
-        : env.CHANNEL_MOD_LOGS_ID;
+      // 2. Recherche par noms de salons standardisés au sein du serveur (uniforme sur tous les serveurs)
+      const nameMapping = {
+        messages_delete: ['logs-messages-suppr', 'logs-messages', 'logs-audit'],
+        messages_edit: ['logs-messages-modif', 'logs-messages', 'logs-audit'],
+        messages_bulk: ['logs-purges', 'logs-messages-suppr', 'logs-messages', 'logs-audit'],
+        joins_leaves: [
+          'logs-arrivées-départs',
+          'logs-arrivees-departs',
+          'logs-membres',
+          'logs-audit',
+        ],
+        member_profile: ['logs-profils-membres', 'logs-membres', 'logs-audit'],
+        member_roles: ['logs-roles-membres', 'logs-membres', 'logs-audit'],
+        moderation: ['logs-moderation', 'mod-logs', 'logs-sanctions', 'logs-audit'],
+        channels: ['logs-salons', 'logs-serveur', 'logs-audit'],
+        roles: ['logs-roles-serveur', 'logs-roles', 'logs-serveur', 'logs-audit'],
+        voice: ['logs-vocal', 'logs-audit'],
+        server: ['logs-serveur', 'logs-audit'],
+        invites: ['logs-invitations', 'logs-serveur', 'logs-audit'],
+      };
 
-      if (fallbackId) {
-        const channel = guild.channels.cache.get(fallbackId) ||
-                        await guild.channels.fetch(fallbackId).catch(() => null);
-        if (channel && channel.isTextBased()) return channel;
+      const targetNames = nameMapping[categoryKey] || ['logs-moderation', 'logs-audit'];
+      for (const name of targetNames) {
+        const found = guild.channels.cache.find(c => c.name === name && c.isTextBased());
+        if (found) return found;
       }
+
+      // 3. Fallback configuration discordConfig (pour le serveur communautaire)
+      if (GuildRegistry.isCommunityGuild(guild.id)) {
+        const fallbackId =
+          categoryKey === 'joins_leaves' ||
+          categoryKey === 'member_profile' ||
+          categoryKey === 'member_roles'
+            ? discordConfig.channels.memberLogs
+            : discordConfig.channels.modLogs;
+
+        if (fallbackId) {
+          const channel =
+            guild.channels.cache.get(fallbackId) ||
+            (await guild.channels.fetch(fallbackId).catch(() => null));
+          if (channel && channel.isTextBased()) return channel;
+        }
+      }
+
+      // 4. Dernier recours : n'importe quel salon de logs existant sur ce serveur
+      const genericLogChannel = guild.channels.cache.find(
+        c => (c.name.startsWith('logs-') || c.name === 'logs') && c.isTextBased()
+      );
+      if (genericLogChannel) return genericLogChannel;
 
       return null;
     } catch {
@@ -72,14 +115,17 @@ export class DeepAuditLogger {
    * Envoie un embed vers le salon de destination approprié.
    */
   static async send(guild, categoryKey, embed) {
-    if (!guild || guild.id !== getEnv().DISCORD_GUILD_ID) return;
+    if (!guild || !GuildRegistry.isPlayerGuild(guild.id)) return;
     try {
       const channel = await this.getLogChannel(guild, categoryKey);
       if (channel) {
         await channel.send({ embeds: [embed] }).catch(() => {});
       }
     } catch (error) {
-      logger.error({ error, categoryKey }, 'Erreur lors de l\'envoi du log d\'audit');
+      logger.error(
+        { error, categoryKey, guildId: guild?.id },
+        "Erreur lors de l'envoi du log d'audit"
+      );
     }
   }
 
@@ -87,7 +133,7 @@ export class DeepAuditLogger {
    * Récupère l'exécuteur d'une action depuis l'Audit Log de Discord.
    */
   static async fetchExecutor(guild, auditLogType, targetId = null) {
-    if (!guild || guild.id !== getEnv().DISCORD_GUILD_ID) return null;
+    if (!guild || !GuildRegistry.isPlayerGuild(guild.id)) return null;
     try {
       if (!guild.members.me?.permissions.has(PermissionsBitField.Flags.ViewAuditLog)) {
         return null;
@@ -121,16 +167,28 @@ export class DeepAuditLogger {
     // 1. Salons (Création, Suppression, Modification)
     client.on(Events.ChannelCreate, async channel => {
       if (!channel.guild) return;
-      const executor = await this.fetchExecutor(channel.guild, AuditLogEvent.ChannelCreate, channel.id);
+      const executor = await this.fetchExecutor(
+        channel.guild,
+        AuditLogEvent.ChannelCreate,
+        channel.id
+      );
 
       const embed = new EmbedBuilder()
-        .setColor(0x57F287)
+        .setColor(0x57f287)
         .setTitle('📁 Salon Créé')
         .addFields(
           { name: 'Nom', value: `${channel.name} (<#${channel.id}>)`, inline: true },
           { name: 'Type', value: `\`${ChannelType[channel.type] || channel.type}\``, inline: true },
-          { name: 'Catégorie', value: channel.parent ? channel.parent.name : '*Aucune*', inline: true },
-          { name: 'Créé par', value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu / Non détecté*', inline: false }
+          {
+            name: 'Catégorie',
+            value: channel.parent ? channel.parent.name : '*Aucune*',
+            inline: true,
+          },
+          {
+            name: 'Créé par',
+            value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu / Non détecté*',
+            inline: false,
+          }
         )
         .setTimestamp();
 
@@ -139,15 +197,23 @@ export class DeepAuditLogger {
 
     client.on(Events.ChannelDelete, async channel => {
       if (!channel.guild) return;
-      const executor = await this.fetchExecutor(channel.guild, AuditLogEvent.ChannelDelete, channel.id);
+      const executor = await this.fetchExecutor(
+        channel.guild,
+        AuditLogEvent.ChannelDelete,
+        channel.id
+      );
 
       const embed = new EmbedBuilder()
-        .setColor(0xED4245)
+        .setColor(0xed4245)
         .setTitle('🗑️ Salon Supprimé')
         .addFields(
           { name: 'Nom', value: `\`#${channel.name}\` (\`${channel.id}\`)`, inline: true },
           { name: 'Type', value: `\`${ChannelType[channel.type] || channel.type}\``, inline: true },
-          { name: 'Supprimé par', value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu / Non détecté*', inline: false }
+          {
+            name: 'Supprimé par',
+            value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu / Non détecté*',
+            inline: false,
+          }
         )
         .setTimestamp();
 
@@ -162,26 +228,36 @@ export class DeepAuditLogger {
         changes.push(`• **Nom :** \`#${oldChannel.name}\` ➔ \`#${newChannel.name}\``);
       }
       if (oldChannel.topic !== newChannel.topic) {
-        changes.push(`• **Description/Topic :** \n*Avant :* ${oldChannel.topic || 'Aucun'}\n*Après :* ${newChannel.topic || 'Aucun'}`);
+        changes.push(
+          `• **Description/Topic :** \n*Avant :* ${oldChannel.topic || 'Aucun'}\n*Après :* ${newChannel.topic || 'Aucun'}`
+        );
       }
       if (oldChannel.rateLimitPerUser !== newChannel.rateLimitPerUser) {
-        changes.push(`• **Mode lent (Slowmode) :** \`${oldChannel.rateLimitPerUser}s\` ➔ \`${newChannel.rateLimitPerUser}s\``);
+        changes.push(
+          `• **Mode lent (Slowmode) :** \`${oldChannel.rateLimitPerUser}s\` ➔ \`${newChannel.rateLimitPerUser}s\``
+        );
       }
       if (oldChannel.nsfw !== newChannel.nsfw) {
-        changes.push(`• **NSFW :** \`${oldChannel.nsfw ? 'Oui' : 'Non'}\` ➔ \`${newChannel.nsfw ? 'Oui' : 'Non'}\``);
+        changes.push(
+          `• **NSFW :** \`${oldChannel.nsfw ? 'Oui' : 'Non'}\` ➔ \`${newChannel.nsfw ? 'Oui' : 'Non'}\``
+        );
       }
 
       if (changes.length === 0) return;
 
-      const executor = await this.fetchExecutor(newChannel.guild, AuditLogEvent.ChannelUpdate, newChannel.id);
+      const executor = await this.fetchExecutor(
+        newChannel.guild,
+        AuditLogEvent.ChannelUpdate,
+        newChannel.id
+      );
 
       const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
+        .setColor(0x5865f2)
         .setTitle('⚙️ Salon Modifié')
         .setDescription(`Salon : <#${newChannel.id}>\n\n${changes.join('\n')}`)
         .addFields({
           name: 'Modifié par',
-          value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu / Non détecté*'
+          value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu / Non détecté*',
         })
         .setTimestamp();
 
@@ -193,12 +269,16 @@ export class DeepAuditLogger {
       const executor = await this.fetchExecutor(role.guild, AuditLogEvent.RoleCreate, role.id);
 
       const embed = new EmbedBuilder()
-        .setColor(0x57F287)
+        .setColor(0x57f287)
         .setTitle('🏷️ Rôle Créé')
         .addFields(
           { name: 'Nom', value: `<@&${role.id}> (\`${role.name}\`)`, inline: true },
           { name: 'Couleur', value: `\`${role.hexColor}\``, inline: true },
-          { name: 'Créé par', value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu*', inline: false }
+          {
+            name: 'Créé par',
+            value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu*',
+            inline: false,
+          }
         )
         .setTimestamp();
 
@@ -209,11 +289,15 @@ export class DeepAuditLogger {
       const executor = await this.fetchExecutor(role.guild, AuditLogEvent.RoleDelete, role.id);
 
       const embed = new EmbedBuilder()
-        .setColor(0xED4245)
+        .setColor(0xed4245)
         .setTitle('🗑️ Rôle Supprimé')
         .addFields(
           { name: 'Nom', value: `\`@${role.name}\` (\`${role.id}\`)`, inline: true },
-          { name: 'Supprimé par', value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu*', inline: true }
+          {
+            name: 'Supprimé par',
+            value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu*',
+            inline: true,
+          }
         )
         .setTimestamp();
 
@@ -230,23 +314,31 @@ export class DeepAuditLogger {
         changes.push(`• **Couleur :** \`${oldRole.hexColor}\` ➔ \`${newRole.hexColor}\``);
       }
       if (oldRole.hoist !== newRole.hoist) {
-        changes.push(`• **Affichage séparé (Hoist) :** \`${oldRole.hoist ? 'Oui' : 'Non'}\` ➔ \`${newRole.hoist ? 'Oui' : 'Non'}\``);
+        changes.push(
+          `• **Affichage séparé (Hoist) :** \`${oldRole.hoist ? 'Oui' : 'Non'}\` ➔ \`${newRole.hoist ? 'Oui' : 'Non'}\``
+        );
       }
       if (oldRole.mentionable !== newRole.mentionable) {
-        changes.push(`• **Mentionnable :** \`${oldRole.mentionable ? 'Oui' : 'Non'}\` ➔ \`${newRole.mentionable ? 'Oui' : 'Non'}\``);
+        changes.push(
+          `• **Mentionnable :** \`${oldRole.mentionable ? 'Oui' : 'Non'}\` ➔ \`${newRole.mentionable ? 'Oui' : 'Non'}\``
+        );
       }
 
       if (changes.length === 0) return;
 
-      const executor = await this.fetchExecutor(newRole.guild, AuditLogEvent.RoleUpdate, newRole.id);
+      const executor = await this.fetchExecutor(
+        newRole.guild,
+        AuditLogEvent.RoleUpdate,
+        newRole.id
+      );
 
       const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
+        .setColor(0x5865f2)
         .setTitle('🏷️ Rôle Modifié')
         .setDescription(`Rôle : <@&${newRole.id}>\n\n${changes.join('\n')}`)
         .addFields({
           name: 'Modifié par',
-          value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu*'
+          value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu*',
         })
         .setTimestamp();
 
@@ -258,12 +350,16 @@ export class DeepAuditLogger {
       const executor = await this.fetchExecutor(ban.guild, AuditLogEvent.MemberBanAdd, ban.user.id);
 
       const embed = new EmbedBuilder()
-        .setColor(0xED4245)
+        .setColor(0xed4245)
         .setTitle('🔨 Membre Banni du Serveur')
         .setThumbnail(ban.user.displayAvatarURL())
         .addFields(
           { name: 'Membre', value: `${ban.user.tag} (\`${ban.user.id}\`)`, inline: true },
-          { name: 'Banni par', value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu*', inline: true },
+          {
+            name: 'Banni par',
+            value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu*',
+            inline: true,
+          },
           { name: 'Raison', value: ban.reason || '*Aucune raison spécifiée*', inline: false }
         )
         .setTimestamp();
@@ -272,15 +368,23 @@ export class DeepAuditLogger {
     });
 
     client.on(Events.GuildBanRemove, async ban => {
-      const executor = await this.fetchExecutor(ban.guild, AuditLogEvent.MemberBanRemove, ban.user.id);
+      const executor = await this.fetchExecutor(
+        ban.guild,
+        AuditLogEvent.MemberBanRemove,
+        ban.user.id
+      );
 
       const embed = new EmbedBuilder()
-        .setColor(0x57F287)
+        .setColor(0x57f287)
         .setTitle('🤝 Membre Débanni du Serveur')
         .setThumbnail(ban.user.displayAvatarURL())
         .addFields(
           { name: 'Membre', value: `${ban.user.tag} (\`${ban.user.id}\`)`, inline: true },
-          { name: 'Débanni par', value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu*', inline: true }
+          {
+            name: 'Débanni par',
+            value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu*',
+            inline: true,
+          }
         )
         .setTimestamp();
 
@@ -312,7 +416,11 @@ export class DeepAuditLogger {
         .addFields(
           { name: '💬 Salon', value: `<#${channel.id}> (\`#${channel.name}\`)`, inline: true },
           { name: '🗑️ Messages Supprimés', value: `\`${messages.size}\``, inline: true },
-          { name: '🛠️ Effectué par', value: executorText || '*Auteur inconnu / Exécution directe*', inline: false }
+          {
+            name: '🛠️ Effectué par',
+            value: executorText || '*Auteur inconnu / Exécution directe*',
+            inline: false,
+          }
         )
         .setFooter({ text: 'HYORI RP • Surveillance & Audit de Sécurité' })
         .setTimestamp();
@@ -323,14 +431,34 @@ export class DeepAuditLogger {
     // 5. Invitations (Création & Suppression)
     client.on(Events.InviteCreate, async invite => {
       const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
+        .setColor(0x5865f2)
         .setTitle('✉️ Invitation Créée')
         .addFields(
           { name: 'Code', value: `\`${invite.code}\``, inline: true },
-          { name: 'Salon', value: invite.channel ? `<#${invite.channel.id}>` : '*Inconnu*', inline: true },
-          { name: 'Créateur', value: invite.inviter ? `${invite.inviter.tag} (\`${invite.inviter.id}\`)` : '*Inconnu*', inline: true },
-          { name: 'Utilisations max', value: invite.maxUses ? `\`${invite.maxUses}\`` : 'Illimité', inline: true },
-          { name: 'Expiration', value: invite.expiresAt ? `<t:${Math.floor(invite.expiresAt.getTime() / 1000)}:R>` : 'Jamais', inline: true }
+          {
+            name: 'Salon',
+            value: invite.channel ? `<#${invite.channel.id}>` : '*Inconnu*',
+            inline: true,
+          },
+          {
+            name: 'Créateur',
+            value: invite.inviter
+              ? `${invite.inviter.tag} (\`${invite.inviter.id}\`)`
+              : '*Inconnu*',
+            inline: true,
+          },
+          {
+            name: 'Utilisations max',
+            value: invite.maxUses ? `\`${invite.maxUses}\`` : 'Illimité',
+            inline: true,
+          },
+          {
+            name: 'Expiration',
+            value: invite.expiresAt
+              ? `<t:${Math.floor(invite.expiresAt.getTime() / 1000)}:R>`
+              : 'Jamais',
+            inline: true,
+          }
         )
         .setTimestamp();
 
@@ -339,11 +467,15 @@ export class DeepAuditLogger {
 
     client.on(Events.InviteDelete, async invite => {
       const embed = new EmbedBuilder()
-        .setColor(0x99AAB5)
+        .setColor(0x99aab5)
         .setTitle('✉️ Invitation Supprimée / Expirée')
         .addFields(
           { name: 'Code', value: `\`${invite.code}\``, inline: true },
-          { name: 'Salon', value: invite.channel ? `<#${invite.channel.id}>` : '*Inconnu*', inline: true }
+          {
+            name: 'Salon',
+            value: invite.channel ? `<#${invite.channel.id}>` : '*Inconnu*',
+            inline: true,
+          }
         )
         .setTimestamp();
 
@@ -355,13 +487,17 @@ export class DeepAuditLogger {
       const executor = await this.fetchExecutor(emoji.guild, AuditLogEvent.EmojiCreate, emoji.id);
 
       const embed = new EmbedBuilder()
-        .setColor(0x57F287)
+        .setColor(0x57f287)
         .setTitle('😀 Emoji Ajouté')
         .setThumbnail(emoji.imageURL())
         .addFields(
           { name: 'Nom', value: `:${emoji.name}: (\`${emoji.id}\`)`, inline: true },
           { name: 'Animé ?', value: emoji.animated ? 'Oui' : 'Non', inline: true },
-          { name: 'Ajouté par', value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu*', inline: false }
+          {
+            name: 'Ajouté par',
+            value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu*',
+            inline: false,
+          }
         )
         .setTimestamp();
 
@@ -372,11 +508,15 @@ export class DeepAuditLogger {
       const executor = await this.fetchExecutor(emoji.guild, AuditLogEvent.EmojiDelete, emoji.id);
 
       const embed = new EmbedBuilder()
-        .setColor(0xED4245)
+        .setColor(0xed4245)
         .setTitle('🗑️ Emoji Supprimé')
         .addFields(
           { name: 'Nom', value: `:${emoji.name}: (\`${emoji.id}\`)`, inline: true },
-          { name: 'Supprimé par', value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu*', inline: true }
+          {
+            name: 'Supprimé par',
+            value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu*',
+            inline: true,
+          }
         )
         .setTimestamp();
 
@@ -402,12 +542,12 @@ export class DeepAuditLogger {
       const executor = await this.fetchExecutor(newGuild, AuditLogEvent.GuildUpdate);
 
       const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
+        .setColor(0x5865f2)
         .setTitle('🏰 Paramètres Serveur Modifiés')
         .setDescription(changes.join('\n'))
         .addFields({
           name: 'Modifié par',
-          value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu*'
+          value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu*',
         })
         .setTimestamp();
 
@@ -417,11 +557,15 @@ export class DeepAuditLogger {
     // 8. Fils de Discussion (Threads)
     client.on(Events.ThreadCreate, async thread => {
       const embed = new EmbedBuilder()
-        .setColor(0x57F287)
+        .setColor(0x57f287)
         .setTitle('🧵 Fil de Discussion Créé')
         .addFields(
           { name: 'Nom', value: `${thread.name} (<#${thread.id}>)`, inline: true },
-          { name: 'Salon parent', value: thread.parent ? `<#${thread.parent.id}>` : '*Aucun*', inline: true }
+          {
+            name: 'Salon parent',
+            value: thread.parent ? `<#${thread.parent.id}>` : '*Aucun*',
+            inline: true,
+          }
         )
         .setTimestamp();
 
@@ -430,11 +574,15 @@ export class DeepAuditLogger {
 
     client.on(Events.ThreadDelete, async thread => {
       const embed = new EmbedBuilder()
-        .setColor(0xED4245)
+        .setColor(0xed4245)
         .setTitle('🗑️ Fil de Discussion Supprimé')
         .addFields(
           { name: 'Nom', value: `\`${thread.name}\` (\`${thread.id}\`)`, inline: true },
-          { name: 'Salon parent', value: thread.parent ? `<#${thread.parent.id}>` : '*Aucun*', inline: true }
+          {
+            name: 'Salon parent',
+            value: thread.parent ? `<#${thread.parent.id}>` : '*Aucun*',
+            inline: true,
+          }
         )
         .setTimestamp();
 
@@ -450,7 +598,7 @@ export class DeepAuditLogger {
         const oldNick = oldMember.nickname || oldMember.user.displayName;
         const newNick = newMember.nickname || newMember.user.displayName;
         const embed = new EmbedBuilder()
-          .setColor(0x5865F2)
+          .setColor(0x5865f2)
           .setTitle('👤 Changement de Surnom')
           .setThumbnail(newMember.user.displayAvatarURL())
           .addFields(
@@ -465,15 +613,27 @@ export class DeepAuditLogger {
       // Rôles ajoutés
       const addedRoles = newMember.roles.cache.filter(r => !oldMember.roles.cache.has(r.id));
       if (addedRoles.size > 0) {
-        const executor = await this.fetchExecutor(newMember.guild, AuditLogEvent.MemberRoleUpdate, newMember.id);
+        const executor = await this.fetchExecutor(
+          newMember.guild,
+          AuditLogEvent.MemberRoleUpdate,
+          newMember.id
+        );
         const embed = new EmbedBuilder()
-          .setColor(0x57F287)
+          .setColor(0x57f287)
           .setTitle('🛡️ Rôle(s) Attribué(s)')
           .setThumbnail(newMember.user.displayAvatarURL())
           .addFields(
             { name: 'Membre', value: `${newMember.user.tag} (<@${newMember.id}>)`, inline: true },
-            { name: 'Rôle(s) Ajouté(s)', value: addedRoles.map(r => `<@&${r.id}>`).join(', '), inline: true },
-            { name: 'Attribué par', value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu / Auto*', inline: false }
+            {
+              name: 'Rôle(s) Ajouté(s)',
+              value: addedRoles.map(r => `<@&${r.id}>`).join(', '),
+              inline: true,
+            },
+            {
+              name: 'Attribué par',
+              value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu / Auto*',
+              inline: false,
+            }
           )
           .setTimestamp();
         await this.send(newMember.guild, 'member_roles', embed);
@@ -482,33 +642,62 @@ export class DeepAuditLogger {
       // Rôles retirés
       const removedRoles = oldMember.roles.cache.filter(r => !newMember.roles.cache.has(r.id));
       if (removedRoles.size > 0) {
-        const executor = await this.fetchExecutor(newMember.guild, AuditLogEvent.MemberRoleUpdate, newMember.id);
+        const executor = await this.fetchExecutor(
+          newMember.guild,
+          AuditLogEvent.MemberRoleUpdate,
+          newMember.id
+        );
         const embed = new EmbedBuilder()
-          .setColor(0xED4245)
+          .setColor(0xed4245)
           .setTitle('🛡️ Rôle(s) Retiré(s)')
           .setThumbnail(newMember.user.displayAvatarURL())
           .addFields(
             { name: 'Membre', value: `${newMember.user.tag} (<@${newMember.id}>)`, inline: true },
-            { name: 'Rôle(s) Retiré(s)', value: removedRoles.map(r => `<@&${r.id}>`).join(', '), inline: true },
-            { name: 'Retiré par', value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu / Auto*', inline: false }
+            {
+              name: 'Rôle(s) Retiré(s)',
+              value: removedRoles.map(r => `<@&${r.id}>`).join(', '),
+              inline: true,
+            },
+            {
+              name: 'Retiré par',
+              value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu / Auto*',
+              inline: false,
+            }
           )
           .setTimestamp();
         await this.send(newMember.guild, 'member_roles', embed);
       }
 
       // Exclusion temporaire (Timeout natif)
-      if (oldMember.communicationDisabledUntilTimestamp !== newMember.communicationDisabledUntilTimestamp) {
+      if (
+        oldMember.communicationDisabledUntilTimestamp !==
+        newMember.communicationDisabledUntilTimestamp
+      ) {
         const isTimeout = newMember.isCommunicationDisabled();
-        const executor = await this.fetchExecutor(newMember.guild, AuditLogEvent.MemberUpdate, newMember.id);
+        const executor = await this.fetchExecutor(
+          newMember.guild,
+          AuditLogEvent.MemberUpdate,
+          newMember.id
+        );
 
         const embed = new EmbedBuilder()
-          .setColor(isTimeout ? 0xED4245 : 0x57F287)
+          .setColor(isTimeout ? 0xed4245 : 0x57f287)
           .setTitle(isTimeout ? '⏳ Membre Mis en Timeout' : '🔊 Timeout Levé')
           .setThumbnail(newMember.user.displayAvatarURL())
           .addFields(
             { name: 'Membre', value: `${newMember.user.tag} (<@${newMember.id}>)`, inline: true },
-            { name: isTimeout ? 'Expire' : 'Statut', value: isTimeout ? `<t:${Math.floor(newMember.communicationDisabledUntilTimestamp / 1000)}:R>` : 'Parole rétablie', inline: true },
-            { name: 'Modérateur', value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu*', inline: false }
+            {
+              name: isTimeout ? 'Expire' : 'Statut',
+              value: isTimeout
+                ? `<t:${Math.floor(newMember.communicationDisabledUntilTimestamp / 1000)}:R>`
+                : 'Parole rétablie',
+              inline: true,
+            },
+            {
+              name: 'Modérateur',
+              value: executor ? `${executor.tag} (\`${executor.id}\`)` : '*Inconnu*',
+              inline: false,
+            }
           )
           .setTimestamp();
 

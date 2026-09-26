@@ -1,13 +1,12 @@
 import { slashCommandsMap } from '../commands/index.js';
 import { PermissionService } from '../../services/permissionService.js';
 import { tempVoiceService } from '../../services/tempVoiceService.js';
-import { getEnv } from '../../config/env.js';
+import { GuildRegistry } from '../services/guildRegistry.js';
 import { logger } from '../../logger/index.js';
 
 export async function handleInteractionCreate(interaction) {
-  const env = getEnv();
-  // Seul le serveur communautaire gère les interactions (commandes, boutons de tickets/rôles, vocal temporaire)
-  if (interaction.guildId && interaction.guildId !== env.DISCORD_GUILD_ID) {
+  // Les interactions (commandes, boutons, modales) sont autorisées sur les 6 serveurs joueurs
+  if (interaction.guildId && !GuildRegistry.isPlayerGuild(interaction.guildId)) {
     return;
   }
 
@@ -20,7 +19,7 @@ export async function handleInteractionCreate(interaction) {
     try {
       return await tempVoiceService.handleInteraction(interaction);
     } catch (err) {
-      logger.error({ error: err.message }, 'Erreur lors du traitement d\'interaction tempvoice');
+      logger.error({ error: err.message }, "Erreur lors du traitement d'interaction tempvoice");
       return;
     }
   }
@@ -51,12 +50,13 @@ export async function handleInteractionCreate(interaction) {
       ephemeral: true,
     });
   }
+
   // Contrôle des permissions personnalisées (RBAC / ACL)
   const permCheck = await PermissionService.canExecute(interaction.member, interaction.commandName);
   if (!permCheck.allowed) {
     return interaction.reply({
       content: `❌ **Accès Refusé :** ${permCheck.reason}`,
-      ephemeral: true
+      ephemeral: true,
     });
   }
 

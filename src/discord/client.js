@@ -9,6 +9,7 @@ import { handleVoiceStateUpdate } from './listeners/voiceStateUpdate.js';
 import { handleGuildMemberAdd } from './listeners/guildMemberAdd.js';
 import { handleGuildMemberRemove } from './listeners/guildMemberRemove.js';
 import { DeepAuditLogger } from './listeners/deepAuditLogger.js';
+import { GuildRegistry } from './services/guildRegistry.js';
 import { allSlashCommands } from './commands/index.js';
 
 export class DiscordBotClient {
@@ -105,23 +106,23 @@ export class DiscordBotClient {
     }
     this.isReady = false;
   }
-  getGuild() {
-    const env = getEnv();
-    return this.client.guilds.cache.get(env.DISCORD_GUILD_ID) || null;
+  getGuild(guildId = null) {
+    const targetId = guildId || GuildRegistry.getCommunityGuildId();
+    return this.client.guilds.cache.get(targetId) || null;
   }
-  async fetchGuild() {
-    const env = getEnv();
-    const cached = this.getGuild();
+  async fetchGuild(guildId = null) {
+    const targetId = guildId || GuildRegistry.getCommunityGuildId();
+    const cached = this.getGuild(targetId);
     if (cached) return cached;
-    const guild = await this.client.guilds.fetch(env.DISCORD_GUILD_ID);
+    const guild = await this.client.guilds.fetch(targetId);
     if (!guild) {
-      throw new Error(`Guild with ID ${env.DISCORD_GUILD_ID} not found`);
+      throw new Error(`Guild with ID ${targetId} not found`);
     }
     return guild;
   }
   async syncAndCleanCommands(readyClient) {
     try {
-      logger.info('Vérification et purge automatique des commandes obsolètes sur les serveurs...');
+      logger.info('Vérification et synchronisation des commandes sur les serveurs autorisés...');
       const validNames = new Set(allSlashCommands.map(c => c.data.name));
       const commandsData = allSlashCommands.map(c => c.data.toJSON());
 
@@ -141,48 +142,46 @@ export class DiscordBotClient {
         }
       }
 
-      // 2. Vérification et purge pour chaque serveur où le bot est présent
-      const env = getEnv();
-      const communityGuildId = env.DISCORD_GUILD_ID;
+      // 2. Synchronisation sur les 6 serveurs joueurs et purge sur le serveur staff
       for (const [guildId, guild] of readyClient.guilds.cache) {
         try {
-          if (guildId === communityGuildId) {
+          if (GuildRegistry.isPlayerGuild(guildId)) {
             const guildCmds = await guild.commands.fetch().catch(() => null);
             if (guildCmds && guildCmds.size > 0) {
               for (const [id, cmd] of guildCmds) {
                 if (!validNames.has(cmd.name)) {
                   logger.info(
                     { guild: guild.name, command: cmd.name },
-                    "Suppression automatique d'une commande obsolète sur le serveur communauté"
+                    "Suppression d'une commande obsolète sur serveur joueur"
                   );
                   await cmd.delete().catch(() => {});
                 }
               }
             }
 
-            // Synchronisation des commandes officielles sur le serveur communauté
+            // Synchronisation des commandes sur ce serveur joueur
             await guild.commands.set(commandsData).catch(err => {
               logger.warn(
                 { guild: guild.name, error: err.message },
-                'Erreur synchronisation commandes serveur communauté'
+                'Erreur synchronisation commandes sur serveur joueur'
               );
             });
             logger.info(
               { guild: guild.name, count: commandsData.length },
-              'Commandes du serveur communauté synchronisées avec succès'
+              'Commandes synchronisées avec succès sur serveur joueur'
             );
-          } else {
-            // Serveurs secondaires (serveur Staff, etc.) : aucune commande slash ne doit être active
+          } else if (GuildRegistry.isStaffGuild(guildId)) {
+            // Serveur Staff : purge des commandes de modération/joueur
             const guildCmds = await guild.commands.fetch().catch(() => null);
             if (guildCmds && guildCmds.size > 0) {
               logger.info(
                 { guild: guild.name, count: guildCmds.size },
-                'Purge des commandes slash sur le serveur secondaire (staff)'
+                'Purge des commandes slash sur le serveur staff'
               );
               await guild.commands.set([]).catch(err => {
                 logger.warn(
                   { guild: guild.name, error: err.message },
-                  'Erreur purge commandes sur serveur secondaire'
+                  'Erreur purge commandes sur serveur staff'
                 );
               });
             }

@@ -1,6 +1,6 @@
 import { memberLogService } from '../services/memberLogService.js';
 import { tempVoiceService } from '../../services/tempVoiceService.js';
-import { getEnv } from '../../config/env.js';
+import { GuildRegistry } from '../services/guildRegistry.js';
 import { logger } from '../../logger/index.js';
 
 export async function handleVoiceStateUpdate(oldState, newState) {
@@ -8,9 +8,7 @@ export async function handleVoiceStateUpdate(oldState, newState) {
   if (!member || member.user.bot) return;
 
   const guild = newState.guild || oldState.guild;
-  const env = getEnv();
-  // Les salons vocaux temporaires et logs vocaux sont réservés au serveur communautaire
-  if (!guild || guild.id !== env.DISCORD_GUILD_ID) return;
+  if (!guild || !GuildRegistry.isPlayerGuild(guild.id)) return;
 
   const oldChannel = oldState.channel;
   const newChannel = newState.channel;
