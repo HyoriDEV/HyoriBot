@@ -8,6 +8,7 @@ import {
   TicketCreatedNotificationSchema,
 } from '../schemas/routes.schema.js';
 import { notificationService } from '../../discord/services/notificationService.js';
+import { discordConfig } from '../../config/discordConfig.js';
 import { logger } from '../../logger/index.js';
 export async function notificationRoutes(fastify) {
   fastify.addHook('preHandler', authenticateBearer);
@@ -28,12 +29,13 @@ export async function notificationRoutes(fastify) {
         details: parseResult.error.flatten(),
       });
     }
-    const { discordId, status, playerSpaceUrl, override } = parseResult.data;
+    const { discordId, status, playerSpaceUrl, assignedClass, override } = parseResult.data;
     const result = await notificationService.notifyRegistrationStatus(
       discordId,
       status,
       playerSpaceUrl,
-      override
+      override,
+      assignedClass
     );
     return reply.status(200).send(result);
   });
@@ -155,5 +157,36 @@ export async function notificationRoutes(fastify) {
     }
     const result = await notificationService.notifyTicketCreated(parseResult.data);
     return reply.status(200).send(result);
+  });
+
+  fastify.post('/notifications/broadcast-village-invites', async (_request, reply) => {
+    try {
+      logger.info('Déclenchement de la diffusion des invitations de village par requête API...');
+      const result = await notificationService.broadcastVillageInvites();
+      return reply.status(200).send(result);
+    } catch (error) {
+      logger.error({ error }, 'Échec lors de la diffusion des invitations de village');
+      return reply.status(500).send({
+        success: false,
+        statusCode: 500,
+        error: 'Internal Server Error',
+        message: error?.message || 'Erreur inattendue lors de la diffusion des invitations',
+      });
+    }
+  });
+
+  fastify.get('/villages', async (_request, reply) => {
+    const villages = Object.entries(discordConfig.guilds.villages).map(([key, v]) => ({
+      key,
+      id: v.id,
+      name: v.name,
+      class: v.class,
+      habitantRoleId: v.habitantRoleId,
+      inviteUrl: v.inviteUrl || null,
+    }));
+    return reply.status(200).send({
+      success: true,
+      villages,
+    });
   });
 }

@@ -12,8 +12,15 @@ export const RegistrationStatusNotificationSchema = z.object({
   discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format'),
   status: z.enum(['NEW', 'WAITLIST', 'WHITELIST_IN_PROGRESS', 'WHITELISTED', 'REJECTED']),
   playerSpaceUrl: z.string().url('playerSpaceUrl must be a valid URL').optional(),
+  assignedClass: z.string().max(50).optional().nullable(),
   override: EmbedOverrideSchema.optional().nullable(),
 });
+
+export const BroadcastVillageInvitesSchema = z
+  .object({
+    dryRun: z.boolean().optional().default(false),
+  })
+  .optional();
 
 export const CharacterSheetStatusNotificationSchema = z.object({
   discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format'),

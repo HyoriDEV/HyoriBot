@@ -69,6 +69,19 @@ export class GuildRegistry {
   }
 
   /**
+   * Récupère la configuration de village pour une classe RP donnée (ex: NOBLE, PECHEUR, ROLE_NOBLE).
+   * @param {string} className
+   * @returns {object|null}
+   */
+  static getVillageByClass(className) {
+    if (!className) return null;
+    const normalized = String(className)
+      .toUpperCase()
+      .replace(/^ROLE_/, '');
+    return this.getVillages().find(v => v.class?.toUpperCase() === normalized) || null;
+  }
+
+  /**
    * Retourne la liste de tous les IDs des serveurs joueurs (Hyori RP + villages configurés).
    */
   static getPlayerGuildIds() {
