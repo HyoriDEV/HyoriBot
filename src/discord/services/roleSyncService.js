@@ -1,64 +1,47 @@
 import { discordBot } from '../client.js';
 import { discordQueue } from '../../queue/discordQueue.js';
-import { getEnv } from '../../config/env.js';
+import { discordConfig } from '../../config/discordConfig.js';
 import { logger } from '../../logger/index.js';
+
 export class RoleSyncService {
   getClassRoleMap() {
-    const env = getEnv();
     return {
-      NOBLE: env.ROLE_NOBLE_ID,
-      ROLE_NOBLE: env.ROLE_NOBLE_ID,
-      PAYSAN: env.ROLE_PAYSAN_ID,
-      ROLE_PAYSAN: env.ROLE_PAYSAN_ID,
-      PECHEUR: env.ROLE_PECHEUR_ID,
-      ROLE_PECHEUR: env.ROLE_PECHEUR_ID,
-      MINEUR: env.ROLE_MINEUR_ID,
-      ROLE_MINEUR: env.ROLE_MINEUR_ID,
-      ERUDIT: env.ROLE_ERUDIT_ID,
-      ROLE_ERUDIT: env.ROLE_ERUDIT_ID,
+      NOBLE: discordConfig.roles.classes.NOBLE,
+      ROLE_NOBLE: discordConfig.roles.classes.NOBLE,
+      PAYSAN: discordConfig.roles.classes.PAYSAN,
+      ROLE_PAYSAN: discordConfig.roles.classes.PAYSAN,
+      PECHEUR: discordConfig.roles.classes.PECHEUR,
+      ROLE_PECHEUR: discordConfig.roles.classes.PECHEUR,
+      MINEUR: discordConfig.roles.classes.MINEUR,
+      ROLE_MINEUR: discordConfig.roles.classes.MINEUR,
+      ERUDIT: discordConfig.roles.classes.ERUDIT,
+      ROLE_ERUDIT: discordConfig.roles.classes.ERUDIT,
     };
   }
   getAllClassRoleIds() {
-    const env = getEnv();
-    return [
-      env.ROLE_NOBLE_ID,
-      env.ROLE_PAYSAN_ID,
-      env.ROLE_PECHEUR_ID,
-      env.ROLE_MINEUR_ID,
-      env.ROLE_ERUDIT_ID,
-    ];
+    return Object.values(discordConfig.roles.classes);
   }
   getStaffRoleMap() {
-    const env = getEnv();
     return {
-      GC: env.ROLE_GC_ID,
-      ROLE_GC: env.ROLE_GC_ID,
-      CONFLICT_MANAGEMENT: env.ROLE_GC_ID,
-      COMMUNICATION: env.ROLE_COMMUNICATION_ID,
-      ROLE_COMMUNICATION: env.ROLE_COMMUNICATION_ID,
-      RP_TRACKING: env.ROLE_RP_TRACKING_ID,
-      ROLE_RP_TRACKING: env.ROLE_RP_TRACKING_ID,
-      EVENT: env.ROLE_EVENT_ID,
-      ROLE_EVENT: env.ROLE_EVENT_ID,
-      DEVELOPER: env.ROLE_DEVELOPER_ID,
-      ROLE_DEVELOPER: env.ROLE_DEVELOPER_ID,
-      ADMIN: env.ROLE_ADMIN_ID,
-      ROLE_ADMIN: env.ROLE_ADMIN_ID,
+      GC: discordConfig.roles.staff.GC,
+      ROLE_GC: discordConfig.roles.staff.GC,
+      CONFLICT_MANAGEMENT: discordConfig.roles.staff.GC,
+      COMMUNICATION: discordConfig.roles.staff.COMMUNICATION,
+      ROLE_COMMUNICATION: discordConfig.roles.staff.COMMUNICATION,
+      RP_TRACKING: discordConfig.roles.staff.RP_TRACKING,
+      ROLE_RP_TRACKING: discordConfig.roles.staff.RP_TRACKING,
+      EVENT: discordConfig.roles.staff.EVENT,
+      ROLE_EVENT: discordConfig.roles.staff.EVENT,
+      DEVELOPER: discordConfig.roles.staff.DEVELOPER,
+      ROLE_DEVELOPER: discordConfig.roles.staff.DEVELOPER,
+      ADMIN: discordConfig.roles.staff.ADMIN,
+      ROLE_ADMIN: discordConfig.roles.staff.ADMIN,
     };
   }
   getAllStaffRoleIds() {
-    const env = getEnv();
-    return [
-      env.ROLE_GC_ID,
-      env.ROLE_COMMUNICATION_ID,
-      env.ROLE_RP_TRACKING_ID,
-      env.ROLE_EVENT_ID,
-      env.ROLE_DEVELOPER_ID,
-      env.ROLE_ADMIN_ID,
-    ];
+    return Object.values(discordConfig.roles.staff);
   }
   async syncWhitelistAndClass({ discordId, whitelisted, classRole }) {
-    const env = getEnv();
     const classMap = this.getClassRoleMap();
     const allClasses = this.getAllClassRoleIds();
     return discordQueue.enqueue(`syncWhitelistAndClass:${discordId}`, async () => {
@@ -80,8 +63,11 @@ export class RoleSyncService {
         const rolesToAdd = [];
         const rolesToRemove = [];
         const targetClassRoleId = classRole ? classMap[classRole.toUpperCase()] : null;
+        const whitelistRoleId = discordConfig.roles.whitelist;
         if (whitelisted) {
-          rolesToAdd.push(env.ROLE_WHITELIST_ID);
+          if (whitelistRoleId) {
+            rolesToAdd.push(whitelistRoleId);
+          }
           if (targetClassRoleId) {
             rolesToAdd.push(targetClassRoleId);
           }
@@ -91,8 +77,8 @@ export class RoleSyncService {
             }
           });
         } else {
-          if (member.roles.cache.has(env.ROLE_WHITELIST_ID)) {
-            rolesToRemove.push(env.ROLE_WHITELIST_ID);
+          if (whitelistRoleId && member.roles.cache.has(whitelistRoleId)) {
+            rolesToRemove.push(whitelistRoleId);
           }
           allClasses.forEach(roleId => {
             if (member.roles.cache.has(roleId)) {

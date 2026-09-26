@@ -1,24 +1,104 @@
-import {
-  ChannelType,
-  PermissionFlagsBits,
-  EmbedBuilder
-} from 'discord.js';
+import { ChannelType, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import { configStore } from '../storage/index.js';
 import { logger } from '../logger/index.js';
 
 export const LOG_TYPES = [
-  { id: 'messages_delete', key: 'messagesDeleteChannelId', name: 'Messages Supprimés', channelName: '🗑️・logs-messages-suppr', emoji: '🗑️', desc: 'Messages supprimés avec auteur, salon et contenu' },
-  { id: 'messages_edit', key: 'messagesEditChannelId', name: 'Messages Modifiés', channelName: '✏️・logs-messages-modif', emoji: '✏️', desc: 'Historique des messages édités (avant / après)' },
-  { id: 'messages_bulk', key: 'messagesBulkChannelId', name: 'Purges Massives (Clear)', channelName: '🧹・logs-purges', emoji: '🧹', desc: 'Suppressions massives via /clear ou /purge' },
-  { id: 'members_join_leave', key: 'joinsLeavesChannelId', name: 'Arrivées & Départs', channelName: '📥・logs-arrivées-départs', emoji: '📥', desc: 'Arrivées et départs de membres sur le serveur' },
-  { id: 'members_profile', key: 'memberProfileChannelId', name: 'Profils & Surnoms', channelName: '👤・logs-profils-membres', emoji: '👤', desc: 'Changements de pseudos, surnoms et avatars' },
-  { id: 'members_roles', key: 'memberRolesChannelId', name: 'Rôles des Membres', channelName: '🛡️・logs-roles-membres', emoji: '🛡️', desc: 'Attributions et retraits de rôles aux membres' },
-  { id: 'moderation', key: 'moderationChannelId', name: 'Modération & Sanctions', channelName: '⚖️・logs-moderation', emoji: '⚖️', desc: 'Warns, Timeouts, Mutes, Kicks, Bans, Débans' },
-  { id: 'channels', key: 'channelsChannelId', name: 'Salons Serveur', channelName: '📁・logs-salons', emoji: '📁', desc: 'Création, modification et suppression de salons' },
-  { id: 'roles', key: 'rolesChannelId', name: 'Rôles Serveur', channelName: '🏷️・logs-roles-serveur', emoji: '🏷️', desc: 'Création, modification et suppression de rôles' },
-  { id: 'voice', key: 'voiceChannelId', name: 'Activité Vocale', channelName: '🔊・logs-vocal', emoji: '🔊', desc: 'Connexions, déconnexions et déplacements en vocal' },
-  { id: 'server', key: 'serverChannelId', name: 'Serveur & Emojis', channelName: '⚙️・logs-serveur', emoji: '⚙️', desc: 'Paramètres du serveur, bannière, emojis et stickers' },
-  { id: 'invites', key: 'invitesChannelId', name: 'Invitations', channelName: '✉️・logs-invitations', emoji: '✉️', desc: 'Création et suppression de liens d\'invitation' }
+  {
+    id: 'messages_delete',
+    key: 'messagesDeleteChannelId',
+    name: 'Messages Supprimés',
+    channelName: '🗑️・logs-messages-suppr',
+    emoji: '🗑️',
+    desc: 'Messages supprimés avec auteur, salon et contenu',
+  },
+  {
+    id: 'messages_edit',
+    key: 'messagesEditChannelId',
+    name: 'Messages Modifiés',
+    channelName: '✏️・logs-messages-modif',
+    emoji: '✏️',
+    desc: 'Historique des messages édités (avant / après)',
+  },
+  {
+    id: 'messages_bulk',
+    key: 'messagesBulkChannelId',
+    name: 'Purges Massives (Clear)',
+    channelName: '🧹・logs-purges',
+    emoji: '🧹',
+    desc: 'Suppressions massives via /clear ou /purge',
+  },
+  {
+    id: 'members_join_leave',
+    key: 'joinsLeavesChannelId',
+    name: 'Arrivées & Départs',
+    channelName: '📥・logs-arrivées-départs',
+    emoji: '📥',
+    desc: 'Arrivées et départs de membres sur le serveur',
+  },
+  {
+    id: 'members_profile',
+    key: 'memberProfileChannelId',
+    name: 'Profils & Surnoms',
+    channelName: '👤・logs-profils-membres',
+    emoji: '👤',
+    desc: 'Changements de pseudos, surnoms et avatars',
+  },
+  {
+    id: 'members_roles',
+    key: 'memberRolesChannelId',
+    name: 'Rôles des Membres',
+    channelName: '🛡️・logs-roles-membres',
+    emoji: '🛡️',
+    desc: 'Attributions et retraits de rôles aux membres',
+  },
+  {
+    id: 'moderation',
+    key: 'moderationChannelId',
+    name: 'Modération & Sanctions',
+    channelName: '⚖️・logs-moderation',
+    emoji: '⚖️',
+    desc: 'Warns, Timeouts, Mutes, Kicks, Bans, Débans',
+  },
+  {
+    id: 'channels',
+    key: 'channelsChannelId',
+    name: 'Salons Serveur',
+    channelName: '📁・logs-salons',
+    emoji: '📁',
+    desc: 'Création, modification et suppression de salons',
+  },
+  {
+    id: 'roles',
+    key: 'rolesChannelId',
+    name: 'Rôles Serveur',
+    channelName: '🏷️・logs-roles-serveur',
+    emoji: '🏷️',
+    desc: 'Création, modification et suppression de rôles',
+  },
+  {
+    id: 'voice',
+    key: 'voiceChannelId',
+    name: 'Activité Vocale',
+    channelName: '🔊・logs-vocal',
+    emoji: '🔊',
+    desc: 'Connexions, déconnexions et déplacements en vocal',
+  },
+  {
+    id: 'server',
+    key: 'serverChannelId',
+    name: 'Serveur & Emojis',
+    channelName: '⚙️・logs-serveur',
+    emoji: '⚙️',
+    desc: 'Paramètres du serveur, bannière, emojis et stickers',
+  },
+  {
+    id: 'invites',
+    key: 'invitesChannelId',
+    name: 'Invitations',
+    channelName: '✉️・logs-invitations',
+    emoji: '✉️',
+    desc: "Création et suppression de liens d'invitation",
+  },
 ];
 
 export class LogSetupService {
@@ -27,7 +107,8 @@ export class LogSetupService {
    */
   static async getOrCreateLogCategory(guild) {
     let category = guild.channels.cache.find(
-      c => c.type === ChannelType.GuildCategory && (c.name.includes('LOGS') || c.name.includes('Logs'))
+      c =>
+        c.type === ChannelType.GuildCategory && (c.name.includes('LOGS') || c.name.includes('Logs'))
     );
 
     if (!category) {
@@ -37,7 +118,7 @@ export class LogSetupService {
         permissionOverwrites: [
           {
             id: guild.id, // @everyone
-            deny: [PermissionFlagsBits.ViewChannel]
+            deny: [PermissionFlagsBits.ViewChannel],
           },
           {
             id: guild.members.me.id, // Bot
@@ -46,11 +127,11 @@ export class LogSetupService {
               PermissionFlagsBits.SendMessages,
               PermissionFlagsBits.EmbedLinks,
               PermissionFlagsBits.AttachFiles,
-              PermissionFlagsBits.ReadMessageHistory
-            ]
-          }
+              PermissionFlagsBits.ReadMessageHistory,
+            ],
+          },
         ],
-        reason: 'Création automatique de la catégorie des logs Hyori'
+        reason: 'Création automatique de la catégorie des logs Hyori',
       });
     }
 
@@ -63,9 +144,10 @@ export class LogSetupService {
    * @param {string[]} selectedIds - Liste des IDs de logs à créer (tous si null)
    */
   static async setupChannels(guild, selectedIds = null) {
-    const targets = selectedIds && selectedIds.length > 0
-      ? LOG_TYPES.filter(t => selectedIds.includes(t.id))
-      : LOG_TYPES;
+    const targets =
+      selectedIds && selectedIds.length > 0
+        ? LOG_TYPES.filter(t => selectedIds.includes(t.id))
+        : LOG_TYPES;
 
     const category = await this.getOrCreateLogCategory(guild);
     const results = [];
@@ -75,10 +157,11 @@ export class LogSetupService {
       try {
         // Vérifie si un salon avec le même nom existe déjà dans la catégorie ou le serveur
         let channel = guild.channels.cache.find(
-          c => c.type === ChannelType.GuildText && (
-            c.name === logType.channelName ||
-            c.name.replace(/[^a-zA-Z0-9-]/g, '') === logType.channelName.replace(/[^a-zA-Z0-9-]/g, '')
-          )
+          c =>
+            c.type === ChannelType.GuildText &&
+            (c.name === logType.channelName ||
+              c.name.replace(/[^a-zA-Z0-9-]/g, '') ===
+                logType.channelName.replace(/[^a-zA-Z0-9-]/g, ''))
         );
 
         let isNew = false;
@@ -91,7 +174,7 @@ export class LogSetupService {
             permissionOverwrites: [
               {
                 id: guild.id, // @everyone
-                deny: [PermissionFlagsBits.ViewChannel]
+                deny: [PermissionFlagsBits.ViewChannel],
               },
               {
                 id: guild.members.me.id,
@@ -100,19 +183,21 @@ export class LogSetupService {
                   PermissionFlagsBits.SendMessages,
                   PermissionFlagsBits.EmbedLinks,
                   PermissionFlagsBits.AttachFiles,
-                  PermissionFlagsBits.ReadMessageHistory
-                ]
-              }
+                  PermissionFlagsBits.ReadMessageHistory,
+                ],
+              },
             ],
-            reason: `Création du salon de logs automatique (${logType.name})`
+            reason: `Création du salon de logs automatique (${logType.name})`,
           });
           isNew = true;
 
           // Envoi d'un message inaugural dans le nouveau salon
           const initEmbed = new EmbedBuilder()
-            .setColor(0x5865F2)
+            .setColor(0x5865f2)
             .setTitle(`${logType.emoji} Salon Initialisé : ${logType.name}`)
-            .setDescription(`Ce salon est désormais configuré pour enregistrer automatiquement tous les événements liés à : **${logType.desc}**.\n\n🔒 *Ce salon est strictement privé et visible uniquement par le Staff.*`)
+            .setDescription(
+              `Ce salon est désormais configuré pour enregistrer automatiquement tous les événements liés à : **${logType.desc}**.\n\n🔒 *Ce salon est strictement privé et visible uniquement par le Staff.*`
+            )
             .setTimestamp();
 
           await channel.send({ embeds: [initEmbed] }).catch(() => {});
@@ -125,23 +210,37 @@ export class LogSetupService {
         results.push({
           logType,
           channel,
-          isNew
+          isNew,
         });
       } catch (err) {
         logger.error({ err, logType: logType.id }, 'Erreur création salon de logs');
       }
     }
 
-    // Sauvegarde persistante dans config.json
+    // Sauvegarde persistante dans config.json scopée par serveur
     await configStore.update(data => {
+      data.guilds = data.guilds || {};
+      data.guilds[guild.id] = data.guilds[guild.id] || {};
+      data.guilds[guild.id].logs = data.guilds[guild.id].logs || {};
+      data.guilds[guild.id].logs.categoryChannelId = category.id;
+      for (const [k, v] of Object.entries(updatedIds)) {
+        data.guilds[guild.id].logs[k] = v;
+      }
+      if (updatedIds.messagesDeleteChannelId)
+        data.guilds[guild.id].logs.messagesChannelId = updatedIds.messagesDeleteChannelId;
+      if (updatedIds.joinsLeavesChannelId)
+        data.guilds[guild.id].logs.membersChannelId = updatedIds.joinsLeavesChannelId;
+
+      // Rétrocompatibilité avec l'ancienne structure globale
       data.logs = data.logs || {};
       data.logs.categoryChannelId = category.id;
       for (const [k, v] of Object.entries(updatedIds)) {
         data.logs[k] = v;
       }
-      // Rétrocompatibilité avec les anciennes clés
-      if (updatedIds.messagesDeleteChannelId) data.logs.messagesChannelId = updatedIds.messagesDeleteChannelId;
-      if (updatedIds.joinsLeavesChannelId) data.logs.membersChannelId = updatedIds.joinsLeavesChannelId;
+      if (updatedIds.messagesDeleteChannelId)
+        data.logs.messagesChannelId = updatedIds.messagesDeleteChannelId;
+      if (updatedIds.joinsLeavesChannelId)
+        data.logs.membersChannelId = updatedIds.joinsLeavesChannelId;
       return data;
     });
 
@@ -153,7 +252,7 @@ export class LogSetupService {
    */
   static async deleteAllChannels(guild) {
     const config = await configStore.read().catch(() => ({}));
-    const logsConfig = config.logs || {};
+    const logsConfig = config.guilds?.[guild.id]?.logs || config.logs || {};
     let deletedCount = 0;
 
     for (const logType of LOG_TYPES) {
@@ -175,6 +274,9 @@ export class LogSetupService {
     }
 
     await configStore.update(data => {
+      if (data.guilds?.[guild.id]) {
+        data.guilds[guild.id].logs = {};
+      }
       data.logs = {};
       return data;
     });

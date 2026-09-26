@@ -1,5 +1,5 @@
 import { ChannelType, PermissionFlagsBits, EmbedBuilder, AuditLogEvent } from 'discord.js';
-import { getEnv } from '../../config/env.js';
+import { discordConfig } from '../../config/discordConfig.js';
 import { configStore } from '../../storage/index.js';
 import { createHyoriEmbed } from '../embeds.js';
 import { logger } from '../../logger/index.js';
@@ -29,11 +29,9 @@ export class MemberLogService {
       }
     }
 
-    const env = getEnv();
-
-    // 1. Try by configured ID in env
-    if (env.CHANNEL_MEMBER_LOGS_ID) {
-      const channel = guild.channels.cache.get(env.CHANNEL_MEMBER_LOGS_ID);
+    // 1. Try by configured ID in discordConfig
+    if (discordConfig.channels.memberLogs) {
+      const channel = guild.channels.cache.get(discordConfig.channels.memberLogs);
       if (channel && channel.isTextBased()) return channel;
     }
 

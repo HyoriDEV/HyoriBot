@@ -1,7 +1,7 @@
 import { discordBot } from '../client.js';
 import { discordQueue } from '../../queue/discordQueue.js';
 import { logger } from '../../logger/index.js';
-import { getEnv } from '../../config/env.js';
+import { discordConfig } from '../../config/discordConfig.js';
 import {
   buildRegistrationStatusEmbed,
   buildCharacterSheetStatusEmbed,
@@ -217,14 +217,13 @@ export class NotificationService {
     ticketStaffUrl,
     override = null,
   }) {
-    const env = getEnv();
-    const targetChannelId = channelId || env.CHANNEL_TICKET_NOTIFICATIONS_ID;
-    const roleId = mentionRoleId || env.ROLE_TICKET_NOTIFICATIONS_ID;
+    const targetChannelId = channelId || discordConfig.channels.ticketNotifications;
+    const roleId = mentionRoleId || discordConfig.roles.ticketMention;
 
     if (!targetChannelId) {
       logger.warn(
         { ticketId },
-        'No channel configured for ticket-created notification (neither channelId in payload nor CHANNEL_TICKET_NOTIFICATIONS_ID in env)'
+        'No channel configured for ticket-created notification'
       );
       return {
         success: false,

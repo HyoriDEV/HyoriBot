@@ -1,5 +1,6 @@
 import { Client, GatewayIntentBits } from 'discord.js';
 import dotenv from 'dotenv';
+import { GuildRegistry } from '../src/discord/services/guildRegistry.js';
 dotenv.config();
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
@@ -7,7 +8,7 @@ const client = new Client({
 async function inspectGuild() {
   console.log('Connexion au serveur Discord pour inspection...');
   await client.login(process.env.DISCORD_BOT_TOKEN);
-  const guild = await client.guilds.fetch(process.env.DISCORD_GUILD_ID);
+  const guild = await client.guilds.fetch(GuildRegistry.getCommunityGuildId());
   console.log(`\n============================================================`);
   console.log(`🏰 Serveur : ${guild.name} (ID: ${guild.id})`);
   console.log(`👥 Membres totaux : ${guild.memberCount}`);

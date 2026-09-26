@@ -1,74 +1,73 @@
-import { Client, GatewayIntentBits, PermissionsBitField } from 'discord.js';
+import { Client, GatewayIntentBits } from 'discord.js';
 import dotenv from 'dotenv';
-import fs from 'fs';
-import path from 'path';
+import { GuildRegistry } from '../src/discord/services/guildRegistry.js';
 dotenv.config();
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
 const REQUIRED_ROLES = [
   {
-    key: 'ROLE_WHITELIST_ID',
+    configPath: 'roles.whitelist',
     name: 'Whitelisté',
     color: 0xe9d15c,
   },
   {
-    key: 'ROLE_SANCTIONED_ID',
+    configPath: 'roles.sanctioned',
     name: 'Sanctionné (Isolé)',
     color: 0x808080,
   },
   {
-    key: 'ROLE_NOBLE_ID',
+    configPath: 'roles.classes.NOBLE',
     name: 'Noble',
     color: 0x9b59b6,
   },
   {
-    key: 'ROLE_PAYSAN_ID',
+    configPath: 'roles.classes.PAYSAN',
     name: 'Paysan',
     color: 0x2ecc71,
   },
   {
-    key: 'ROLE_PECHEUR_ID',
+    configPath: 'roles.classes.PECHEUR',
     name: 'Pêcheur',
     color: 0x3498db,
   },
   {
-    key: 'ROLE_MINEUR_ID',
+    configPath: 'roles.classes.MINEUR',
     name: 'Mineur',
     color: 0xe67e22,
   },
   {
-    key: 'ROLE_ERUDIT_ID',
+    configPath: 'roles.classes.ERUDIT',
     name: 'Érudit',
     color: 0x1abc9c,
   },
   {
-    key: 'ROLE_GC_ID',
+    configPath: 'roles.staff.GC',
     name: 'Staff - Gestion Conflits',
     color: 0xe74c3c,
   },
   {
-    key: 'ROLE_COMMUNICATION_ID',
+    configPath: 'roles.staff.COMMUNICATION',
     name: 'Staff - Communication',
     color: 0xe91e63,
   },
   {
-    key: 'ROLE_RP_TRACKING_ID',
+    configPath: 'roles.staff.RP_TRACKING',
     name: 'Staff - Suivi RP',
     color: 0x3f51b5,
   },
   {
-    key: 'ROLE_EVENT_ID',
+    configPath: 'roles.staff.EVENT',
     name: 'Staff - Événementiel',
     color: 0xff9800,
   },
   {
-    key: 'ROLE_DEVELOPER_ID',
+    configPath: 'roles.staff.DEVELOPER',
     name: 'Staff - Développeur',
     color: 0x607d8b,
   },
   {
-    key: 'ROLE_ADMIN_ID',
+    configPath: 'roles.staff.ADMIN',
     name: 'Staff - Administrateur',
     color: 0xd32f2f,
   },
@@ -76,10 +75,10 @@ const REQUIRED_ROLES = [
 async function setupRoles() {
   console.log('🤖 Connexion à Discord pour création et configuration automatique des rôles...');
   await client.login(process.env.DISCORD_BOT_TOKEN);
-  const guild = await client.guilds.fetch(process.env.DISCORD_GUILD_ID);
+  const guild = await client.guilds.fetch(GuildRegistry.getCommunityGuildId());
   console.log(`🏰 Serveur : ${guild.name || guild.id}`);
   const existingRoles = await guild.roles.fetch();
-  const roleIdMap = {};
+  const createdRoles = [];
   for (const roleDef of REQUIRED_ROLES) {
     let found = existingRoles.find(r => r.name.toLowerCase() === roleDef.name.toLowerCase());
     if (!found) {
@@ -100,21 +99,17 @@ async function setupRoles() {
       console.log(`ℹ️ Rôle existant trouvé : "${found.name}" (ID: ${found.id})`);
     }
     if (found) {
-      roleIdMap[roleDef.key] = found.id;
+      createdRoles.push({ configPath: roleDef.configPath, id: found.id });
     }
   }
-  const envPath = path.join(process.cwd(), '.env');
-  let envContent = fs.readFileSync(envPath, 'utf-8');
-  for (const [key, roleId] of Object.entries(roleIdMap)) {
-    const regex = new RegExp(`^${key}=.*$`, 'm');
-    if (regex.test(envContent)) {
-      envContent = envContent.replace(regex, `${key}=${roleId}`);
-    } else {
-      envContent += `\n${key}=${roleId}`;
-    }
+
+  console.log(
+    '\n✅ Rôles synchronisés. Reportez ces IDs dans src/config/discordConfig.js :\n'
+  );
+  for (const { configPath, id } of createdRoles) {
+    console.log(`  ${configPath} = '${id}'`);
   }
-  fs.writeFileSync(envPath, envContent, 'utf-8');
-  console.log('\n✅ Fichier .env mis à jour avec les véritables IDs de rôles !');
+
   await client.destroy();
   process.exit(0);
 }

@@ -1,11 +1,12 @@
 import { REST, Routes } from 'discord.js';
 import dotenv from 'dotenv';
 import { allSlashCommands } from '../src/discord/commands/index.js';
+import { GuildRegistry } from '../src/discord/services/guildRegistry.js';
 
 dotenv.config();
 
 const token = process.env.DISCORD_BOT_TOKEN;
-const clientId = process.env.DISCORD_CLIENT_ID || '1054172720847388753';
+const clientId = process.env.DISCORD_CLIENT_ID;
 
 if (!token) {
   console.error('❌ DISCORD_BOT_TOKEN manquant dans le fichier .env');
@@ -22,20 +23,25 @@ async function cleanAllCommands() {
   console.log('🧹 ──────────────────────────────────────────────────────────\n');
 
   // 1. Purge complète des commandes globales
-  try {
-    console.log('1️⃣ Inspection des commandes GLOBALES...');
-    const globalCmds = await rest.get(Routes.applicationCommands(clientId));
-    console.log(`   ➔ ${globalCmds.length} commande(s) globale(s) trouvée(s) :`, globalCmds.map(c => c.name));
-    
-    if (globalCmds.length > 0) {
-      console.log('   🗑️ Suppression de toutes les commandes globales...');
-      await rest.put(Routes.applicationCommands(clientId), { body: [] });
-      console.log('   ✅ Commandes globales réinitialisées à zéro !');
-    } else {
-      console.log('   ✅ Aucune commande globale résiduelle.');
+  if (clientId) {
+    try {
+      console.log('1️⃣ Inspection des commandes GLOBALES...');
+      const globalCmds = await rest.get(Routes.applicationCommands(clientId));
+      console.log(
+        `   ➔ ${globalCmds.length} commande(s) globale(s) trouvée(s) :`,
+        globalCmds.map(c => c.name)
+      );
+
+      if (globalCmds.length > 0) {
+        console.log('   🗑️ Suppression de toutes les commandes globales...');
+        await rest.put(Routes.applicationCommands(clientId), { body: [] });
+        console.log('   ✅ Commandes globales réinitialisées à zéro !');
+      } else {
+        console.log('   ✅ Aucune commande globale résiduelle.');
+      }
+    } catch (err) {
+      console.warn(`   ⚠️ Erreur purge globale : ${err.message}`);
     }
-  } catch (err) {
-    console.warn(`   ⚠️ Erreur purge globale : ${err.message}`);
   }
 
   // 2. Détection de tous les serveurs où se trouve le bot
@@ -54,27 +60,33 @@ async function cleanAllCommands() {
   for (const guild of guilds) {
     console.log(`\n   📌 Serveur : ${guild.name} (${guild.id})`);
     try {
-      if (guild.id === process.env.DISCORD_GUILD_ID) {
-        // Récupération des commandes existantes sur la communauté
+      if (GuildRegistry.isPlayerGuild(guild.id)) {
+        // Serveurs Joueurs (Hyori RP + 5 villages) : synchronisation des commandes officielles
         const existingCmds = await rest.get(Routes.applicationGuildCommands(clientId, guild.id));
         const oldCmds = existingCmds.filter(c => !validCommandNames.has(c.name));
 
         if (oldCmds.length > 0) {
-          console.log(`      ⚠️ ${oldCmds.length} ancienne(s) commande(s) obsolète(s) détectée(s) :`, oldCmds.map(c => c.name));
+          console.log(
+            `      ⚠️ ${oldCmds.length} ancienne(s) commande(s) obsolète(s) détectée(s) :`,
+            oldCmds.map(c => c.name)
+          );
         }
 
-        // Remplacement direct par les commandes propres
         const updated = await rest.put(Routes.applicationGuildCommands(clientId, guild.id), {
           body: commandsData,
         });
 
-        console.log(`      ✅ ${updated.length} commandes officielles enregistrées avec succès sur le serveur Communauté "${guild.name}" !`);
+        console.log(
+          `      ✅ ${updated.length} commandes officielles enregistrées avec succès sur le serveur joueur "${guild.name}" !`
+        );
       } else {
-        // Serveur Staff / secondaire : purge complète des commandes
+        // Serveur Staff / autres serveurs : purge complète des commandes de modération
         await rest.put(Routes.applicationGuildCommands(clientId, guild.id), {
           body: [],
         });
-        console.log(`      🧹 Commandes purgées sur le serveur secondaire "${guild.name}" (aucun slash command actif).`);
+        console.log(
+          `      🧹 Commandes purgées sur le serveur non-joueur "${guild.name}" (aucun slash command actif).`
+        );
       }
     } catch (err) {
       console.warn(`      ❌ Erreur sur ${guild.name} : ${err.message}`);

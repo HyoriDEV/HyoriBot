@@ -5,7 +5,7 @@ import { warnRepository } from '../../persistence/warnRepository.js';
 import { roleBackupRepository } from '../../persistence/roleBackupRepository.js';
 import { createHyoriEmbed } from '../embeds.js';
 import { logger } from '../../logger/index.js';
-import { getEnv } from '../../config/env.js';
+import { discordConfig } from '../../config/discordConfig.js';
 export class ModActions {
   async executeMute({ guild, targetMember, moderator, durationStr, reason = 'Non précisé' }) {
     if (!targetMember) {
@@ -689,9 +689,14 @@ export class ModActions {
     const member = targetMember || (await guild.members.fetch(user.id).catch(() => null));
     const warns = await warnRepository.getWarns(user.id);
     const activeBackup = await roleBackupRepository.getActiveBackup(user.id);
-    const env = getEnv();
-    const isWhitelisted = member ? member.roles.cache.has(env.ROLE_WHITELIST_ID) : false;
-    const isSanctioned = member ? member.roles.cache.has(env.ROLE_SANCTIONED_ID) : false;
+    const isWhitelisted =
+      member && discordConfig.roles.whitelist
+        ? member.roles.cache.has(discordConfig.roles.whitelist)
+        : false;
+    const isSanctioned =
+      member && discordConfig.roles.sanctioned
+        ? member.roles.cache.has(discordConfig.roles.sanctioned)
+        : false;
     const embed = createHyoriEmbed()
       .setTitle(`Fiche Utilisateur — ${user.tag || user.username}`)
       .setThumbnail(
