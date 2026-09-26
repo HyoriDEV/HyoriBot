@@ -76,21 +76,23 @@ export async function callDiscordBot<TResponse = unknown>(
 
 ## 3. Table des Endpoints
 
-| Méthode | Route                                   | Description                                                                | Module     |
-| :------ | :-------------------------------------- | :------------------------------------------------------------------------- | :--------- |
-| `GET`   | `/health`                               | Diagnostic de l'état du bot et de la passerelle Discord                    | Système    |
-| `POST`  | `/notifications/registration-status`    | Notifie le joueur de l'avancement de son inscription                       | Module 1.a |
-| `POST`  | `/notifications/character-sheet-status` | Notifie le joueur de retours sur sa fiche personnage                       | Module 1.b |
-| `POST`  | `/notifications/interview-reminder`     | Relance le(s) joueur(s) pour réserver leur créneau d'entretien             | Module 1.c |
-| `POST`  | `/notifications/ticket-message`         | Notifie le joueur d'un nouveau message dans un ticket dont il fait partie  | Module 1.d |
-| `POST`  | `/notifications/ticket-created`         | Alerte sur un salon Discord externe lors de l'ouverture d'un ticket        | Module 1.e |
-| `POST`  | `/notifications/sanction`               | Envoie une notification de sanction (Avertissement, Suspension, Exclusion) | Module 1.f |
-| `POST`  | `/sanctions/apply`                      | Applique une sanction, sauvegarde les rôles et attribue le rôle sanctionné | Module 2   |
-| `POST`  | `/sanctions/rollback`                   | Lève une sanction, retire le rôle sanctionné et restaure les rôles         | Module 2   |
-| `GET`   | `/sanctions/backups`                    | Liste l'historique et les sauvegardes actives de rôles                     | Module 2   |
-| `POST`  | `/roles/whitelist-class`                | Attribue la whitelist et la classe RP correspondante                       | Module 3.a |
-| `POST`  | `/roles/staff`                          | Synchronise le rôle staff (garantie d'un rôle unique, non-cumul)           | Module 3.b |
-| `GET`   | `/members/:discordId`                   | Inspecte un membre Discord (rôles, avatar, statut sanctionné)              | Utilitaire |
+| Méthode | Route                                      | Description                                                                | Module     |
+| :------ | :----------------------------------------- | :------------------------------------------------------------------------- | :--------- |
+| `GET`   | `/health`                                  | Diagnostic de l'état du bot et de la passerelle Discord                    | Système    |
+| `POST`  | `/notifications/registration-status`       | Notifie le joueur de l'avancement de son inscription (inclut village)      | Module 1.a |
+| `POST`  | `/notifications/broadcast-village-invites` | Diffuse en DM à tous les whitelistés l'invitation à leur village           | Module 1.a |
+| `POST`  | `/notifications/character-sheet-status`    | Notifie le joueur de retours sur sa fiche personnage                       | Module 1.b |
+| `POST`  | `/notifications/interview-reminder`        | Relance le(s) joueur(s) pour réserver leur créneau d'entretien             | Module 1.c |
+| `POST`  | `/notifications/ticket-message`            | Notifie le joueur d'un nouveau message dans un ticket dont il fait partie  | Module 1.d |
+| `POST`  | `/notifications/ticket-created`            | Alerte sur un salon Discord externe lors de l'ouverture d'un ticket        | Module 1.e |
+| `POST`  | `/notifications/sanction`                  | Envoie une notification de sanction (Avertissement, Suspension, Exclusion) | Module 1.f |
+| `POST`  | `/sanctions/apply`                         | Applique une sanction, sauvegarde les rôles et attribue le rôle sanctionné | Module 2   |
+| `POST`  | `/sanctions/rollback`                      | Lève une sanction, retire le rôle sanctionné et restaure les rôles         | Module 2   |
+| `GET`   | `/sanctions/backups`                       | Liste l'historique et les sauvegardes actives de rôles                     | Module 2   |
+| `POST`  | `/roles/whitelist-class`                   | Attribue la whitelist et la classe RP correspondante                       | Module 3.a |
+| `POST`  | `/roles/staff`                             | Synchronise le rôle staff (garantie d'un rôle unique, non-cumul)           | Module 3.b |
+| `GET`   | `/members/:discordId`                      | Inspecte un membre Discord (rôles, avatar, statut sanctionné)              | Utilitaire |
+| `GET`   | `/villages`                                | Liste les configurations et liens d'invitation des 5 serveurs de villages  | Utilitaire |
 
 ---
 
@@ -143,8 +145,9 @@ Notifie le joueur en message privé lors de l'évolution de son inscription sur 
 ```json
 {
   "discordId": "123456789012345678",
-  "status": "WHITELIST_IN_PROGRESS",
-  "playerSpaceUrl": "https://hyori.fr/espace-joueur"
+  "status": "WHITELISTED",
+  "playerSpaceUrl": "https://hyori.fr/espace-joueur",
+  "assignedClass": "NOBLE"
 }
 ```
 
@@ -153,6 +156,7 @@ Notifie le joueur en message privé lors de l'évolution de son inscription sur 
 - `discordId` (string, requis) : ID Discord de l'utilisateur (17-20 chiffres).
 - `status` (string, requis) : `'NEW' | 'WAITLIST' | 'WHITELIST_IN_PROGRESS' | 'WHITELISTED' | 'REJECTED'`.
 - `playerSpaceUrl` (string, optionnel) : URL personnalisée vers l'espace joueur (par défaut `ATLAS_PLAYER_SPACE_URL`).
+- `assignedClass` (string, optionnel) : Classe RP assignée (`'NOBLE' | 'PAYSAN' | 'PECHEUR' | 'MINEUR' | 'ERUDIT'`). Si fournie pour le statut `WHITELISTED`, le bot injecte automatiquement le lien permanent d'invitation vers le serveur Discord du village et ajoute un bouton d'accès direct.
 
 #### Réponse HTTP 200 (Succès d'envoi) :
 
@@ -182,6 +186,41 @@ Notifie le joueur en message privé lors de l'évolution de son inscription sur 
   "notified": false,
   "dmClosed": true,
   "error": "Direct messages are disabled or the bot is blocked by the user"
+}
+```
+
+---
+
+### 4.2b. `POST /api/v1/notifications/broadcast-village-invites`
+
+Analyse les rôles de l'intégralité des membres sur le serveur Discord communautaire "Hyori RP" (`discordConfig.guilds.community.id`). Filtre tous les membres possédant le rôle Whitelist (`discordConfig.roles.whitelist`), détecte leur rôle de classe et leur envoie un message privé contenant le lien permanent d'invitation vers le serveur Discord de leur village.
+
+#### Corps de la requête (JSON) :
+
+```json
+{}
+```
+
+#### Réponse HTTP 200 :
+
+```json
+{
+  "success": true,
+  "summary": {
+    "totalWhitelisted": 25,
+    "sent": 22,
+    "dmClosed": 2,
+    "failed": 0,
+    "noClassRole": 1,
+    "byClass": {
+      "NOBLE": 5,
+      "PECHEUR": 4,
+      "PAYSAN": 6,
+      "MINEUR": 4,
+      "ERUDIT": 3
+    }
+  },
+  "message": "22 invitation(s) envoyée(s) avec succès sur 25 joueur(s) whitelisté(s)."
 }
 ```
 

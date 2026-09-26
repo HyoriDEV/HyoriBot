@@ -17,7 +17,7 @@ export function createPlayerSpaceButton(customUrl, customLabel) {
   const button = new ButtonBuilder().setLabel(label).setStyle(ButtonStyle.Link).setURL(url);
   return new ActionRowBuilder().addComponents(button);
 }
-export function buildRegistrationStatusEmbed(status, customUrl, override = null) {
+export function buildRegistrationStatusEmbed(status, customUrl, override = null, village = null) {
   const env = getEnv();
   const url = customUrl || env.ATLAS_PLAYER_SPACE_URL;
   const embed = createHyoriEmbed();
@@ -29,13 +29,15 @@ export function buildRegistrationStatusEmbed(status, customUrl, override = null)
           "Votre candidature pour rejoindre **Hyori RP** a été acceptée par l'équipe staff.\n\nVous pouvez dès à présent accéder à votre espace joueur pour préparer votre fiche personnage et réserver votre entretien vocal."
         );
       break;
-    case 'WHITELISTED':
-      embed
-        .setTitle('Whitelist — Validation définitive')
-        .setDescription(
-          "Félicitations, votre inscription sur **Hyori RP** a été validée !\n\nVous disposez désormais d'un accès complet au site, au serveur Discord et au serveur Minecraft."
-        );
+    case 'WHITELISTED': {
+      let desc =
+        "Félicitations, votre inscription sur **Hyori RP** a été validée !\n\nVous disposez désormais d'un accès complet au site, au serveur Discord communautaire et au serveur Minecraft.";
+      if (village?.inviteUrl) {
+        desc += `\n\n🏛️ **Serveur Discord de votre classe (${village.name}) :**\nRejoignez vos concitoyens sur le serveur de votre village :\n${village.inviteUrl}`;
+      }
+      embed.setTitle('Whitelist — Validation définitive').setDescription(desc);
       break;
+    }
     case 'REJECTED':
       embed
         .setTitle('Inscription — Candidature non retenue')
@@ -55,16 +57,61 @@ export function buildRegistrationStatusEmbed(status, customUrl, override = null)
     embed.setTitle(override.title);
   }
   if (override?.description) {
-    embed.setDescription(override.description);
+    let desc = override.description;
+    if (status === 'WHITELISTED' && village?.inviteUrl && !desc.includes(village.inviteUrl)) {
+      desc += `\n\n🏛️ **Serveur Discord de votre classe (${village.name}) :**\n${village.inviteUrl}`;
+    }
+    embed.setDescription(desc);
   }
   const buttonUrl = override?.buttonUrl || url;
-  const buttonLabel = override?.buttonLabel || undefined;
-  const row = createPlayerSpaceButton(buttonUrl, buttonLabel);
+  const buttonLabel = override?.buttonLabel || 'Accéder à mon espace joueur';
+  const buttons = [
+    new ButtonBuilder().setLabel(buttonLabel).setStyle(ButtonStyle.Link).setURL(buttonUrl),
+  ];
+
+  if (status === 'WHITELISTED' && village?.inviteUrl) {
+    buttons.push(
+      new ButtonBuilder()
+        .setLabel(`Discord — ${village.name}`)
+        .setStyle(ButtonStyle.Link)
+        .setURL(village.inviteUrl)
+    );
+  }
+
+  const row = new ActionRowBuilder().addComponents(buttons);
   return {
     embed,
     components: [row],
   };
 }
+
+/**
+ * Construit l'embed et le bouton pour l'invitation au serveur Discord d'un village.
+ * @param {{ village: object, memberName?: string }} params
+ */
+export function buildVillageInviteNotificationEmbed({ village, memberName }) {
+  const embed = createHyoriEmbed()
+    .setTitle(`Serveur Discord — ${village.name}`)
+    .setDescription(
+      `Bonjour${memberName ? ` **${memberName}**` : ''},\n\n` +
+        `En tant que joueur whitelisté de **Hyori RP** affilié à la classe **${village.name}** (${village.class}), voici le lien d'invitation permanent vers le serveur Discord réservé à votre village :\n\n` +
+        `🔗 **${village.inviteUrl}**\n\n` +
+        `Ce serveur privé permet aux habitants de votre village d'échanger, d'organiser la vie communautaire et de suivre les annonces locales.`
+    );
+
+  const button = new ButtonBuilder()
+    .setLabel(`Rejoindre ${village.name}`)
+    .setStyle(ButtonStyle.Link)
+    .setURL(village.inviteUrl);
+
+  const row = new ActionRowBuilder().addComponents(button);
+
+  return {
+    embed,
+    components: [row],
+  };
+}
+
 export function buildCharacterSheetStatusEmbed(status, customUrl, override = null) {
   const env = getEnv();
   const url = customUrl || env.ATLAS_PLAYER_SPACE_URL;
