@@ -81,6 +81,7 @@ export const ApplySanctionSchema = z.object({
   durationString: z.string().max(100).optional(),
   notifyDm: z.boolean().default(true),
   metadata: z.record(z.unknown()).optional(),
+  ignoreIfNotInGuild: z.boolean().optional(),
 });
 export const RollbackSanctionSchema = z.object({
   discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format'),

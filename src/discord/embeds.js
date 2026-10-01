@@ -42,7 +42,7 @@ export function buildRegistrationStatusEmbed(status, customUrl, override = null,
       embed
         .setTitle('Inscription — Candidature non retenue')
         .setDescription(
-          "Votre candidature pour rejoindre **Hyori RP** n'a pas été retenue par l'équipe staff.\n\nVous pouvez consulter les détails depuis votre espace joueur."
+          "Ta candidature pour rejoindre **Hyori RP** n'a pas été retenue par l'équipe staff.\n\nTu peux consulter les détails depuis ton espace joueur."
         );
       break;
     case 'WAITLIST':

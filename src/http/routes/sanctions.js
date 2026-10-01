@@ -23,8 +23,16 @@ export async function sanctionRoutes(fastify) {
         details: parseResult.error.flatten(),
       });
     }
-    const { discordId, type, reason, durationSeconds, durationString, notifyDm, metadata } =
-      parseResult.data;
+    const {
+      discordId,
+      type,
+      reason,
+      durationSeconds,
+      durationString,
+      notifyDm,
+      metadata,
+      ignoreIfNotInGuild,
+    } = parseResult.data;
     const result = await sanctionService.applySanction({
       discordId,
       type,
@@ -33,6 +41,17 @@ export async function sanctionRoutes(fastify) {
       metadata,
     });
     if (!result.success) {
+      if (ignoreIfNotInGuild && result.error && result.error.includes('not found in the guild')) {
+        logger.info(
+          { discordId },
+          'Member not found in guild, skipping sanction application as ignoreIfNotInGuild is true'
+        );
+        return reply.status(200).send({
+          success: true,
+          inGuild: false,
+          message: 'Member not found in guild, sanction skipped',
+        });
+      }
       return reply.status(500).send({
         success: false,
         statusCode: 500,
@@ -51,6 +70,7 @@ export async function sanctionRoutes(fastify) {
     }
     return reply.status(200).send({
       ...result,
+      inGuild: true,
       dmNotification,
     });
   });
