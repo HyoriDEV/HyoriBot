@@ -73,6 +73,8 @@ export const TicketCreatedNotificationSchema = z.object({
   ticketStaffUrl: z.string().url('ticketStaffUrl must be a valid URL').optional().nullable(),
   override: EmbedOverrideSchema.optional().nullable(),
 });
+
+export const TicketRpSummonedNotificationSchema = TicketCreatedNotificationSchema;
 export const ApplySanctionSchema = z.object({
   discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format'),
   type: z.enum(['SUSPENSION', 'EXCLUSION']),

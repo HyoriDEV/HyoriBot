@@ -71,12 +71,14 @@ export const discordConfig = {
     },
 
     ticketMention: '1552510616869015604',
+    rpStaffMention: process.env.DISCORD_RP_STAFF_ROLE_ID || null,
   },
 
   channels: {
     modLogs: '1545033853809332324',
     memberLogs: '1545033895777673297',
     ticketNotifications: '1552506859670347776',
+    ticketRpNotifications: process.env.DISCORD_TICKET_RP_CHANNEL_ID || '1552506859670347776',
   },
 };
 
