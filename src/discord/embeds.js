@@ -292,3 +292,43 @@ export function buildTicketCreatedNotificationEmbed({
     components: [row],
   };
 }
+
+export function buildTicketRpSummonedNotificationEmbed({
+  ticketSubject,
+  ticketCategory,
+  authorName,
+  ticketDescription,
+  ticketStaffUrl,
+  override = null,
+}) {
+  const env = getEnv();
+  const url = ticketStaffUrl || `${env.ATLAS_BASE_URL}/staff/tickets`;
+  const embed = createHyoriEmbed();
+
+  embed.setTitle(`Convocation Suivi RP — ${ticketCategory || 'Demande'}`);
+
+  let description = `L'équipe de **Suivi RP** a été convoquée sur le ticket de **${authorName}**.\n\n**Catégorie :** ${ticketCategory}\n**Sujet :** ${ticketSubject}`;
+  if (ticketDescription && ticketDescription.trim()) {
+    const excerpt =
+      ticketDescription.length > 300 ? `${ticketDescription.slice(0, 297)}...` : ticketDescription;
+    description += `\n\n> ${excerpt.replace(/\n+/g, '\n> ')}`;
+  }
+  description += "\n\nUn administrateur requiert votre intervention ou votre avis sur ce ticket.";
+
+  embed.setDescription(description);
+
+  if (override?.title) {
+    embed.setTitle(override.title);
+  }
+  if (override?.description) {
+    embed.setDescription(override.description);
+  }
+
+  const buttonUrl = override?.buttonUrl || url;
+  const buttonLabel = override?.buttonLabel || 'Consulter le ticket';
+  const row = createPlayerSpaceButton(buttonUrl, buttonLabel);
+  return {
+    embed,
+    components: [row],
+  };
+}

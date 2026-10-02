@@ -70,13 +70,15 @@ export const discordConfig = {
       ADMIN: '1539770126314901635',
     },
 
-    ticketMention: '1552510616869015604',
+    ticketMention: null,
+    rpStaffMention: null,
   },
 
   channels: {
     modLogs: '1545033853809332324',
     memberLogs: '1545033895777673297',
     ticketNotifications: '1552506859670347776',
+    ticketRpNotifications: '1555399133529903154',
   },
 };
 
