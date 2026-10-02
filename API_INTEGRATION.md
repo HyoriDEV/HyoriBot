@@ -85,6 +85,7 @@ export async function callDiscordBot<TResponse = unknown>(
 | `POST`  | `/notifications/interview-reminder`        | Relance le(s) joueur(s) pour réserver leur créneau d'entretien             | Module 1.c |
 | `POST`  | `/notifications/ticket-message`            | Notifie le joueur d'un nouveau message dans un ticket dont il fait partie  | Module 1.d |
 | `POST`  | `/notifications/ticket-created`            | Alerte sur un salon Discord externe lors de l'ouverture d'un ticket        | Module 1.e |
+| `POST`  | `/notifications/ticket-rp-summoned`        | Alerte sur le salon Suivi RP dédié lors de la convocation sur un ticket    | Module 1.e |
 | `POST`  | `/notifications/sanction`                  | Envoie une notification de sanction (Avertissement, Suspension, Exclusion) | Module 1.f |
 | `POST`  | `/sanctions/apply`                         | Applique une sanction, sauvegarde les rôles et attribue le rôle sanctionné | Module 2   |
 | `POST`  | `/sanctions/rollback`                      | Lève une sanction, retire le rôle sanctionné et restaure les rôles         | Module 2   |
@@ -414,7 +415,34 @@ Envoie une notification dans un salon Discord (pouvant être situé sur un autre
 
 ---
 
-### 4.8. `POST /api/v1/sanctions/apply`
+### 4.8. `POST /api/v1/notifications/ticket-rp-summoned`
+
+Envoie une notification dans le salon Discord Suivi RP dédié (`channels.ticketRpNotifications` dans `discordConfig.js` ou salon surchargé dans la requête) lorsqu'un ticket est rendu accessible ou convoque le staff Suivi RP. Le format d'embed est identique à celui d'ouverture de ticket (`ticket-created`).
+
+#### Corps de la requête (JSON) :
+
+Même format que `ticket-created` :
+```json
+{
+  "channelId": "123456789012345678",
+  "mentionRoleId": "987654321098765432",
+  "ticketId": "cm1234567890",
+  "ticketSubject": "Demande de concession de terrain",
+  "ticketCategory": "Demande RP",
+  "authorName": "Joueur_Alex",
+  "ticketDescription": "Bonjour, je sollicite un terrain pour implanter une forge...",
+  "ticketStaffUrl": "https://hyori-rp.fr/staff/tickets/cm1234567890",
+  "override": {
+    "title": "Nouveau Ticket — {category}",
+    "description": "Un ticket a été ouvert par {author}...",
+    "buttonLabel": "Consulter le ticket"
+  }
+}
+```
+
+---
+
+### 4.9. `POST /api/v1/sanctions/apply`
 
 Applique une sanction lourde (`SUSPENSION` ou `EXCLUSION`) sur Discord avec le cycle complet :
 
