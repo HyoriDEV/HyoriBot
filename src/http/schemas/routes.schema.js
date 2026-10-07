@@ -74,6 +74,13 @@ export const TicketCreatedNotificationSchema = z.object({
   override: EmbedOverrideSchema.optional().nullable(),
 });
 
+export const TICKET_TEAMS = ['RP_TRACKING', 'CONFLICT_MANAGEMENT', 'EVENT', 'DEVELOPER'];
+
+export const TicketTeamSummonedNotificationSchema = TicketCreatedNotificationSchema.extend({
+  team: z.enum(TICKET_TEAMS),
+});
+
+// Ancienne route `ticket-rp-summoned` : même charge utile, équipe implicite.
 export const TicketRpSummonedNotificationSchema = TicketCreatedNotificationSchema;
 export const ApplySanctionSchema = z.object({
   discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format'),

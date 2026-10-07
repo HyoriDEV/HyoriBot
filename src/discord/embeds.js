@@ -292,8 +292,3 @@ export function buildTicketCreatedNotificationEmbed({
     components: [row],
   };
 }
-
-export function buildTicketRpSummonedNotificationEmbed(params) {
-  return buildTicketCreatedNotificationEmbed(params);
-}
-

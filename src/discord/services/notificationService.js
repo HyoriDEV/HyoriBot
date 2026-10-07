@@ -11,7 +11,6 @@ import {
   buildSanctionNotificationEmbed,
   buildTicketMessageNotificationEmbed,
   buildTicketCreatedNotificationEmbed,
-  buildTicketRpSummonedNotificationEmbed,
 } from '../embeds.js';
 export class NotificationService {
   async sendDirectMessage(discordId, actionName, messagePayload) {
@@ -249,36 +248,56 @@ export class NotificationService {
       components,
     });
   }
-  async notifyTicketCreated({
-    channelId,
-    mentionRoleId,
-    ticketId,
-    ticketSubject,
-    ticketCategory,
-    authorName,
-    ticketDescription,
-    ticketStaffUrl,
-    override = null,
-  }) {
-    const targetChannelId = channelId || discordConfig.channels.ticketNotifications;
-    const roleId = mentionRoleId || discordConfig.roles.ticketMention;
+  async notifyTicketCreated({ channelId, mentionRoleId, ...ticket }) {
+    return this.sendTicketChannelNotification({
+      label: 'ticket-created',
+      targetChannelId: channelId || discordConfig.channels.ticketNotifications,
+      roleId: mentionRoleId || discordConfig.roles.ticketMention,
+      ticket,
+    });
+  }
+
+  /**
+   * Transmet un ticket à une équipe sur son salon dédié. L'embed est celui d'une ouverture de
+   * ticket, et aucun repli sur le salon tickets général n'est fait : sans salon configuré pour
+   * l'équipe, rien n'est envoyé.
+   */
+  async notifyTicketTeamSummoned({ team, channelId, mentionRoleId, ...ticket }) {
+    return this.sendTicketChannelNotification({
+      label: `ticket-team-summoned:${team}`,
+      targetChannelId: channelId || discordConfig.channels.ticketTeamNotifications[team],
+      roleId: mentionRoleId || discordConfig.roles.ticketTeamMention[team],
+      ticket,
+    });
+  }
+
+  async sendTicketChannelNotification({ label, targetChannelId, roleId, ticket }) {
+    const {
+      ticketId,
+      ticketSubject,
+      ticketCategory,
+      authorName,
+      ticketDescription,
+      ticketStaffUrl,
+      override = null,
+    } = ticket;
 
     if (!targetChannelId) {
-      logger.warn({ ticketId }, 'No channel configured for ticket-created notification');
+      logger.warn({ ticketId }, `No channel configured for ${label} notification`);
       return {
         success: false,
         notified: false,
-        error: 'No target channel configured for ticket creation notification',
+        error: `No target channel configured for ${label} notification`,
       };
     }
 
-    return discordQueue.enqueue(`notifyTicketCreated:${ticketId}`, async () => {
+    return discordQueue.enqueue(`${label}:${ticketId}`, async () => {
       try {
         const channel = await discordBot.client.channels.fetch(targetChannelId);
         if (!channel || !channel.isTextBased()) {
           logger.warn(
             { targetChannelId, ticketId },
-            'Target channel not found or not text-based for ticket-created notification'
+            `Target channel not found or not text-based for ${label} notification`
           );
           return {
             success: false,
@@ -306,100 +325,18 @@ export class NotificationService {
 
         logger.info(
           { targetChannelId, ticketId, roleId },
-          'Ticket creation notification sent successfully to channel'
+          `${label} notification sent successfully to channel`
         );
 
         return {
           success: true,
           notified: true,
-          message: 'Ticket creation notification sent successfully to channel',
+          message: `${label} notification sent successfully to channel`,
         };
       } catch (error) {
         logger.error(
           { targetChannelId, ticketId, error },
-          'Failed to send ticket creation notification to channel'
-        );
-        return {
-          success: false,
-          notified: false,
-          error: error?.message || 'Failed to send message to Discord channel',
-        };
-      }
-    });
-  }
-
-  async notifyTicketRpSummoned({
-    channelId,
-    mentionRoleId,
-    ticketId,
-    ticketSubject,
-    ticketCategory,
-    authorName,
-    ticketDescription,
-    ticketStaffUrl,
-    override = null,
-  }) {
-    const targetChannelId =
-      channelId ||
-      discordConfig.channels.ticketRpNotifications ||
-      discordConfig.channels.ticketNotifications;
-    const roleId = mentionRoleId || discordConfig.roles.rpStaffMention;
-
-    if (!targetChannelId) {
-      logger.warn({ ticketId }, 'No channel configured for ticket-rp-summoned notification');
-      return {
-        success: false,
-        notified: false,
-        error: 'No target channel configured for ticket RP summoned notification',
-      };
-    }
-
-    return discordQueue.enqueue(`notifyTicketRpSummoned:${ticketId}`, async () => {
-      try {
-        const channel = await discordBot.client.channels.fetch(targetChannelId);
-        if (!channel || !channel.isTextBased()) {
-          logger.warn(
-            { targetChannelId, ticketId },
-            'Target channel not found or not text-based for ticket-rp-summoned notification'
-          );
-          return {
-            success: false,
-            notified: false,
-            error: `Target channel ${targetChannelId} not found or not text-based`,
-          };
-        }
-
-        const { embed, components } = buildTicketRpSummonedNotificationEmbed({
-          ticketSubject,
-          ticketCategory,
-          authorName,
-          ticketDescription,
-          ticketStaffUrl,
-          override,
-        });
-
-        const content = roleId ? `<@&${roleId}>` : undefined;
-
-        await channel.send({
-          content,
-          embeds: [embed],
-          components,
-        });
-
-        logger.info(
-          { targetChannelId, ticketId, roleId },
-          'Ticket RP summoned notification sent successfully to channel'
-        );
-
-        return {
-          success: true,
-          notified: true,
-          message: 'Ticket RP summoned notification sent successfully to channel',
-        };
-      } catch (error) {
-        logger.error(
-          { targetChannelId, ticketId, error },
-          'Failed to send ticket RP summoned notification to channel'
+          `Failed to send ${label} notification to channel`
         );
         return {
           success: false,

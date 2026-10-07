@@ -6,6 +6,7 @@ import {
   SanctionNotificationSchema,
   TicketMessageNotificationSchema,
   TicketCreatedNotificationSchema,
+  TicketTeamSummonedNotificationSchema,
   TicketRpSummonedNotificationSchema,
 } from '../schemas/routes.schema.js';
 import { notificationService } from '../../discord/services/notificationService.js';
@@ -177,7 +178,31 @@ export async function notificationRoutes(fastify) {
         details: parseResult.error.flatten(),
       });
     }
-    const result = await notificationService.notifyTicketRpSummoned(parseResult.data);
+    const result = await notificationService.notifyTicketTeamSummoned({
+      ...parseResult.data,
+      team: 'RP_TRACKING',
+    });
+    return reply.status(200).send(result);
+  });
+
+  fastify.post('/notifications/ticket-team-summoned', async (request, reply) => {
+    const parseResult = TicketTeamSummonedNotificationSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      logger.warn(
+        {
+          errors: parseResult.error.format(),
+        },
+        'Invalid payload for ticket-team-summoned notification'
+      );
+      return reply.status(400).send({
+        success: false,
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'Invalid request payload',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const result = await notificationService.notifyTicketTeamSummoned(parseResult.data);
     return reply.status(200).send(result);
   });
 
