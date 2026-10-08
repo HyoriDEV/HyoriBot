@@ -71,14 +71,30 @@ export const discordConfig = {
     },
 
     ticketMention: null,
-    rpStaffMention: null,
+    waitlistMention: null,
+
+    // Rôle mentionné lorsqu'un ticket est transmis à une équipe (null = aucune mention).
+    ticketTeamMention: {
+      RP_TRACKING: null,
+      CONFLICT_MANAGEMENT: null,
+      EVENT: null,
+      DEVELOPER: null,
+    },
   },
 
   channels: {
     modLogs: '1545033853809332324',
     memberLogs: '1545033895777673297',
     ticketNotifications: '1552506859670347776',
-    ticketRpNotifications: '1555399133529903154',
+    waitlistNotifications: '1557096333683331172',
+
+    // Salon de chaque équipe pour les tickets qui lui sont transmis (null = non configuré).
+    ticketTeamNotifications: {
+      RP_TRACKING: '1555399133529903154',
+      CONFLICT_MANAGEMENT: null,
+      EVENT: '1557676908433637386',
+      DEVELOPER: '1557676856847900752',
+    },
   },
 };
 

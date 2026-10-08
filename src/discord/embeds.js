@@ -293,7 +293,44 @@ export function buildTicketCreatedNotificationEmbed({
   };
 }
 
-export function buildTicketRpSummonedNotificationEmbed(params) {
-  return buildTicketCreatedNotificationEmbed(params);
-}
+export function buildWaitlistRegistrationNotificationEmbed({
+  playerName,
+  minecraftUsername,
+  discordId,
+  waitlistStaffUrl,
+  avatarUrl = null,
+  override = null,
+}) {
+  const env = getEnv();
+  const url = waitlistStaffUrl || `${env.ATLAS_BASE_URL}/staff/waitlist`;
+  const embed = createHyoriEmbed();
 
+  embed.setTitle("Nouvelle Inscription — Liste d'attente");
+
+  let description =
+    `Nouveau inscrit sur la liste d'attente..\n\n` +
+    `**Joueur :** ${playerName || 'Inconnu'}${discordId ? ` (<@${discordId}>)` : ''}\n` +
+    `**Compte Minecraft :** \`${minecraftUsername || 'Non renseigné'}\`\n\n` +
+    `Consulte la liste d'attente depuis l'espace staff.`;
+
+  embed.setDescription(description);
+
+  if (avatarUrl) {
+    embed.setThumbnail(avatarUrl);
+  }
+
+  if (override?.title) {
+    embed.setTitle(override.title);
+  }
+  if (override?.description) {
+    embed.setDescription(override.description);
+  }
+
+  const buttonUrl = override?.buttonUrl || url;
+  const buttonLabel = override?.buttonLabel || "Consulter la liste d'attente";
+  const row = createPlayerSpaceButton(buttonUrl, buttonLabel);
+  return {
+    embed,
+    components: [row],
+  };
+}
