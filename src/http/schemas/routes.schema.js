@@ -82,6 +82,23 @@ export const TicketTeamSummonedNotificationSchema = TicketCreatedNotificationSch
 
 // Ancienne route `ticket-rp-summoned` : même charge utile, équipe implicite.
 export const TicketRpSummonedNotificationSchema = TicketCreatedNotificationSchema;
+
+export const WaitlistRegistrationNotificationSchema = z.object({
+  channelId: z.string().regex(discordIdRegex, 'Invalid Discord ID format').optional().nullable(),
+  mentionRoleId: z
+    .string()
+    .regex(discordIdRegex, 'Invalid Discord ID format')
+    .optional()
+    .nullable(),
+  discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format').optional().nullable(),
+  playerName: z.string().min(1, 'playerName must not be empty').max(100),
+  minecraftUsername: z.string().max(50).optional().nullable(),
+  minecraftUuid: z.string().max(64).optional().nullable(),
+  avatarUrl: z.string().url('avatarUrl must be a valid URL').optional().nullable(),
+  waitlistStaffUrl: z.string().url('waitlistStaffUrl must be a valid URL').optional().nullable(),
+  override: EmbedOverrideSchema.optional().nullable(),
+});
+
 export const ApplySanctionSchema = z.object({
   discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format'),
   type: z.enum(['SUSPENSION', 'EXCLUSION']),

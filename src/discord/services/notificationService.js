@@ -11,6 +11,7 @@ import {
   buildSanctionNotificationEmbed,
   buildTicketMessageNotificationEmbed,
   buildTicketCreatedNotificationEmbed,
+  buildWaitlistRegistrationNotificationEmbed,
 } from '../embeds.js';
 export class NotificationService {
   async sendDirectMessage(discordId, actionName, messagePayload) {
@@ -337,6 +338,103 @@ export class NotificationService {
         logger.error(
           { targetChannelId, ticketId, error },
           `Failed to send ${label} notification to channel`
+        );
+        return {
+          success: false,
+          notified: false,
+          error: error?.message || 'Failed to send message to Discord channel',
+        };
+      }
+    });
+  }
+
+  /**
+   * Notifie les administrateurs sur le salon Discord dédié du serveur staff
+   * lors de l'inscription d'un nouveau joueur sur la liste d'attente.
+   */
+  async notifyWaitlistRegistration({
+    channelId,
+    mentionRoleId,
+    discordId,
+    playerName,
+    minecraftUsername,
+    minecraftUuid,
+    avatarUrl,
+    waitlistStaffUrl,
+    override = null,
+  }) {
+    const targetChannelId = channelId || discordConfig.channels.waitlistNotifications;
+    const roleId =
+      mentionRoleId !== undefined ? mentionRoleId : discordConfig.roles.waitlistMention;
+
+    if (!targetChannelId) {
+      logger.warn('No channel configured for waitlist-registration notification');
+      return {
+        success: false,
+        notified: false,
+        error: 'No target channel configured for waitlist-registration notification',
+      };
+    }
+
+    const queueKey = `waitlist-registration:${discordId || playerName || Date.now()}`;
+    return discordQueue.enqueue(queueKey, async () => {
+      try {
+        const channel = await discordBot.client.channels.fetch(targetChannelId);
+        if (!channel || !channel.isTextBased()) {
+          logger.warn(
+            { targetChannelId },
+            'Target channel not found or not text-based for waitlist-registration notification'
+          );
+          return {
+            success: false,
+            notified: false,
+            error: `Target channel ${targetChannelId} not found or not text-based`,
+          };
+        }
+
+        let effectiveAvatarUrl = avatarUrl;
+        if (!effectiveAvatarUrl && discordId) {
+          try {
+            const user = await discordBot.client.users.fetch(discordId);
+            if (user) {
+              effectiveAvatarUrl = user.displayAvatarURL({ size: 256 });
+            }
+          } catch {
+            // Non bloquant
+          }
+        }
+
+        const { embed, components } = buildWaitlistRegistrationNotificationEmbed({
+          playerName,
+          minecraftUsername,
+          discordId,
+          waitlistStaffUrl,
+          avatarUrl: effectiveAvatarUrl,
+          override,
+        });
+
+        const content = roleId ? `<@&${roleId}>` : undefined;
+
+        await channel.send({
+          content,
+          embeds: [embed],
+          components,
+        });
+
+        logger.info(
+          { targetChannelId, playerName, roleId },
+          'Waitlist registration notification sent successfully to channel'
+        );
+
+        return {
+          success: true,
+          notified: true,
+          message: 'Waitlist registration notification sent successfully to channel',
+        };
+      } catch (error) {
+        logger.error(
+          { targetChannelId, error },
+          'Failed to send waitlist-registration notification to channel'
         );
         return {
           success: false,

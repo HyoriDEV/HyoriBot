@@ -8,6 +8,7 @@ import {
   TicketCreatedNotificationSchema,
   TicketTeamSummonedNotificationSchema,
   TicketRpSummonedNotificationSchema,
+  WaitlistRegistrationNotificationSchema,
 } from '../schemas/routes.schema.js';
 import { notificationService } from '../../discord/services/notificationService.js';
 import { discordConfig } from '../../config/discordConfig.js';
@@ -203,6 +204,27 @@ export async function notificationRoutes(fastify) {
       });
     }
     const result = await notificationService.notifyTicketTeamSummoned(parseResult.data);
+    return reply.status(200).send(result);
+  });
+
+  fastify.post('/notifications/waitlist-registration', async (request, reply) => {
+    const parseResult = WaitlistRegistrationNotificationSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      logger.warn(
+        {
+          errors: parseResult.error.format(),
+        },
+        'Invalid payload for waitlist-registration notification'
+      );
+      return reply.status(400).send({
+        success: false,
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'Invalid request payload',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const result = await notificationService.notifyWaitlistRegistration(parseResult.data);
     return reply.status(200).send(result);
   });
 
