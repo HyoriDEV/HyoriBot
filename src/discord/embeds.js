@@ -253,6 +253,50 @@ export function buildTicketMessageNotificationEmbed(
     components: [row],
   };
 }
+
+export function buildRpTrackingMessageNotificationEmbed({
+  authorName,
+  messagePreview,
+  rpTrackingUrl,
+  characterName = null,
+  override = null,
+}) {
+  const env = getEnv();
+  const url = rpTrackingUrl || `${env.ATLAS_PLAYER_SPACE_URL}/rp-tracking`;
+  const embed = createHyoriEmbed();
+
+  embed.setTitle(
+    characterName
+      ? `Suivi RP — Nouveau message (${characterName})`
+      : 'Suivi RP — Nouveau message'
+  );
+
+  let description = `Un nouveau message a été posté par **${authorName}** dans votre suivi RP.`;
+  if (messagePreview && messagePreview.trim()) {
+    const cleanPreview =
+      messagePreview.length > 300 ? `${messagePreview.slice(0, 297)}...` : messagePreview;
+    description += `\n\n> ${cleanPreview.replace(/\n+/g, '\n> ')}`;
+  }
+  description += "\n\nRendez-vous sur votre espace joueur pour consulter l'échange et y répondre.";
+
+  embed.setDescription(description);
+
+  if (override?.title) {
+    embed.setTitle(override.title);
+  }
+  if (override?.description) {
+    embed.setDescription(override.description);
+  }
+
+  const buttonUrl = override?.buttonUrl || url;
+  const buttonLabel = override?.buttonLabel || 'Consulter mon suivi RP';
+  const row = createPlayerSpaceButton(buttonUrl, buttonLabel);
+  return {
+    embed,
+    components: [row],
+  };
+}
+
 export function buildTicketCreatedNotificationEmbed({
   ticketSubject,
   ticketCategory,

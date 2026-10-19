@@ -5,6 +5,7 @@ import {
   InterviewReminderNotificationSchema,
   SanctionNotificationSchema,
   TicketMessageNotificationSchema,
+  RpTrackingMessageNotificationSchema,
   TicketCreatedNotificationSchema,
   TicketTeamSummonedNotificationSchema,
   TicketRpSummonedNotificationSchema,
@@ -139,6 +140,26 @@ export async function notificationRoutes(fastify) {
       });
     }
     const result = await notificationService.notifyTicketMessage(parseResult.data);
+    return reply.status(200).send(result);
+  });
+  fastify.post('/notifications/rp-tracking-message', async (request, reply) => {
+    const parseResult = RpTrackingMessageNotificationSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      logger.warn(
+        {
+          errors: parseResult.error.format(),
+        },
+        'Invalid payload for rp-tracking-message notification'
+      );
+      return reply.status(400).send({
+        success: false,
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'Invalid request payload',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const result = await notificationService.notifyRpTrackingMessage(parseResult.data);
     return reply.status(200).send(result);
   });
   fastify.post('/notifications/ticket-created', async (request, reply) => {

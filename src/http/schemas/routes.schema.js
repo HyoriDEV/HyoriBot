@@ -58,6 +58,15 @@ export const TicketMessageNotificationSchema = z.object({
   override: EmbedOverrideSchema.optional().nullable(),
 });
 
+export const RpTrackingMessageNotificationSchema = z.object({
+  discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format'),
+  authorName: z.string().min(1, 'authorName must not be empty').max(100),
+  messagePreview: z.string().max(1000).optional().nullable(),
+  rpTrackingUrl: z.string().url('rpTrackingUrl must be a valid URL').optional(),
+  characterName: z.string().max(100).optional().nullable(),
+  override: EmbedOverrideSchema.optional().nullable(),
+});
+
 export const TicketCreatedNotificationSchema = z.object({
   channelId: z.string().regex(discordIdRegex, 'Invalid Discord ID format').optional().nullable(),
   mentionRoleId: z
