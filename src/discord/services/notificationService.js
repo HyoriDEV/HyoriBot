@@ -10,6 +10,7 @@ import {
   buildInterviewReminderEmbed,
   buildSanctionNotificationEmbed,
   buildTicketMessageNotificationEmbed,
+  buildRpTrackingMessageNotificationEmbed,
   buildTicketCreatedNotificationEmbed,
   buildWaitlistRegistrationNotificationEmbed,
 } from '../embeds.js';
@@ -245,6 +246,26 @@ export class NotificationService {
       override
     );
     return this.sendDirectMessage(discordId, `notifyTicketMessage:${ticketId}`, {
+      embeds: [embed],
+      components,
+    });
+  }
+  async notifyRpTrackingMessage({
+    discordId,
+    authorName,
+    messagePreview,
+    rpTrackingUrl,
+    characterName = null,
+    override = null,
+  }) {
+    const { embed, components } = buildRpTrackingMessageNotificationEmbed({
+      authorName,
+      messagePreview,
+      rpTrackingUrl,
+      characterName,
+      override,
+    });
+    return this.sendDirectMessage(discordId, `notifyRpTrackingMessage:${discordId}`, {
       embeds: [embed],
       components,
     });
