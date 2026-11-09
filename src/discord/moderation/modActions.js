@@ -437,7 +437,13 @@ export class ModActions {
       };
     }
   }
-  async executeClear({ channel, moderator, amount = 10, filterUser = null, commandName = 'clear' }) {
+  async executeClear({
+    channel,
+    moderator,
+    amount = 10,
+    filterUser = null,
+    commandName = 'clear',
+  }) {
     if (!channel || !channel.isTextBased()) {
       return {
         success: false,
@@ -453,9 +459,7 @@ export class ModActions {
       });
 
       const fetched = await channel.messages.fetch({ limit: Math.min(Math.max(amount, 1), 100) });
-      const toDelete = filterUser
-        ? fetched.filter(m => m.author.id === filterUser.id)
-        : fetched;
+      const toDelete = filterUser ? fetched.filter(m => m.author.id === filterUser.id) : fetched;
 
       if (toDelete.size === 0) {
         return {
@@ -479,7 +483,11 @@ export class ModActions {
           : `Suppression de ${deleted.size} message(s)`,
         extraFields: [
           { name: 'Nombre supprimé', value: `${deleted.size}`, inline: true },
-          { name: 'Cible', value: filterUser ? `<@${filterUser.id}>` : 'Tous les messages', inline: true },
+          {
+            name: 'Cible',
+            value: filterUser ? `<@${filterUser.id}>` : 'Tous les messages',
+            inline: true,
+          },
         ],
       });
 

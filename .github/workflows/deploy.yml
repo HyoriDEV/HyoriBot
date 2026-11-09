@@ -29,9 +29,9 @@ jobs:
             set -e
             echo "🚀 [CI/CD] Connexion au serveur de production établie."
             cd "${{ secrets.DEPLOY_PATH }}"
-            
+
             # S'assurer que deploy.sh est exécutable
             chmod +x ./deploy.sh
-            
+
             # Déployer HyoriBot (Pull, Build, Restart)
             ./deploy.sh bot

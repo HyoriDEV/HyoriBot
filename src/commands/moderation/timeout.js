@@ -9,10 +9,7 @@ export default {
     .setDescription('Appliquer un timeout customisé avec rôle restrictif (blacklist salons)')
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
     .addUserOption(opt =>
-      opt
-        .setName('membre')
-        .setDescription('Le membre à sanctionner')
-        .setRequired(true)
+      opt.setName('membre').setDescription('Le membre à sanctionner').setRequired(true)
     )
     .addStringOption(opt =>
       opt
@@ -21,10 +18,7 @@ export default {
         .setRequired(true)
     )
     .addStringOption(opt =>
-      opt
-        .setName('raison')
-        .setDescription('Raison du timeout')
-        .setRequired(false)
+      opt.setName('raison').setDescription('Raison du timeout').setRequired(false)
     ),
 
   async execute(interaction) {
@@ -35,37 +29,42 @@ export default {
     const durationMs = ms(durationInput);
     if (!durationMs || durationMs < 1000 || durationMs > 28 * 24 * 60 * 60 * 1000) {
       return interaction.reply({
-        content: '❌ Format de durée invalide. Exemples valides : `10m`, `1h`, `12h`, `3d` (max 28 jours).',
-        ephemeral: true
+        content:
+          '❌ Format de durée invalide. Exemples valides : `10m`, `1h`, `12h`, `3d` (max 28 jours).',
+        ephemeral: true,
       });
     }
 
     const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
     if (!member) {
       return interaction.reply({
-        content: '❌ Ce membre n\'a pas été trouvé sur le serveur.',
-        ephemeral: true
+        content: "❌ Ce membre n'a pas été trouvé sur le serveur.",
+        ephemeral: true,
       });
     }
 
     if (member.id === interaction.user.id) {
       return interaction.reply({
         content: '❌ Vous ne pouvez pas vous sanctionner vous-même.',
-        ephemeral: true
+        ephemeral: true,
       });
     }
 
     if (member.id === interaction.client.user.id) {
       return interaction.reply({
-        content: '❌ Je ne peux pas m\'appliquer cette sanction.',
-        ephemeral: true
+        content: "❌ Je ne peux pas m'appliquer cette sanction.",
+        ephemeral: true,
       });
     }
 
-    if (member.roles.highest.position >= interaction.member.roles.highest.position && interaction.user.id !== interaction.guild.ownerId) {
+    if (
+      member.roles.highest.position >= interaction.member.roles.highest.position &&
+      interaction.user.id !== interaction.guild.ownerId
+    ) {
       return interaction.reply({
-        content: '❌ Vous ne pouvez pas sanctionner un membre ayant un rôle supérieur ou égal au vôtre.',
-        ephemeral: true
+        content:
+          '❌ Vous ne pouvez pas sanctionner un membre ayant un rôle supérieur ou égal au vôtre.',
+        ephemeral: true,
       });
     }
 
@@ -81,21 +80,26 @@ export default {
       );
 
       // Notification en MP si possible
-      await member.send({
-        embeds: [
-          new EmbedBuilder()
-            .setColor(0xED4245)
-            .setTitle(`🔇 Vous avez été restreint sur ${interaction.guild.name}`)
-            .addFields(
-              { name: 'Raison', value: reason },
-              { name: 'Fin de la sanction', value: `<t:${Math.floor(expiresAt / 1000)}:F> (<t:${Math.floor(expiresAt / 1000)}:R>)` }
-            )
-            .setTimestamp()
-        ]
-      }).catch(() => {});
+      await member
+        .send({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(0xed4245)
+              .setTitle(`🔇 Vous avez été restreint sur ${interaction.guild.name}`)
+              .addFields(
+                { name: 'Raison', value: reason },
+                {
+                  name: 'Fin de la sanction',
+                  value: `<t:${Math.floor(expiresAt / 1000)}:F> (<t:${Math.floor(expiresAt / 1000)}:R>)`,
+                }
+              )
+              .setTimestamp(),
+          ],
+        })
+        .catch(() => {});
 
       const successEmbed = new EmbedBuilder()
-        .setColor(0xED4245)
+        .setColor(0xed4245)
         .setTitle('🔇 Timeout Customisé Appliqué')
         .setDescription(`Le membre ${member} a reçu le rôle restrictif <@&${role.id}>.`)
         .addFields(
@@ -116,8 +120,8 @@ export default {
       await sendModLog(interaction.guild, successEmbed);
     } catch (err) {
       await interaction.editReply({
-        content: `❌ Une erreur est survenue lors de l'application du timeout : ${err.message}`
+        content: `❌ Une erreur est survenue lors de l'application du timeout : ${err.message}`,
       });
     }
-  }
+  },
 };

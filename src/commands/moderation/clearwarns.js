@@ -5,13 +5,10 @@ import { sendModLog } from '../../utils/modLogger.js';
 export default {
   data: new SlashCommandBuilder()
     .setName('clearwarns')
-    .setDescription('Supprimer tous les avertissements d\'un membre')
+    .setDescription("Supprimer tous les avertissements d'un membre")
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
     .addUserOption(opt =>
-      opt
-        .setName('membre')
-        .setDescription('Le membre ciblé')
-        .setRequired(true)
+      opt.setName('membre').setDescription('Le membre ciblé').setRequired(true)
     ),
 
   async execute(interaction) {
@@ -22,7 +19,8 @@ export default {
       data.sanctions = data.sanctions || [];
       const before = data.sanctions.length;
       data.sanctions = data.sanctions.filter(
-        s => !(s.guildId === interaction.guild.id && s.userId === targetUser.id && s.type === 'WARN')
+        s =>
+          !(s.guildId === interaction.guild.id && s.userId === targetUser.id && s.type === 'WARN')
       );
       removedCount = before - data.sanctions.length;
       return data;
@@ -31,22 +29,22 @@ export default {
     if (removedCount === 0) {
       return interaction.reply({
         content: `ℹ️ Aucun avertissement à supprimer pour **${targetUser.tag}**.`,
-        ephemeral: true
+        ephemeral: true,
       });
     }
 
     const embed = new EmbedBuilder()
-      .setColor(0x57F287)
+      .setColor(0x57f287)
       .setTitle('🧹 Avertissements Effacés')
       .setDescription(`Les avertissements de <@${targetUser.id}> ont été réinitialisés.`)
       .addFields(
         { name: 'Membre', value: `${targetUser.tag} (\`${targetUser.id}\`)`, inline: true },
         { name: 'Modérateur', value: `${interaction.user.tag}`, inline: true },
-        { name: 'Nombre d\'avertissements effacés', value: `\`${removedCount}\``, inline: true }
+        { name: "Nombre d'avertissements effacés", value: `\`${removedCount}\``, inline: true }
       )
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
     await sendModLog(interaction.guild, embed);
-  }
+  },
 };

@@ -1,8 +1,4 @@
-import {
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-  EmbedBuilder
-} from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import { configStore } from '../../storage/index.js';
 
 export default {
@@ -31,15 +27,11 @@ export default {
             )
         )
         .addSubcommand(sub =>
-          sub
-            .setName('list')
-            .setDescription('Lister tous les rôles staff configurés')
+          sub.setName('list').setDescription('Lister tous les rôles staff configurés')
         )
     )
     .addSubcommand(sub =>
-      sub
-        .setName('view')
-        .setDescription('Afficher toute la configuration actuelle des rôles')
+      sub.setName('view').setDescription('Afficher toute la configuration actuelle des rôles')
     ),
 
   async execute(interaction) {
@@ -50,16 +42,17 @@ export default {
     config.roles.staffRoleIds = config.roles.staffRoleIds || [];
 
     if (subcommand === 'view' || (group === 'staff' && subcommand === 'list')) {
-      const staffList = config.roles.staffRoleIds.length > 0
-        ? config.roles.staffRoleIds.map(id => `• <@&${id}> (\`${id}\`)`).join('\n')
-        : '*Aucun rôle staff configuré*';
+      const staffList =
+        config.roles.staffRoleIds.length > 0
+          ? config.roles.staffRoleIds.map(id => `• <@&${id}> (\`${id}\`)`).join('\n')
+          : '*Aucun rôle staff configuré*';
 
       const mutedRole = config.roles.mutedRoleId
         ? `<@&${config.roles.mutedRoleId}> (\`${config.roles.mutedRoleId}\`)`
         : '*Automatique (@Muted-Restricted)*';
 
       const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
+        .setColor(0x5865f2)
         .setTitle('⚙️ Configuration des Rôles')
         .addFields(
           { name: '🛡️ Rôles Staff (Accès tickets & modération)', value: staffList, inline: false },
@@ -77,7 +70,7 @@ export default {
         if (config.roles.staffRoleIds.includes(role.id)) {
           return interaction.reply({
             content: `⚠️ Le rôle ${role} est déjà enregistré comme rôle staff.`,
-            ephemeral: true
+            ephemeral: true,
           });
         }
 
@@ -86,7 +79,7 @@ export default {
 
         return interaction.reply({
           content: `✅ Le rôle ${role} a été ajouté aux rôles staff avec succès.`,
-          ephemeral: true
+          ephemeral: true,
         });
       }
 
@@ -94,7 +87,7 @@ export default {
         if (!config.roles.staffRoleIds.includes(role.id)) {
           return interaction.reply({
             content: `⚠️ Le rôle ${role} n'est pas dans la liste du staff.`,
-            ephemeral: true
+            ephemeral: true,
           });
         }
 
@@ -103,9 +96,9 @@ export default {
 
         return interaction.reply({
           content: `✅ Le rôle ${role} a été retiré des rôles staff.`,
-          ephemeral: true
+          ephemeral: true,
         });
       }
     }
-  }
+  },
 };

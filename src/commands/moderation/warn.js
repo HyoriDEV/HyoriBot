@@ -8,16 +8,10 @@ export default {
     .setDescription('Avertir un membre et enregistrer la sanction dans warns.json')
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
     .addUserOption(opt =>
-      opt
-        .setName('membre')
-        .setDescription('Le membre à avertir')
-        .setRequired(true)
+      opt.setName('membre').setDescription('Le membre à avertir').setRequired(true)
     )
     .addStringOption(opt =>
-      opt
-        .setName('raison')
-        .setDescription('Raison de l\'avertissement')
-        .setRequired(true)
+      opt.setName('raison').setDescription("Raison de l'avertissement").setRequired(true)
     ),
 
   async execute(interaction) {
@@ -25,17 +19,27 @@ export default {
     const reason = interaction.options.getString('raison');
 
     if (targetUser.id === interaction.user.id) {
-      return interaction.reply({ content: '❌ Vous ne pouvez pas vous avertir vous-même.', ephemeral: true });
+      return interaction.reply({
+        content: '❌ Vous ne pouvez pas vous avertir vous-même.',
+        ephemeral: true,
+      });
     }
     if (targetUser.bot) {
-      return interaction.reply({ content: '❌ Vous ne pouvez pas avertir un bot.', ephemeral: true });
+      return interaction.reply({
+        content: '❌ Vous ne pouvez pas avertir un bot.',
+        ephemeral: true,
+      });
     }
 
     const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
-    if (member && member.roles.highest.position >= interaction.member.roles.highest.position && interaction.user.id !== interaction.guild.ownerId) {
+    if (
+      member &&
+      member.roles.highest.position >= interaction.member.roles.highest.position &&
+      interaction.user.id !== interaction.guild.ownerId
+    ) {
       return interaction.reply({
         content: '❌ Vous ne pouvez pas avertir un membre de rang supérieur ou égal au vôtre.',
-        ephemeral: true
+        ephemeral: true,
       });
     }
 
@@ -52,7 +56,7 @@ export default {
         moderatorId: interaction.user.id,
         type: 'WARN',
         reason,
-        timestamp: now
+        timestamp: now,
       });
       userWarnCount = data.sanctions.filter(
         s => s.guildId === interaction.guild.id && s.userId === targetUser.id && s.type === 'WARN'
@@ -62,22 +66,24 @@ export default {
 
     // Envoi d'un MP d'avertissement
     if (member) {
-      await member.send({
-        embeds: [
-          new EmbedBuilder()
-            .setColor(0xFEE75C)
-            .setTitle(`⚠️ Avertissement reçu sur ${interaction.guild.name}`)
-            .addFields(
-              { name: 'Raison', value: reason },
-              { name: 'Total d\'avertissements', value: `\`${userWarnCount}\``, inline: true }
-            )
-            .setTimestamp()
-        ]
-      }).catch(() => {});
+      await member
+        .send({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(0xfee75c)
+              .setTitle(`⚠️ Avertissement reçu sur ${interaction.guild.name}`)
+              .addFields(
+                { name: 'Raison', value: reason },
+                { name: "Total d'avertissements", value: `\`${userWarnCount}\``, inline: true }
+              )
+              .setTimestamp(),
+          ],
+        })
+        .catch(() => {});
     }
 
     const embed = new EmbedBuilder()
-      .setColor(0xFEE75C)
+      .setColor(0xfee75c)
       .setTitle('⚠️ Avertissement Appliqué')
       .setDescription(`Le membre <@${targetUser.id}> a reçu un avertissement.`)
       .addFields(
@@ -91,5 +97,5 @@ export default {
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
     await sendModLog(interaction.guild, embed);
-  }
+  },
 };

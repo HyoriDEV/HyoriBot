@@ -22,16 +22,19 @@ async function main() {
   await warnRepository.init();
   logger.info('Persistence storage initialized');
 
-  discordBot.start().then(() => {
-    timeoutScheduler.start(discordBot.client);
-  }).catch(error => {
-    logger.error(
-      {
-        error,
-      },
-      'Failed to connect to Discord Gateway. Running HTTP server in degraded mode...'
-    );
-  });
+  discordBot
+    .start()
+    .then(() => {
+      timeoutScheduler.start(discordBot.client);
+    })
+    .catch(error => {
+      logger.error(
+        {
+          error,
+        },
+        'Failed to connect to Discord Gateway. Running HTTP server in degraded mode...'
+      );
+    });
 
   suspensionScheduler.start();
   const server = await createHttpServer();

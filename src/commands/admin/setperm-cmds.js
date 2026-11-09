@@ -6,22 +6,26 @@ import {
   StringSelectMenuBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ComponentType
+  ComponentType,
 } from 'discord.js';
-import { PermissionService, PERMISSION_LEVELS, DEFAULT_COMMAND_LEVELS } from '../../services/permissionService.js';
+import {
+  PermissionService,
+  PERMISSION_LEVELS,
+  DEFAULT_COMMAND_LEVELS,
+} from '../../services/permissionService.js';
 
 // Liste des commandes configurables avec leurs descriptions
 const CONFIGURABLE_COMMANDS = [
   { name: 'clear', label: '/clear (alias /purge)', desc: 'Suppression en masse de messages' },
   { name: 'warn', label: '/warn', desc: 'Avertir un membre' },
-  { name: 'warnlist', label: '/warnlist', desc: 'Voir les avertissements d\'un membre' },
-  { name: 'clearwarns', label: '/clearwarns', desc: 'Effacer les avertissements d\'un membre' },
+  { name: 'warnlist', label: '/warnlist', desc: "Voir les avertissements d'un membre" },
+  { name: 'clearwarns', label: '/clearwarns', desc: "Effacer les avertissements d'un membre" },
   { name: 'timeout', label: '/timeout', desc: 'Mettre un membre en timeout' },
-  { name: 'untimeout', label: '/untimeout', desc: 'Retirer le timeout d\'un membre' },
+  { name: 'untimeout', label: '/untimeout', desc: "Retirer le timeout d'un membre" },
   { name: 'tempban', label: '/tempban', desc: 'Bannir temporairement avec isolement de salons' },
-  { name: 'untempban', label: '/untempban', desc: 'Lever le tempban / isolement d\'un membre' },
-  { name: 'mute', label: '/mute', desc: 'Appliquer le rôle d\'isolement / mute' },
-  { name: 'unmute', label: '/unmute', desc: 'Retirer le rôle d\'isolement / mute' },
+  { name: 'untempban', label: '/untempban', desc: "Lever le tempban / isolement d'un membre" },
+  { name: 'mute', label: '/mute', desc: "Appliquer le rôle d'isolement / mute" },
+  { name: 'unmute', label: '/unmute', desc: "Retirer le rôle d'isolement / mute" },
   { name: 'kick', label: '/kick', desc: 'Expulser un membre du serveur' },
   { name: 'ban', label: '/ban', desc: 'Bannir définitivement un membre' },
   { name: 'unban', label: '/unban', desc: 'Débannir un membre via son ID' },
@@ -30,14 +34,26 @@ const CONFIGURABLE_COMMANDS = [
   { name: 'slowmode', label: '/slowmode', desc: 'Activer le mode ralenti sur un salon' },
   { name: 'setperm', label: '/setperm', desc: 'Assigner des permissions aux rôles/membres' },
   { name: 'config-logs', label: '/config-logs', desc: 'Configurer les salons de logs' },
-  { name: 'configtempban', label: '/configtempban', desc: 'Configurer rôle et salons autorisés du tempban' },
-  { name: 'config-welcome', label: '/config-welcome', desc: 'Configurer le système d\'image de bienvenue' },
-  { name: 'setup-vocal', label: '/setup-vocal', desc: 'Déployer les salons vocaux temporaires (Join to Create)' },
+  {
+    name: 'configtempban',
+    label: '/configtempban',
+    desc: 'Configurer rôle et salons autorisés du tempban',
+  },
+  {
+    name: 'config-welcome',
+    label: '/config-welcome',
+    desc: "Configurer le système d'image de bienvenue",
+  },
+  {
+    name: 'setup-vocal',
+    label: '/setup-vocal',
+    desc: 'Déployer les salons vocaux temporaires (Join to Create)',
+  },
   { name: 'cmds', label: '/cmds', desc: 'Liste des commandes pour les joueurs' },
   { name: 'help', label: '/help', desc: 'Aide générale' },
   { name: 'ping', label: '/ping', desc: 'Vérifier la latence du bot' },
   { name: 'userinfo', label: '/userinfo', desc: 'Informations sur un utilisateur' },
-  { name: 'serverinfo', label: '/serverinfo', desc: 'Statistiques du serveur' }
+  { name: 'serverinfo', label: '/serverinfo', desc: 'Statistiques du serveur' },
 ];
 
 function buildOverviewEmbed(commandsConfig, selectedCmd = null) {
@@ -45,11 +61,14 @@ function buildOverviewEmbed(commandsConfig, selectedCmd = null) {
     3: [],
     2: [],
     1: [],
-    0: []
+    0: [],
   };
 
   for (const cmd of CONFIGURABLE_COMMANDS) {
-    const lvl = typeof commandsConfig[cmd.name] === 'number' ? commandsConfig[cmd.name] : (DEFAULT_COMMAND_LEVELS[cmd.name] ?? 2);
+    const lvl =
+      typeof commandsConfig[cmd.name] === 'number'
+        ? commandsConfig[cmd.name]
+        : (DEFAULT_COMMAND_LEVELS[cmd.name] ?? 2);
     if (levels[lvl]) {
       levels[lvl].push(`\`/${cmd.name}\``);
     }
@@ -59,31 +78,33 @@ function buildOverviewEmbed(commandsConfig, selectedCmd = null) {
     .setColor(0xe9d15c)
     .setTitle('⚙️ Configuration des Permissions des Commandes')
     .setDescription(
-      'Ce panneau vous permet d\'assigner directement le niveau requis pour chaque commande sans jamais réécrire de commande.\n\n' +
-      '👉 **1.** Choisissez une commande dans le menu déroulant ci-dessous.\n' +
-      '👉 **2.** Cliquez sur le niveau souhaité pour la mettre à jour instantanément !\n\n' +
-      (selectedCmd ? `📌 **Commande sélectionnée actuellement : \`/${selectedCmd}\`**` : '*Sélectionnez une commande pour modifier son niveau.*')
+      "Ce panneau vous permet d'assigner directement le niveau requis pour chaque commande sans jamais réécrire de commande.\n\n" +
+        '👉 **1.** Choisissez une commande dans le menu déroulant ci-dessous.\n' +
+        '👉 **2.** Cliquez sur le niveau souhaité pour la mettre à jour instantanément !\n\n' +
+        (selectedCmd
+          ? `📌 **Commande sélectionnée actuellement : \`/${selectedCmd}\`**`
+          : '*Sélectionnez une commande pour modifier son niveau.*')
     )
     .addFields(
       {
         name: '👑 Niveau 3 — Administrateur',
         value: levels[3].length > 0 ? levels[3].join(', ') : '*Aucune commande*',
-        inline: false
+        inline: false,
       },
       {
         name: '🛡️ Niveau 2 — Modérateur / Staff',
         value: levels[2].length > 0 ? levels[2].join(', ') : '*Aucune commande*',
-        inline: false
+        inline: false,
       },
       {
         name: '👤 Niveau 1 — Membre',
         value: levels[1].length > 0 ? levels[1].join(', ') : '*Aucune commande*',
-        inline: false
+        inline: false,
       },
       {
         name: '👥 Niveau 0 — Tout le monde (Public)',
         value: levels[0].length > 0 ? levels[0].join(', ') : '*Aucune commande*',
-        inline: false
+        inline: false,
       }
     )
     .setFooter({ text: 'Menu interactif actif pendant 15 minutes • Hyori RP' })
@@ -96,16 +117,21 @@ function buildComponents(commandsConfig, selectedCmd = null) {
   // 1. Menu déroulant pour choisir la commande
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId('select_perm_command')
-    .setPlaceholder(selectedCmd ? `Modifier : /${selectedCmd}` : 'Sélectionnez une commande à modifier...')
+    .setPlaceholder(
+      selectedCmd ? `Modifier : /${selectedCmd}` : 'Sélectionnez une commande à modifier...'
+    )
     .addOptions(
       CONFIGURABLE_COMMANDS.map(c => {
-        const lvl = typeof commandsConfig[c.name] === 'number' ? commandsConfig[c.name] : (DEFAULT_COMMAND_LEVELS[c.name] ?? 2);
+        const lvl =
+          typeof commandsConfig[c.name] === 'number'
+            ? commandsConfig[c.name]
+            : (DEFAULT_COMMAND_LEVELS[c.name] ?? 2);
         const lvlInfo = PERMISSION_LEVELS[lvl] || { emoji: '❓', name: `Niv. ${lvl}` };
         return {
           label: c.label,
           description: `${lvlInfo.emoji} ${lvlInfo.name} — ${c.desc}`.slice(0, 100),
           value: c.name,
-          default: c.name === selectedCmd
+          default: c.name === selectedCmd,
         };
       })
     );
@@ -114,9 +140,10 @@ function buildComponents(commandsConfig, selectedCmd = null) {
 
   // 2. Boutons de niveau si une commande est sélectionnée
   if (selectedCmd) {
-    const currentLvl = typeof commandsConfig[selectedCmd] === 'number'
-      ? commandsConfig[selectedCmd]
-      : (DEFAULT_COMMAND_LEVELS[selectedCmd] ?? 2);
+    const currentLvl =
+      typeof commandsConfig[selectedCmd] === 'number'
+        ? commandsConfig[selectedCmd]
+        : (DEFAULT_COMMAND_LEVELS[selectedCmd] ?? 2);
 
     const buttonRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -150,7 +177,9 @@ function buildComponents(commandsConfig, selectedCmd = null) {
 export default {
   data: new SlashCommandBuilder()
     .setName('setperm-cmds')
-    .setDescription('Menu interactif pour modifier le niveau de permission requis par chaque commande')
+    .setDescription(
+      'Menu interactif pour modifier le niveau de permission requis par chaque commande'
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction) {
@@ -164,12 +193,12 @@ export default {
     const response = await interaction.reply({
       embeds: [initialEmbed],
       components: initialComponents,
-      fetchReply: true
+      fetchReply: true,
     });
 
     const collector = response.createMessageComponentCollector({
       filter: i => i.user.id === interaction.user.id,
-      time: 15 * 60 * 1000 // 15 minutes
+      time: 15 * 60 * 1000, // 15 minutes
     });
 
     collector.on('collect', async i => {
@@ -181,7 +210,7 @@ export default {
 
         await i.update({
           embeds: [newEmbed],
-          components: newComponents
+          components: newComponents,
         });
         return;
       }
@@ -205,7 +234,7 @@ export default {
 
         await i.update({
           embeds: [newEmbed],
-          components: newComponents
+          components: newComponents,
         });
       }
     });
@@ -221,5 +250,5 @@ export default {
         // Ignorer si message supprimé
       }
     });
-  }
+  },
 };

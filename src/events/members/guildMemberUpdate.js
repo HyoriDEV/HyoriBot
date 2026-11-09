@@ -15,7 +15,7 @@ export default {
       changes.push({
         name: '🏷️ Changement de surnom',
         value: `**Avant :** \`${oldNick}\`\n**Après :** \`${newNick}\``,
-        inline: false
+        inline: false,
       });
     }
 
@@ -26,7 +26,7 @@ export default {
       changes.push({
         name: `🟢 Rôle(s) attribué(s) (+${addedRoles.size})`,
         value: rolesList.slice(0, 1024),
-        inline: false
+        inline: false,
       });
     }
 
@@ -37,7 +37,7 @@ export default {
       changes.push({
         name: `🔴 Rôle(s) retiré(s) (-${removedRoles.size})`,
         value: rolesList.slice(0, 1024),
-        inline: false
+        inline: false,
       });
     }
 
@@ -45,15 +45,15 @@ export default {
     if (changes.length === 0) return;
 
     const embed = new EmbedBuilder()
-      .setColor(0x5865F2)
+      .setColor(0x5865f2)
       .setTitle('👤 Profil Membre Mis à Jour')
       .setAuthor({
         name: `${newMember.user.tag} (${newMember.id})`,
-        iconURL: newMember.user.displayAvatarURL()
+        iconURL: newMember.user.displayAvatarURL(),
       })
       .addFields(changes)
       .setTimestamp();
 
     await sendAuditLog(newMember.guild, 'membersChannelId', embed);
-  }
+  },
 };

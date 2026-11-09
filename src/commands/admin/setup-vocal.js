@@ -1,34 +1,37 @@
-import {
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-  ChannelType,
-  EmbedBuilder
-} from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder } from 'discord.js';
 import { tempVoiceService } from '../../services/tempVoiceService.js';
 import { logger } from '../../logger/index.js';
 
 export const setupVocalCommand = {
   data: new SlashCommandBuilder()
     .setName('setup-vocal')
-    .setDescription('Déployer ou configurer le système de salons vocaux temporaires (Join to Create)')
+    .setDescription(
+      'Déployer ou configurer le système de salons vocaux temporaires (Join to Create)'
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addChannelOption(opt =>
       opt
         .setName('salon')
-        .setDescription('Salon vocal existant à utiliser comme déclencheur (laisser vide pour créer automatiquement)')
+        .setDescription(
+          'Salon vocal existant à utiliser comme déclencheur (laisser vide pour créer automatiquement)'
+        )
         .addChannelTypes(ChannelType.GuildVoice)
         .setRequired(false)
     )
     .addChannelOption(opt =>
       opt
         .setName('categorie')
-        .setDescription('Catégorie dans laquelle créer les salons temporaires (laisser vide pour créer automatiquement)')
+        .setDescription(
+          'Catégorie dans laquelle créer les salons temporaires (laisser vide pour créer automatiquement)'
+        )
         .addChannelTypes(ChannelType.GuildCategory)
         .setRequired(false)
     ),
 
   async execute(interactionOrMessage, args = []) {
-    const isInteraction = typeof interactionOrMessage.isCommand === 'function' || interactionOrMessage.isChatInputCommand?.();
+    const isInteraction =
+      typeof interactionOrMessage.isCommand === 'function' ||
+      interactionOrMessage.isChatInputCommand?.();
     const guild = interactionOrMessage.guild;
 
     if (!guild) {
@@ -66,7 +69,7 @@ export const setupVocalCommand = {
             chosenCategory = await guild.channels.create({
               name: '🔊 ─── SALONS TEMPORAIRES ───',
               type: ChannelType.GuildCategory,
-              reason: 'Catégorie pour les salons vocaux temporaires (Join to Create)'
+              reason: 'Catégorie pour les salons vocaux temporaires (Join to Create)',
             });
           }
         }
@@ -85,11 +88,11 @@ export const setupVocalCommand = {
               allow: [
                 PermissionFlagsBits.ViewChannel,
                 PermissionFlagsBits.Connect,
-                PermissionFlagsBits.Speak
-              ]
-            }
+                PermissionFlagsBits.Speak,
+              ],
+            },
           ],
-          reason: 'Création du salon générateur Join to Create'
+          reason: 'Création du salon générateur Join to Create',
         });
       }
 
@@ -101,15 +104,23 @@ export const setupVocalCommand = {
         .setTitle('🎙️ Système Vocal « Join to Create » Déployé')
         .setDescription(
           `Le système de salons vocaux temporaires automatiques est désormais **actif et prêt à l'emploi** sur votre serveur !\n\n` +
-          `**Comment ça fonctionne ?**\n` +
-          `1. N'importe quel membre rejoint le salon <#${chosenChannel.id}>.\n` +
-          `2. Le bot lui génère instantanément son propre salon vocal privé dans la catégorie **${chosenCategory.name}**.\n` +
-          `3. Le membre est automatiquement téléporté dans son salon et reçoit un **panneau de commande interactif** dans le chat du salon pour changer son nom, sa limite, le verrouiller ou expulser des personnes.\n` +
-          `4. Dès que le salon devient vide, il est **automatiquement supprimé** pour garder le serveur propre.`
+            `**Comment ça fonctionne ?**\n` +
+            `1. N'importe quel membre rejoint le salon <#${chosenChannel.id}>.\n` +
+            `2. Le bot lui génère instantanément son propre salon vocal privé dans la catégorie **${chosenCategory.name}**.\n` +
+            `3. Le membre est automatiquement téléporté dans son salon et reçoit un **panneau de commande interactif** dans le chat du salon pour changer son nom, sa limite, le verrouiller ou expulser des personnes.\n` +
+            `4. Dès que le salon devient vide, il est **automatiquement supprimé** pour garder le serveur propre.`
         )
         .addFields(
-          { name: '📍 Salon Déclencheur', value: `<#${chosenChannel.id}> (\`${chosenChannel.name}\`)`, inline: true },
-          { name: '📁 Catégorie', value: `${chosenCategory.name} (\`${chosenCategory.id}\`)`, inline: true },
+          {
+            name: '📍 Salon Déclencheur',
+            value: `<#${chosenChannel.id}> (\`${chosenChannel.name}\`)`,
+            inline: true,
+          },
+          {
+            name: '📁 Catégorie',
+            value: `${chosenCategory.name} (\`${chosenCategory.id}\`)`,
+            inline: true,
+          },
           { name: '⚙️ Statut', value: '🟢 Actif', inline: true }
         )
         .setFooter({ text: 'Hyori RP • Salons Vocaux Temporaires' })
@@ -133,7 +144,7 @@ export const setupVocalCommand = {
 
   async executePrefix(message, args = []) {
     return this.execute(message, args);
-  }
+  },
 };
 
 export default setupVocalCommand;

@@ -103,9 +103,7 @@ async function setupRoles() {
     }
   }
 
-  console.log(
-    '\n✅ Rôles synchronisés. Reportez ces IDs dans src/config/discordConfig.js :\n'
-  );
+  console.log('\n✅ Rôles synchronisés. Reportez ces IDs dans src/config/discordConfig.js :\n');
   for (const { configPath, id } of createdRoles) {
     console.log(`  ${configPath} = '${id}'`);
   }

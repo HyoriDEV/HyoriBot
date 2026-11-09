@@ -11,11 +11,11 @@ export default {
     if (oldMessage.content === newMessage.content) return;
 
     const embed = new EmbedBuilder()
-      .setColor(0xFEE75C)
+      .setColor(0xfee75c)
       .setTitle('✏️ Message Modifié')
       .setAuthor({
         name: `${newMessage.author.tag} (${newMessage.author.id})`,
-        iconURL: newMessage.author.displayAvatarURL()
+        iconURL: newMessage.author.displayAvatarURL(),
       })
       .addFields(
         { name: 'Salon', value: `<#${newMessage.channelId}>`, inline: true },
@@ -26,16 +26,24 @@ export default {
     const oldText = oldMessage.content?.trim();
     const newText = newMessage.content?.trim();
 
-    const formatContent = (txt) => {
+    const formatContent = txt => {
       if (!txt) return '*Contenu non mis en cache avant modification*';
       return txt.length > 1000 ? `${txt.slice(0, 1000)}... *(tronqué)*` : txt;
     };
 
     embed.addFields(
-      { name: '🔴 Avant modification', value: `\`\`\`\n${formatContent(oldText)}\n\`\`\``, inline: false },
-      { name: '🟢 Après modification', value: `\`\`\`\n${formatContent(newText)}\n\`\`\``, inline: false }
+      {
+        name: '🔴 Avant modification',
+        value: `\`\`\`\n${formatContent(oldText)}\n\`\`\``,
+        inline: false,
+      },
+      {
+        name: '🟢 Après modification',
+        value: `\`\`\`\n${formatContent(newText)}\n\`\`\``,
+        inline: false,
+      }
     );
 
     await sendAuditLog(newMessage.guild, 'messagesChannelId', embed);
-  }
+  },
 };

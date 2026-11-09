@@ -15,7 +15,7 @@ export async function loadEvents(client, eventsDir) {
     return;
   }
 
-  const readEvents = (dir) => {
+  const readEvents = dir => {
     let files = [];
     const items = fs.readdirSync(dir, { withFileTypes: true });
     for (const item of items) {
@@ -56,7 +56,7 @@ export async function loadEvents(client, eventsDir) {
     } catch (error) {
       logger.error(
         { file: path.relative(process.cwd(), filePath), error },
-        'Erreur lors du chargement de l\'événement'
+        "Erreur lors du chargement de l'événement"
       );
     }
   }

@@ -12,7 +12,7 @@ export default {
         tag: client.user.tag,
         id: client.user.id,
         guilds: client.guilds.cache.size,
-        users: client.users.cache.size
+        users: client.users.cache.size,
       },
       `✅ Bot connecté avec succès en tant que ${client.user.tag}`
     );
@@ -21,10 +21,10 @@ export default {
       activities: [
         {
           name: '🛡️ Sécurité & Modération | /help',
-          type: ActivityType.Custom
-        }
+          type: ActivityType.Custom,
+        },
       ],
-      status: 'online'
+      status: 'online',
     });
 
     // 1. Démarrage du scheduler de timeouts persistants
@@ -34,5 +34,5 @@ export default {
     for (const guild of client.guilds.cache.values()) {
       await MuteRoleService.syncAllBlacklistedChannels(guild).catch(() => {});
     }
-  }
+  },
 };

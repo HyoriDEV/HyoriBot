@@ -1,11 +1,10 @@
-import {
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-  EmbedBuilder
-} from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import { PermissionService, PERMISSION_LEVELS } from '../../services/permissionService.js';
 
-function createSetpermBuilder(name = 'setperm', desc = 'Assigner un niveau de permission (0 à 3) à un rôle ou à un membre') {
+function createSetpermBuilder(
+  name = 'setperm',
+  desc = 'Assigner un niveau de permission (0 à 3) à un rôle ou à un membre'
+) {
   return new SlashCommandBuilder()
     .setName(name)
     .setDescription(desc)
@@ -43,8 +42,9 @@ export async function executeSetperm(interaction) {
 
   if (!role && !user) {
     return interaction.reply({
-      content: '⚠️ **Paramètre manquant** : Vous devez spécifier au moins un `role` ou un `membre` à assigner à ce niveau.',
-      ephemeral: true
+      content:
+        '⚠️ **Paramètre manquant** : Vous devez spécifier au moins un `role` ou un `membre` à assigner à ce niveau.',
+      ephemeral: true,
     });
   }
 
@@ -56,7 +56,7 @@ export async function executeSetperm(interaction) {
     fields.push({
       name: '🎭 Rôle Assigné',
       value: `**${role.name}** (<@&${role.id}>) ➔ **${lvlInfo.emoji} ${lvlInfo.name} (Niveau ${level})**`,
-      inline: false
+      inline: false,
     });
   }
 
@@ -65,29 +65,37 @@ export async function executeSetperm(interaction) {
     fields.push({
       name: '👤 Membre Assigné',
       value: `<@${user.id}> (**${user.tag}**) ➔ **${lvlInfo.emoji} ${lvlInfo.name} (Niveau ${level})**`,
-      inline: false
+      inline: false,
     });
   }
 
   const embed = new EmbedBuilder()
-    .setColor(0x5865F2)
+    .setColor(0x5865f2)
     .setTitle('✅ Permissions Mises à Jour')
     .setDescription(`Les permissions suivantes ont été enregistrées avec succès :`)
     .addFields(fields)
-    .setFooter({ text: 'Utilisez /setperm-cmds pour gérer le niveau requis de chaque commande, /spl pour lister, /spr pour réinitialiser.' })
+    .setFooter({
+      text: 'Utilisez /setperm-cmds pour gérer le niveau requis de chaque commande, /spl pour lister, /spr pour réinitialiser.',
+    })
     .setTimestamp();
 
   return interaction.reply({ embeds: [embed] });
 }
 
 export const setpermCommand = {
-  data: createSetpermBuilder('setperm', 'Assigner un niveau de permission (0 à 3) à un rôle ou à un membre'),
-  execute: executeSetperm
+  data: createSetpermBuilder(
+    'setperm',
+    'Assigner un niveau de permission (0 à 3) à un rôle ou à un membre'
+  ),
+  execute: executeSetperm,
 };
 
 export const spCommand = {
-  data: createSetpermBuilder('sp', 'Alias direct de /setperm : assigner un niveau à un rôle ou membre'),
-  execute: executeSetperm
+  data: createSetpermBuilder(
+    'sp',
+    'Alias direct de /setperm : assigner un niveau à un rôle ou membre'
+  ),
+  execute: executeSetperm,
 };
 
 export default setpermCommand;

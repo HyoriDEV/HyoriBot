@@ -5,8 +5,12 @@ import { logger } from '../logger/index.js';
 export const PERMISSION_LEVELS = {
   0: { name: 'Tout le monde', emoji: '👥', description: 'Accessible par tous les membres' },
   1: { name: 'Membre', emoji: '👤', description: 'Réservé aux membres autorisés (Niveau 1+)' },
-  2: { name: 'Modérateur', emoji: '🛡️', description: 'Réservé aux modérateurs / Staff (Niveau 2+)' },
-  3: { name: 'Administrateur', emoji: '👑', description: 'Réservé aux administrateurs (Niveau 3)' }
+  2: {
+    name: 'Modérateur',
+    emoji: '🛡️',
+    description: 'Réservé aux modérateurs / Staff (Niveau 2+)',
+  },
+  3: { name: 'Administrateur', emoji: '👑', description: 'Réservé aux administrateurs (Niveau 3)' },
 };
 
 export const DEFAULT_COMMAND_LEVELS = {
@@ -50,12 +54,12 @@ export const DEFAULT_COMMAND_LEVELS = {
   'setup-logs': 3,
   'config-logs': 3,
   'config-welcome': 3,
-  'configtempban': 3,
+  configtempban: 3,
   'config-tempban': 3,
   'setup-vocal': 3,
-  'setupvocal': 3,
+  setupvocal: 3,
   'config-vocal': 3,
-  'jointocreate': 3,
+  jointocreate: 3,
   setprefix: 3,
   prefix: 3,
 };
@@ -70,7 +74,7 @@ const COMMAND_ALIASES = {
   sp: 'setperm',
   setupvocal: 'setup-vocal',
   'config-vocal': 'setup-vocal',
-  jointocreate: 'setup-vocal'
+  jointocreate: 'setup-vocal',
 };
 
 export class PermissionService {
@@ -95,7 +99,9 @@ export class PermissionService {
       return { allowed: true, userLevel: 3, requiredLevel: 0 };
     }
 
-    const permData = await permissionsStore.read().catch(() => ({ roles: {}, users: {}, commands: {} }));
+    const permData = await permissionsStore
+      .read()
+      .catch(() => ({ roles: {}, users: {}, commands: {} }));
     const rolesConfig = permData.roles || {};
     const usersConfig = permData.users || {};
     const commandsConfig = permData.commands || {};
@@ -106,7 +112,9 @@ export class PermissionService {
 
     // b) Niveau le plus élevé parmi les rôles du membre
     const memberRoleIds = member.roles?.cache
-      ? (typeof member.roles.cache.map === 'function' ? member.roles.cache.map(r => r.id) : Array.from(member.roles.cache.keys()))
+      ? typeof member.roles.cache.map === 'function'
+        ? member.roles.cache.map(r => r.id)
+        : Array.from(member.roles.cache.keys())
       : [];
 
     for (const roleId of memberRoleIds) {
@@ -155,7 +163,7 @@ export class PermissionService {
       allowed: false,
       userLevel,
       requiredLevel,
-      reason: `Cette commande requiert la permission **${lvlName} (Niveau ${requiredLevel})**. Votre niveau actuel est **${userLvlName} (Niveau ${userLevel})**.`
+      reason: `Cette commande requiert la permission **${lvlName} (Niveau ${requiredLevel})**. Votre niveau actuel est **${userLvlName} (Niveau ${userLevel})**.`,
     };
   }
 
@@ -232,11 +240,13 @@ export class PermissionService {
    * Récupère la table complète des permissions.
    */
   static async getAllPermissions() {
-    const data = await permissionsStore.read().catch(() => ({ roles: {}, users: {}, commands: {} }));
+    const data = await permissionsStore
+      .read()
+      .catch(() => ({ roles: {}, users: {}, commands: {} }));
     return {
       roles: data.roles || {},
       users: data.users || {},
-      commands: { ...DEFAULT_COMMAND_LEVELS, ...(data.commands || {}) }
+      commands: { ...DEFAULT_COMMAND_LEVELS, ...(data.commands || {}) },
     };
   }
 }

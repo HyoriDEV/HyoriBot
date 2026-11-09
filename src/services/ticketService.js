@@ -7,7 +7,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  AttachmentBuilder
+  AttachmentBuilder,
 } from 'discord.js';
 import { ticketsStore, configStore, DATA_DIR } from '../storage/index.js';
 import { sendAuditLog } from '../utils/auditLogger.js';
@@ -33,7 +33,7 @@ export class TicketService {
 
     if (existingTicket) {
       return interaction.editReply({
-        content: `⚠️ Vous possédez déjà un ticket ouvert dans <#${existingTicket.channelId}>.`
+        content: `⚠️ Vous possédez déjà un ticket ouvert dans <#${existingTicket.channelId}>.`,
       });
     }
 
@@ -58,7 +58,7 @@ export class TicketService {
     const permissionOverwrites = [
       {
         id: guild.roles.everyone.id,
-        deny: [PermissionsBitField.Flags.ViewChannel]
+        deny: [PermissionsBitField.Flags.ViewChannel],
       },
       {
         id: user.id,
@@ -67,8 +67,8 @@ export class TicketService {
           PermissionsBitField.Flags.SendMessages,
           PermissionsBitField.Flags.ReadMessageHistory,
           PermissionsBitField.Flags.AttachFiles,
-          PermissionsBitField.Flags.EmbedLinks
-        ]
+          PermissionsBitField.Flags.EmbedLinks,
+        ],
       },
       {
         id: guild.members.me.id,
@@ -77,9 +77,9 @@ export class TicketService {
           PermissionsBitField.Flags.SendMessages,
           PermissionsBitField.Flags.ManageChannels,
           PermissionsBitField.Flags.ReadMessageHistory,
-          PermissionsBitField.Flags.AttachFiles
-        ]
-      }
+          PermissionsBitField.Flags.AttachFiles,
+        ],
+      },
     ];
 
     // Ajouter l'accès pour chaque rôle staff configuré
@@ -92,8 +92,8 @@ export class TicketService {
             PermissionsBitField.Flags.ViewChannel,
             PermissionsBitField.Flags.SendMessages,
             PermissionsBitField.Flags.ReadMessageHistory,
-            PermissionsBitField.Flags.AttachFiles
-          ]
+            PermissionsBitField.Flags.AttachFiles,
+          ],
         });
       }
     }
@@ -105,7 +105,7 @@ export class TicketService {
         type: ChannelType.GuildText,
         parent: categoryId || null,
         permissionOverwrites,
-        topic: `Ticket #${formattedId} créé par ${user.tag} (${user.id}) - Catégorie: ${categoryType}`
+        topic: `Ticket #${formattedId} créé par ${user.tag} (${user.id}) - Catégorie: ${categoryType}`,
       });
 
       // 6. Enregistrement dans tickets.json
@@ -119,7 +119,7 @@ export class TicketService {
           userTag: user.tag,
           category: categoryType,
           status: 'OPEN',
-          createdAt: Date.now()
+          createdAt: Date.now(),
         });
         return data;
       });
@@ -127,13 +127,13 @@ export class TicketService {
       // 7. Envoi du message d'accueil dans le ticket
       const staffPings = staffRoleIds.map(id => `<@&${id}>`).join(' ');
       const welcomeEmbed = new EmbedBuilder()
-        .setColor(0x5865F2)
+        .setColor(0x5865f2)
         .setTitle(`🎫 ${formattedId.toUpperCase()} - ${categoryType}`)
         .setDescription(
           `Bonjour ${user}, bienvenue dans votre ticket.\n\n` +
-          `L'équipe du support a été notifiée et vous répondra dans les plus brefs délais.\n` +
-          `Veuillez décrire votre problème ou votre demande en détail avec des captures d'écran si nécessaire.\n\n` +
-          `Pour fermer ce ticket à tout moment, cliquez sur le bouton rouge ci-dessous.`
+            `L'équipe du support a été notifiée et vous répondra dans les plus brefs délais.\n` +
+            `Veuillez décrire votre problème ou votre demande en détail avec des captures d'écran si nécessaire.\n\n` +
+            `Pour fermer ce ticket à tout moment, cliquez sur le bouton rouge ci-dessous.`
         )
         .setFooter({ text: 'Système de Support Autonome' })
         .setTimestamp();
@@ -149,32 +149,37 @@ export class TicketService {
       await ticketChannel.send({
         content: `${user} ${staffPings}`.trim(),
         embeds: [welcomeEmbed],
-        components: [closeRow]
+        components: [closeRow],
       });
 
       // 8. Notification vers le salon staff configuré (si présent)
       try {
         const { notificationService } = await import('../discord/services/notificationService.js');
-        await notificationService.notifyTicketCreated({
-          ticketId: formattedId,
-          ticketSubject: `Ticket #${formattedId} (${categoryType})`,
-          ticketCategory: categoryType,
-          authorName: user.tag,
-          ticketDescription: `Nouveau ticket ouvert par ${user} sur le serveur Discord.`,
-        }).catch(err => {
-          logger.warn({ error: err.message }, 'Notification ticket vers le salon staff non envoyée');
-        });
+        await notificationService
+          .notifyTicketCreated({
+            ticketId: formattedId,
+            ticketSubject: `Ticket #${formattedId} (${categoryType})`,
+            ticketCategory: categoryType,
+            authorName: user.tag,
+            ticketDescription: `Nouveau ticket ouvert par ${user} sur le serveur Discord.`,
+          })
+          .catch(err => {
+            logger.warn(
+              { error: err.message },
+              'Notification ticket vers le salon staff non envoyée'
+            );
+          });
       } catch (notifyErr) {
         logger.warn({ error: notifyErr.message }, 'Erreur import notificationService pour ticket');
       }
 
       return interaction.editReply({
-        content: `✅ Votre ticket a été créé avec succès dans <#${ticketChannel.id}>.`
+        content: `✅ Votre ticket a été créé avec succès dans <#${ticketChannel.id}>.`,
       });
     } catch (err) {
       logger.error({ err, user: user.tag }, 'Erreur lors de la création du ticket');
       return interaction.editReply({
-        content: `❌ Une erreur est survenue lors de la création du salon : ${err.message}`
+        content: `❌ Une erreur est survenue lors de la création du salon : ${err.message}`,
       });
     }
   }
@@ -190,7 +195,7 @@ export class TicketService {
 
     await interaction.reply({
       content: '🔒 Fermeture du ticket en cours... Génération de la transcription...',
-      ephemeral: true
+      ephemeral: true,
     });
 
     // 1. Recherche du ticket dans tickets.json
@@ -224,7 +229,7 @@ export class TicketService {
       messages: fetchedMessages,
       creatorTag: ticketInfo?.userTag || 'Inconnu',
       closedByTag: closedBy.tag,
-      createdAt: ticketInfo?.createdAt || channel.createdTimestamp
+      createdAt: ticketInfo?.createdAt || channel.createdTimestamp,
     });
 
     await fs.promises.writeFile(htmlFilePath, htmlContent, 'utf-8');
@@ -245,10 +250,14 @@ export class TicketService {
     const attachment = new AttachmentBuilder(htmlFilePath, { name: htmlFileName });
 
     const summaryEmbed = new EmbedBuilder()
-      .setColor(0xED4245)
+      .setColor(0xed4245)
       .setTitle(`📁 Ticket Fermé - ${transcriptId.toUpperCase()}`)
       .addFields(
-        { name: 'Créateur', value: ticketInfo ? `<@${ticketInfo.userId}> (\`${ticketInfo.userTag}\`)` : 'Inconnu', inline: true },
+        {
+          name: 'Créateur',
+          value: ticketInfo ? `<@${ticketInfo.userId}> (\`${ticketInfo.userTag}\`)` : 'Inconnu',
+          inline: true,
+        },
         { name: 'Fermé par', value: `${closedBy.tag} (\`${closedBy.id}\`)`, inline: true },
         { name: 'Messages archivés', value: `\`${fetchedMessages.length}\``, inline: true },
         { name: 'Fichier local', value: `\`./data/transcripts/${htmlFileName}\``, inline: false }
@@ -260,11 +269,13 @@ export class TicketService {
       try {
         const ticketCreator = await guild.members.fetch(ticketInfo.userId).catch(() => null);
         if (ticketCreator) {
-          await ticketCreator.send({
-            content: `Voici la transcription complète de votre ticket sur **${guild.name}** :`,
-            embeds: [summaryEmbed],
-            files: [attachment]
-          }).catch(() => {});
+          await ticketCreator
+            .send({
+              content: `Voici la transcription complète de votre ticket sur **${guild.name}** :`,
+              embeds: [summaryEmbed],
+              files: [attachment],
+            })
+            .catch(() => {});
         }
       } catch {}
     }
@@ -276,9 +287,9 @@ export class TicketService {
     await channel.send({
       embeds: [
         new EmbedBuilder()
-          .setColor(0xED4245)
-          .setDescription('⚠️ Ce salon sera automatiquement supprimé dans **5 secondes**.')
-      ]
+          .setColor(0xed4245)
+          .setDescription('⚠️ Ce salon sera automatiquement supprimé dans **5 secondes**.'),
+      ],
     });
 
     setTimeout(async () => {
@@ -289,7 +300,15 @@ export class TicketService {
   /**
    * Générateur de transcription HTML autonome, stylisé Discord Dark Theme.
    */
-  static generateHtmlTranscript({ ticketId, channelName, guildName, messages, creatorTag, closedByTag, createdAt }) {
+  static generateHtmlTranscript({
+    ticketId,
+    channelName,
+    guildName,
+    messages,
+    creatorTag,
+    closedByTag,
+    createdAt,
+  }) {
     const formattedDate = new Date(createdAt).toLocaleString('fr-FR');
     const closedDate = new Date().toLocaleString('fr-FR');
 
@@ -302,25 +321,28 @@ export class TicketService {
         .replace(/'/g, '&#039;');
     };
 
-    const messagesHtml = messages.map(msg => {
-      const timeStr = new Date(msg.createdTimestamp).toLocaleTimeString('fr-FR');
-      const authorTag = escapeHtml(msg.author.tag);
-      const isBot = msg.author.bot;
-      const avatarUrl = msg.author.displayAvatarURL({ size: 64 });
-      const content = escapeHtml(msg.content).replace(/\n/g, '<br>');
+    const messagesHtml = messages
+      .map(msg => {
+        const timeStr = new Date(msg.createdTimestamp).toLocaleTimeString('fr-FR');
+        const authorTag = escapeHtml(msg.author.tag);
+        const isBot = msg.author.bot;
+        const avatarUrl = msg.author.displayAvatarURL({ size: 64 });
+        const content = escapeHtml(msg.content).replace(/\n/g, '<br>');
 
-      let attachmentsHtml = '';
-      if (msg.attachments && msg.attachments.size > 0) {
-        attachmentsHtml = msg.attachments.map(att => {
-          const isImg = att.contentType?.startsWith('image/');
-          if (isImg) {
-            return `<div class="attachment"><a href="${att.url}" target="_blank"><img src="${att.url}" style="max-width: 320px; border-radius: 6px; margin-top: 6px;" alt="${escapeHtml(att.name)}"></a></div>`;
-          }
-          return `<div class="attachment">📎 <a href="${att.url}" target="_blank" style="color: #00aff4;">${escapeHtml(att.name)}</a></div>`;
-        }).join('');
-      }
+        let attachmentsHtml = '';
+        if (msg.attachments && msg.attachments.size > 0) {
+          attachmentsHtml = msg.attachments
+            .map(att => {
+              const isImg = att.contentType?.startsWith('image/');
+              if (isImg) {
+                return `<div class="attachment"><a href="${att.url}" target="_blank"><img src="${att.url}" style="max-width: 320px; border-radius: 6px; margin-top: 6px;" alt="${escapeHtml(att.name)}"></a></div>`;
+              }
+              return `<div class="attachment">📎 <a href="${att.url}" target="_blank" style="color: #00aff4;">${escapeHtml(att.name)}</a></div>`;
+            })
+            .join('');
+        }
 
-      return `
+        return `
         <div class="message">
           <img class="avatar" src="${avatarUrl}" alt="${authorTag}">
           <div class="message-body">
@@ -334,7 +356,8 @@ export class TicketService {
           </div>
         </div>
       `;
-    }).join('');
+      })
+      .join('');
 
     return `<!DOCTYPE html>
 <html lang="fr">

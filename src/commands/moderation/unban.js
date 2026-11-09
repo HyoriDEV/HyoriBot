@@ -9,14 +9,11 @@ export default {
     .addStringOption(opt =>
       opt
         .setName('user_id')
-        .setDescription('L\'ID Discord de l\'utilisateur à débannir')
+        .setDescription("L'ID Discord de l'utilisateur à débannir")
         .setRequired(true)
     )
     .addStringOption(opt =>
-      opt
-        .setName('raison')
-        .setDescription('Raison du débannissement')
-        .setRequired(false)
+      opt.setName('raison').setDescription('Raison du débannissement').setRequired(false)
     ),
 
   async execute(interaction) {
@@ -29,17 +26,21 @@ export default {
       const banInfo = await interaction.guild.bans.fetch(userId).catch(() => null);
       if (!banInfo) {
         return interaction.editReply({
-          content: `❌ Aucun bannissement trouvé pour l'ID \`${userId}\`.`
+          content: `❌ Aucun bannissement trouvé pour l'ID \`${userId}\`.`,
         });
       }
 
       await interaction.guild.bans.remove(userId, `${interaction.user.tag}: ${reason}`);
 
       const embed = new EmbedBuilder()
-        .setColor(0x57F287)
+        .setColor(0x57f287)
         .setTitle('🤝 Utilisateur Débanni')
         .addFields(
-          { name: 'Utilisateur', value: `${banInfo.user.tag} (\`${banInfo.user.id}\`)`, inline: true },
+          {
+            name: 'Utilisateur',
+            value: `${banInfo.user.tag} (\`${banInfo.user.id}\`)`,
+            inline: true,
+          },
           { name: 'Modérateur', value: `${interaction.user.tag}`, inline: true },
           { name: 'Raison', value: reason, inline: false }
         )
@@ -49,8 +50,8 @@ export default {
       await sendModLog(interaction.guild, embed);
     } catch (err) {
       await interaction.editReply({
-        content: `❌ Erreur lors du débannissement : ${err.message}`
+        content: `❌ Erreur lors du débannissement : ${err.message}`,
       });
     }
-  }
+  },
 };

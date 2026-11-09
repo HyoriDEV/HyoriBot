@@ -17,13 +17,18 @@ export default {
         await TicketService.closeTicket(interaction);
       }
     } catch (error) {
-      logger.error({ error, customId, user: interaction.user.tag }, 'Erreur dans le gestionnaire de bouton de tickets');
+      logger.error(
+        { error, customId, user: interaction.user.tag },
+        'Erreur dans le gestionnaire de bouton de tickets'
+      );
       if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({
-          content: '⚠️ Une erreur est survenue lors du traitement de votre demande de ticket.',
-          ephemeral: true
-        }).catch(() => {});
+        await interaction
+          .reply({
+            content: '⚠️ Une erreur est survenue lors du traitement de votre demande de ticket.',
+            ephemeral: true,
+          })
+          .catch(() => {});
       }
     }
-  }
+  },
 };

@@ -11,19 +11,21 @@ export default {
 
     if (!guild || !member) return;
 
-    const role = guild.roles.cache.get(roleId) || await guild.roles.fetch(roleId).catch(() => null);
+    const role =
+      guild.roles.cache.get(roleId) || (await guild.roles.fetch(roleId).catch(() => null));
     if (!role) {
       return interaction.reply({
-        content: '❌ Ce rôle n\'existe plus ou est introuvable sur le serveur.',
-        ephemeral: true
+        content: "❌ Ce rôle n'existe plus ou est introuvable sur le serveur.",
+        ephemeral: true,
       });
     }
 
     const botMember = guild.members.me;
     if (role.position >= botMember.roles.highest.position) {
       return interaction.reply({
-        content: '⚠️ Je ne peux pas gérer ce rôle car il est hiérarchiquement supérieur ou égal à mon rôle le plus élevé.',
-        ephemeral: true
+        content:
+          '⚠️ Je ne peux pas gérer ce rôle car il est hiérarchiquement supérieur ou égal à mon rôle le plus élevé.',
+        ephemeral: true,
       });
     }
 
@@ -32,21 +34,26 @@ export default {
         await member.roles.remove(role.id, 'Auto-rôle par bouton (Retrait)');
         return interaction.reply({
           content: `❌ Le rôle **@${role.name}** vous a été retiré.`,
-          ephemeral: true
+          ephemeral: true,
         });
       } else {
         await member.roles.add(role.id, 'Auto-rôle par bouton (Attribution)');
         return interaction.reply({
           content: `✅ Le rôle **@${role.name}** vous a été attribué !`,
-          ephemeral: true
+          ephemeral: true,
         });
       }
     } catch (error) {
-      logger.error({ error, roleId, user: interaction.user.tag }, 'Erreur lors du toggle de rôle par bouton');
-      return interaction.reply({
-        content: '⚠️ Une erreur est survenue lors de l\'attribution ou du retrait du rôle.',
-        ephemeral: true
-      }).catch(() => {});
+      logger.error(
+        { error, roleId, user: interaction.user.tag },
+        'Erreur lors du toggle de rôle par bouton'
+      );
+      return interaction
+        .reply({
+          content: "⚠️ Une erreur est survenue lors de l'attribution ou du retrait du rôle.",
+          ephemeral: true,
+        })
+        .catch(() => {});
     }
-  }
+  },
 };

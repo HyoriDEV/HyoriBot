@@ -51,7 +51,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           echo "Tentative de fusion directe dev -> main..."
           git checkout main
           if git merge origin/dev --no-edit; then
@@ -61,10 +61,10 @@ jobs:
               exit 0
             fi
           fi
-          
+
           echo "Le push direct a échoué (probablement dû aux règles de protection de branche)."
           echo "Utilisation de l'API GitHub CLI pour créer et fusionner une Pull Request..."
-          
+
           # Vérifier si une PR existe déjà
           EXISTING_PR=$(gh pr list --base main --head dev --state open --json number --jq '.[0].number')
           if [ -z "$EXISTING_PR" ]; then
@@ -77,7 +77,7 @@ jobs:
             echo "PR existante trouvée : #$EXISTING_PR"
             TARGET_PR="$EXISTING_PR"
           fi
-          
+
           echo "Validation et fusion de la PR $TARGET_PR..."
           gh pr merge "$TARGET_PR" --merge --auto || gh pr merge "$TARGET_PR" --admin --merge || gh pr merge "$TARGET_PR" --merge
 

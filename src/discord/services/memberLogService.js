@@ -18,13 +18,14 @@ export class MemberLogService {
       messages_edit: [logs.messagesEditChannelId, logs.messagesChannelId],
       joins_leaves: [logs.joinsLeavesChannelId, logs.membersChannelId],
       voice: [logs.voiceChannelId],
-      members: [logs.joinsLeavesChannelId, logs.membersChannelId]
+      members: [logs.joinsLeavesChannelId, logs.membersChannelId],
     };
 
     const candidates = keyMapping[targetKey] || [logs[targetKey]];
     for (const id of candidates) {
       if (id) {
-        const ch = guild.channels.cache.get(id) || await guild.channels.fetch(id).catch(() => null);
+        const ch =
+          guild.channels.cache.get(id) || (await guild.channels.fetch(id).catch(() => null));
         if (ch && ch.isTextBased()) return ch;
       }
     }
@@ -95,15 +96,24 @@ export class MemberLogService {
       }
 
       // Cas B : Recherche dans l'Audit Log Discord (suppression manuelle par un modérateur)
-      if (!deletedByText && message.guild.members.me?.permissions.has(PermissionFlagsBits.ViewAuditLog)) {
+      if (
+        !deletedByText &&
+        message.guild.members.me?.permissions.has(PermissionFlagsBits.ViewAuditLog)
+      ) {
         try {
-          const auditLogs = await message.guild.fetchAuditLogs({
-            type: AuditLogEvent.MessageDelete,
-            limit: 1,
-          }).catch(() => null);
+          const auditLogs = await message.guild
+            .fetchAuditLogs({
+              type: AuditLogEvent.MessageDelete,
+              limit: 1,
+            })
+            .catch(() => null);
 
           const entry = auditLogs?.entries.first();
-          if (entry && entry.target?.id === author?.id && (Date.now() - entry.createdTimestamp < 15000)) {
+          if (
+            entry &&
+            entry.target?.id === author?.id &&
+            Date.now() - entry.createdTimestamp < 15000
+          ) {
             deletedByText = `🛡️ Modérateur <@${entry.executor.id}> (**${entry.executor.tag || entry.executor.username}**)`;
           }
         } catch {
@@ -118,9 +128,10 @@ export class MemberLogService {
           : '*Inconnu / Non détecté*';
       }
 
-      const content = message.content && message.content.trim().length > 0
-        ? `>>> ${message.content.slice(0, 1000)}`
-        : '*Aucun contenu textuel (message vide ou média seul)*';
+      const content =
+        message.content && message.content.trim().length > 0
+          ? `>>> ${message.content.slice(0, 1000)}`
+          : '*Aucun contenu textuel (message vide ou média seul)*';
 
       const createdTime = message.createdTimestamp
         ? `<t:${Math.floor(message.createdTimestamp / 1000)}:f> (<t:${Math.floor(message.createdTimestamp / 1000)}:R>)`
@@ -148,7 +159,7 @@ export class MemberLogService {
             inline: true,
           },
           {
-            name: '📅 Date d\'Envoi Original',
+            name: "📅 Date d'Envoi Original",
             value: createdTime,
             inline: true,
           },
@@ -198,13 +209,15 @@ export class MemberLogService {
         ? `<@${author.id}> (**${author.tag || author.username}** — \`${author.id}\`)`
         : '*Auteur inconnu*';
 
-      const oldContent = oldMessage.content && oldMessage.content.trim().length > 0
-        ? `>>> ${oldMessage.content.slice(0, 1000)}`
-        : '*Non disponible (non mis en cache)*';
+      const oldContent =
+        oldMessage.content && oldMessage.content.trim().length > 0
+          ? `>>> ${oldMessage.content.slice(0, 1000)}`
+          : '*Non disponible (non mis en cache)*';
 
-      const newContent = newMessage.content && newMessage.content.trim().length > 0
-        ? `>>> ${newMessage.content.slice(0, 1000)}`
-        : '*Aucun contenu textuel*';
+      const newContent =
+        newMessage.content && newMessage.content.trim().length > 0
+          ? `>>> ${newMessage.content.slice(0, 1000)}`
+          : '*Aucun contenu textuel*';
 
       // DA Hyori Brand Guidelines (Or chaud #e9d15c)
       const embed = new EmbedBuilder()

@@ -7,7 +7,7 @@ import {
   StringSelectMenuOptionBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ComponentType
+  ComponentType,
 } from 'discord.js';
 import { LogSetupService, LOG_TYPES } from '../../services/logSetupService.js';
 import { configStore } from '../../storage/index.js';
@@ -15,13 +15,18 @@ import { configStore } from '../../storage/index.js';
 export const setupLogsCommand = {
   data: new SlashCommandBuilder()
     .setName('setup-logs')
-    .setDescription('Créer et configurer automatiquement tous les salons de logs d\'audit du serveur')
+    .setDescription(
+      "Créer et configurer automatiquement tous les salons de logs d'audit du serveur"
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction) {
     const guild = interaction.guild;
     if (!guild) {
-      return interaction.reply({ content: '❌ Cette commande doit être exécutée dans un serveur.', ephemeral: true });
+      return interaction.reply({
+        content: '❌ Cette commande doit être exécutée dans un serveur.',
+        ephemeral: true,
+      });
     }
 
     // Récupération de la configuration actuelle
@@ -30,12 +35,12 @@ export const setupLogsCommand = {
 
     const buildOverviewEmbed = (descriptionExtra = '') => {
       const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
+        .setColor(0x5865f2)
         .setTitle('🛠️ Déploiement Automatique des Salons de Logs')
         .setDescription(
           `Ce module analyse et génère une catégorie dédiée (**📁 ─── LOGS SERVEUR ───**) sécurisée (verrouillée pour \`@everyone\`, visible uniquement par le Staff) avec l'ensemble des salons de journalisation d'événements.\n\n` +
-          `Sélectionnez les salons souhaités dans le menu ci-dessous, ou cliquez directement sur **"Créer TOUS les Salons"** pour une protection exhaustive instantanée !\n` +
-          (descriptionExtra ? `\n${descriptionExtra}` : '')
+            `Sélectionnez les salons souhaités dans le menu ci-dessous, ou cliquez directement sur **"Créer TOUS les Salons"** pour une protection exhaustive instantanée !\n` +
+            (descriptionExtra ? `\n${descriptionExtra}` : '')
         );
 
       // Aperçu de l'état actuel de chaque log
@@ -48,11 +53,19 @@ export const setupLogsCommand = {
       // Découper en 2 champs pour un affichage propre
       const mid = Math.ceil(statusLines.length / 2);
       embed.addFields(
-        { name: '📋 Salons de Surveillance (1/2)', value: statusLines.slice(0, mid).join('\n'), inline: true },
-        { name: '📋 Salons de Surveillance (2/2)', value: statusLines.slice(mid).join('\n'), inline: true }
+        {
+          name: '📋 Salons de Surveillance (1/2)',
+          value: statusLines.slice(0, mid).join('\n'),
+          inline: true,
+        },
+        {
+          name: '📋 Salons de Surveillance (2/2)',
+          value: statusLines.slice(mid).join('\n'),
+          inline: true,
+        }
       );
 
-      embed.setFooter({ text: 'Hyori Discord Bot • Système d\'Audit Exhaustif' });
+      embed.setFooter({ text: "Hyori Discord Bot • Système d'Audit Exhaustif" });
       embed.setTimestamp();
       return embed;
     };
@@ -104,7 +117,7 @@ export const setupLogsCommand = {
     const response = await interaction.reply({
       embeds: [initialEmbed],
       components: [rowMenu, rowButtons1, rowButtons2],
-      fetchReply: true
+      fetchReply: true,
     });
 
     // Collecteur de composants interactifs
@@ -112,7 +125,7 @@ export const setupLogsCommand = {
 
     const collector = response.createMessageComponentCollector({
       filter: i => i.user.id === interaction.user.id,
-      time: 600000 // 10 minutes
+      time: 600000, // 10 minutes
     });
 
     collector.on('collect', async i => {
@@ -121,7 +134,7 @@ export const setupLogsCommand = {
           currentSelection = i.values;
           await i.reply({
             content: `🎯 **${currentSelection.length} type(s) de logs sélectionné(s)**. Cliquez maintenant sur **"Créer Salons Sélectionnés"** pour valider la création.`,
-            ephemeral: true
+            ephemeral: true,
           });
           return;
         }
@@ -141,13 +154,13 @@ export const setupLogsCommand = {
 
           const updatedEmbed = buildOverviewEmbed(
             `✅ **Déploiement terminé dans la catégorie <#${category.id}> !**\n` +
-            `• Nouveaux salons créés : **${createdCount}**\n` +
-            `• Salons existants rattachés : **${reusedCount}**`
+              `• Nouveaux salons créés : **${createdCount}**\n` +
+              `• Salons existants rattachés : **${reusedCount}**`
           );
 
           await i.editReply({
             embeds: [updatedEmbed],
-            components: [rowMenu, rowButtons1, rowButtons2]
+            components: [rowMenu, rowButtons1, rowButtons2],
           });
           return;
         }
@@ -158,7 +171,7 @@ export const setupLogsCommand = {
           Object.assign(logsConfig, freshConfig.logs || {});
           await i.editReply({
             embeds: [buildOverviewEmbed('🔄 Affichage actualisé avec la dernière configuration.')],
-            components: [rowMenu, rowButtons1, rowButtons2]
+            components: [rowMenu, rowButtons1, rowButtons2],
           });
           return;
         }
@@ -174,24 +187,28 @@ export const setupLogsCommand = {
 
           await i.editReply({
             embeds: [clearedEmbed],
-            components: [rowMenu, rowButtons1, rowButtons2]
+            components: [rowMenu, rowButtons1, rowButtons2],
           });
           return;
         }
       } catch (err) {
         if (!i.replied && !i.deferred) {
-          await i.reply({ content: `❌ Erreur lors du traitement : ${err.message}`, ephemeral: true }).catch(() => {});
+          await i
+            .reply({ content: `❌ Erreur lors du traitement : ${err.message}`, ephemeral: true })
+            .catch(() => {});
         }
       }
     });
 
     collector.on('end', () => {
       // Désactive les boutons quand le collecteur expire
-      interaction.editReply({
-        components: []
-      }).catch(() => {});
+      interaction
+        .editReply({
+          components: [],
+        })
+        .catch(() => {});
     });
-  }
+  },
 };
 
 export default setupLogsCommand;

@@ -7,7 +7,7 @@ import {
   ChannelSelectMenuBuilder,
   ChannelType,
   ButtonBuilder,
-  ButtonStyle
+  ButtonStyle,
 } from 'discord.js';
 import { TempbanService } from '../../services/tempbanService.js';
 
@@ -18,7 +18,9 @@ export const configtempbanCommand = {
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interactionOrMessage, args = []) {
-    const isInteraction = typeof interactionOrMessage.isCommand === 'function' || interactionOrMessage.isChatInputCommand?.();
+    const isInteraction =
+      typeof interactionOrMessage.isCommand === 'function' ||
+      interactionOrMessage.isChatInputCommand?.();
     const guild = interactionOrMessage.guild;
     const author = isInteraction ? interactionOrMessage.user : interactionOrMessage.author;
 
@@ -31,30 +33,39 @@ export const configtempbanCommand = {
     let config = await TempbanService.getConfig();
 
     const buildEmbed = (statusExtra = '') => {
-      const roleDisplay = config.roleId ? `<@&${config.roleId}> (\`${config.roleId}\`)` : '`⚠️ Aucun rôle sélectionné`';
-      
-      const channelsDisplay = config.allowedChannels && config.allowedChannels.length > 0
-        ? config.allowedChannels.map(id => `<#${id}>`).join(', ')
-        : '`⚠️ Aucun salon (isolement complet / aveugle)`';
+      const roleDisplay = config.roleId
+        ? `<@&${config.roleId}> (\`${config.roleId}\`)`
+        : '`⚠️ Aucun rôle sélectionné`';
+
+      const channelsDisplay =
+        config.allowedChannels && config.allowedChannels.length > 0
+          ? config.allowedChannels.map(id => `<#${id}>`).join(', ')
+          : '`⚠️ Aucun salon (isolement complet / aveugle)`';
 
       const syncDisplay = config.lastSyncedAt
         ? `✅ Synchronisé <t:${Math.floor(config.lastSyncedAt / 1000)}:R>`
         : '`⚠️ Non synchronisé sur les salons du serveur`';
 
       const embed = new EmbedBuilder()
-        .setColor(0xD4AF35) // Or Hyori
+        .setColor(0xd4af35) // Or Hyori
         .setTitle('⚖️ Configuration du Système Tempban & Isolement')
         .setDescription(
           `Ce module configure le **rôle attribué** lors d'un bannissement temporaire ou d'un isolement, ainsi que les **salons que ces membres ont le droit de voir**.\n\n` +
-          `🔒 **Tous les autres salons du serveur leur seront automatiquement masqués et inaccessibles.**\n` +
-          (statusExtra ? `\n> ${statusExtra}\n` : '')
+            `🔒 **Tous les autres salons du serveur leur seront automatiquement masqués et inaccessibles.**\n` +
+            (statusExtra ? `\n> ${statusExtra}\n` : '')
         )
         .addFields(
           { name: '🎭 Rôle Tempban / Isolement attribué', value: roleDisplay, inline: false },
-          { name: `👁️ Salons autorisés & visibles (${config.allowedChannels.length})`, value: channelsDisplay, inline: false },
+          {
+            name: `👁️ Salons autorisés & visibles (${config.allowedChannels.length})`,
+            value: channelsDisplay,
+            inline: false,
+          },
           { name: '⚡ Statut des permissions Discord', value: syncDisplay, inline: false }
         )
-        .setFooter({ text: 'Hyori RP • Sécurité & Modération • Sélectionnez ci-dessous pour modifier' })
+        .setFooter({
+          text: 'Hyori RP • Sécurité & Modération • Sélectionnez ci-dessous pour modifier',
+        })
         .setTimestamp();
 
       return embed;
@@ -64,15 +75,19 @@ export const configtempbanCommand = {
       // 1. Menu de sélection du rôle Tempban
       const roleSelect = new RoleSelectMenuBuilder()
         .setCustomId('tb_role_select')
-        .setPlaceholder('👉 Choisir le rôle attribué lors d\'un tempban...')
+        .setPlaceholder("👉 Choisir le rôle attribué lors d'un tempban...")
         .setMinValues(1)
         .setMaxValues(1);
 
       // 2. Menu de sélection des salons autorisés
       const channelSelect = new ChannelSelectMenuBuilder()
         .setCustomId('tb_channels_select')
-        .setPlaceholder('👉 Choisir les salons qu\'ils ont le droit de voir...')
-        .setChannelTypes(ChannelType.GuildText, ChannelType.GuildVoice, ChannelType.GuildAnnouncement)
+        .setPlaceholder("👉 Choisir les salons qu'ils ont le droit de voir...")
+        .setChannelTypes(
+          ChannelType.GuildText,
+          ChannelType.GuildVoice,
+          ChannelType.GuildAnnouncement
+        )
         .setMinValues(0)
         .setMaxValues(25);
 
@@ -95,7 +110,7 @@ export const configtempbanCommand = {
       return [
         new ActionRowBuilder().addComponents(roleSelect),
         new ActionRowBuilder().addComponents(channelSelect),
-        rowButtons
+        rowButtons,
       ];
     };
 
@@ -107,19 +122,19 @@ export const configtempbanCommand = {
       response = await interactionOrMessage.reply({
         embeds: [embed],
         components,
-        fetchReply: true
+        fetchReply: true,
       });
     } else {
       response = await interactionOrMessage.reply({
         embeds: [embed],
-        components
+        components,
       });
     }
 
     // Collecteur d'interactions composants
     const collector = response.createMessageComponentCollector({
       filter: i => i.user.id === author.id,
-      time: 600000 // 10 minutes
+      time: 600000, // 10 minutes
     });
 
     collector.on('collect', async i => {
@@ -131,8 +146,12 @@ export const configtempbanCommand = {
           config.roleId = selectedRoleId;
 
           await i.update({
-            embeds: [buildEmbed(`✅ Rôle Tempban mis à jour : <@&${selectedRoleId}>. N'oubliez pas de cliquer sur **"Appliquer les permissions"** pour synchroniser.`)],
-            components: buildComponents()
+            embeds: [
+              buildEmbed(
+                `✅ Rôle Tempban mis à jour : <@&${selectedRoleId}>. N'oubliez pas de cliquer sur **"Appliquer les permissions"** pour synchroniser.`
+              ),
+            ],
+            components: buildComponents(),
           });
           return;
         }
@@ -144,8 +163,12 @@ export const configtempbanCommand = {
           config.allowedChannels = selectedChannels;
 
           await i.update({
-            embeds: [buildEmbed(`✅ **${selectedChannels.length} salon(s) autorisé(s)** enregistrés. Cliquez sur **"Appliquer les permissions"** pour verrouiller le reste du serveur.`)],
-            components: buildComponents()
+            embeds: [
+              buildEmbed(
+                `✅ **${selectedChannels.length} salon(s) autorisé(s)** enregistrés. Cliquez sur **"Appliquer les permissions"** pour verrouiller le reste du serveur.`
+              ),
+            ],
+            components: buildComponents(),
           });
           return;
         }
@@ -154,8 +177,9 @@ export const configtempbanCommand = {
         if (i.customId === 'btn_tb_apply') {
           if (!config.roleId) {
             await i.reply({
-              content: '❌ Veuillez d\'abord sélectionner un rôle dans le menu déroulant avant d\'appliquer les permissions.',
-              ephemeral: true
+              content:
+                "❌ Veuillez d'abord sélectionner un rôle dans le menu déroulant avant d'appliquer les permissions.",
+              ephemeral: true,
             });
             return;
           }
@@ -174,11 +198,11 @@ export const configtempbanCommand = {
             embeds: [
               buildEmbed(
                 `🎉 **Permissions synchronisées avec succès sur le serveur !**\n` +
-                `• Salons autorisés & visibles : **${result.allowedCount}**\n` +
-                `• Salons verrouillés & masqués pour <@&${config.roleId}> : **${result.hiddenCount}**`
-              )
+                  `• Salons autorisés & visibles : **${result.allowedCount}**\n` +
+                  `• Salons verrouillés & masqués pour <@&${config.roleId}> : **${result.hiddenCount}**`
+              ),
             ],
-            components: buildComponents()
+            components: buildComponents(),
           });
           return;
         }
@@ -189,7 +213,7 @@ export const configtempbanCommand = {
           config = await TempbanService.getConfig();
           await i.editReply({
             embeds: [buildEmbed('🔄 Affichage actualisé avec la dernière configuration.')],
-            components: buildComponents()
+            components: buildComponents(),
           });
           return;
         }
@@ -201,7 +225,7 @@ export const configtempbanCommand = {
           config = { roleId: null, allowedChannels: [], lastSyncedAt: null };
           await i.editReply({
             embeds: [buildEmbed('🗑️ Configuration Tempban réinitialisée.')],
-            components: buildComponents()
+            components: buildComponents(),
           });
           return;
         }
@@ -209,7 +233,9 @@ export const configtempbanCommand = {
         if (!i.replied && !i.deferred) {
           await i.reply({ content: `❌ Erreur : ${err.message}`, ephemeral: true }).catch(() => {});
         } else {
-          await i.followUp({ content: `❌ Erreur : ${err.message}`, ephemeral: true }).catch(() => {});
+          await i
+            .followUp({ content: `❌ Erreur : ${err.message}`, ephemeral: true })
+            .catch(() => {});
         }
       }
     });
@@ -217,7 +243,7 @@ export const configtempbanCommand = {
     collector.on('end', () => {
       response.edit({ components: [] }).catch(() => {});
     });
-  }
+  },
 };
 
 export default configtempbanCommand;

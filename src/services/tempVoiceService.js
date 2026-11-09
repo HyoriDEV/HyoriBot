@@ -9,7 +9,7 @@ import {
   TextInputBuilder,
   TextInputStyle,
   StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder
+  StringSelectMenuOptionBuilder,
 } from 'discord.js';
 import { configStore } from '../storage/index.js';
 import { logger } from '../logger/index.js';
@@ -28,11 +28,13 @@ class TempVoiceService {
    */
   async getConfig() {
     const config = await configStore.read().catch(() => ({}));
-    return config.tempVoice || {
-      enabled: false,
-      channelId: '',
-      categoryId: ''
-    };
+    return (
+      config.tempVoice || {
+        enabled: false,
+        channelId: '',
+        categoryId: '',
+      }
+    );
   }
 
   /**
@@ -44,7 +46,7 @@ class TempVoiceService {
         enabled: true,
         guildId,
         channelId,
-        categoryId
+        categoryId,
       };
       return data;
     });
@@ -98,8 +100,8 @@ class TempVoiceService {
               PermissionFlagsBits.ViewChannel,
               PermissionFlagsBits.Connect,
               PermissionFlagsBits.Speak,
-              PermissionFlagsBits.SendMessages
-            ]
+              PermissionFlagsBits.SendMessages,
+            ],
           },
           {
             id: member.id, // Créateur du salon
@@ -109,8 +111,8 @@ class TempVoiceService {
               PermissionFlagsBits.Speak,
               PermissionFlagsBits.ManageChannels, // Permet de modifier le nom et la taille de son propre salon
               PermissionFlagsBits.MoveMembers,
-              PermissionFlagsBits.SendMessages
-            ]
+              PermissionFlagsBits.SendMessages,
+            ],
           },
           {
             id: guild.client.user.id, // Le Bot
@@ -119,11 +121,11 @@ class TempVoiceService {
               PermissionFlagsBits.Connect,
               PermissionFlagsBits.ManageChannels,
               PermissionFlagsBits.MoveMembers,
-              PermissionFlagsBits.SendMessages
-            ]
-          }
+              PermissionFlagsBits.SendMessages,
+            ],
+          },
         ],
-        reason: `Salon vocal temporaire créé pour ${member.user.tag}`
+        reason: `Salon vocal temporaire créé pour ${member.user.tag}`,
       });
 
       // Enregistrer le salon dans le registre actif
@@ -131,20 +133,29 @@ class TempVoiceService {
         ownerId: member.id,
         guildId: guild.id,
         createdAt: Date.now(),
-        locked: false
+        locked: false,
       });
 
       // Déplacer immédiatement le membre dans son nouveau salon
       await member.voice.setChannel(newChannel).catch(err => {
-        logger.warn({ error: err.message, memberId: member.id }, 'Impossible de déplacer le membre dans son vocal temporaire');
+        logger.warn(
+          { error: err.message, memberId: member.id },
+          'Impossible de déplacer le membre dans son vocal temporaire'
+        );
       });
 
       // Envoyer le panneau de gestion interactif dans le chat textuel du vocal
       await this.sendVoiceControlPanel(newChannel, member);
 
-      logger.info({ channelId: newChannel.id, memberId: member.id }, 'Temporary voice channel created');
+      logger.info(
+        { channelId: newChannel.id, memberId: member.id },
+        'Temporary voice channel created'
+      );
     } catch (err) {
-      logger.error({ error: err.message, memberId: member.id }, 'Erreur lors de la création du salon vocal temporaire');
+      logger.error(
+        { error: err.message, memberId: member.id },
+        'Erreur lors de la création du salon vocal temporaire'
+      );
     }
   }
 
@@ -157,14 +168,18 @@ class TempVoiceService {
       .setTitle('🔊 Gestionnaire de votre Salon Vocal')
       .setDescription(
         `Bienvenue dans votre salon vocal temporaire, <@${owner.id}> !\n\n` +
-        `Vous êtes le **propriétaire de ce salon**. Utilisez les boutons ci-dessous pour le personnaliser en direct, ou modifiez-le directement via les paramètres Discord de votre salon.`
+          `Vous êtes le **propriétaire de ce salon**. Utilisez les boutons ci-dessous pour le personnaliser en direct, ou modifiez-le directement via les paramètres Discord de votre salon.`
       )
       .addFields(
         { name: '👑 Propriétaire', value: `<@${owner.id}> (\`${owner.user.tag}\`)`, inline: true },
-        { name: '👥 Limite', value: channel.userLimit ? `${channel.userLimit} personnes` : 'Illimitée', inline: true },
+        {
+          name: '👥 Limite',
+          value: channel.userLimit ? `${channel.userLimit} personnes` : 'Illimitée',
+          inline: true,
+        },
         { name: '🔒 Accès', value: '🟢 Ouvert à tous', inline: true }
       )
-      .setFooter({ text: 'Le salon sera automatiquement supprimé dès qu\'il sera vide.' })
+      .setFooter({ text: "Le salon sera automatiquement supprimé dès qu'il sera vide." })
       .setTimestamp();
 
     const row1 = new ActionRowBuilder().addComponents(
@@ -202,10 +217,13 @@ class TempVoiceService {
       await channel.send({
         content: `👋 Hey <@${owner.id}>, voici votre panneau de configuration !`,
         embeds: [embed],
-        components: [row1, row2]
+        components: [row1, row2],
       });
     } catch (err) {
-      logger.warn({ error: err.message, channelId: channel.id }, 'Impossible d\'envoyer le message de contrôle dans le salon vocal');
+      logger.warn(
+        { error: err.message, channelId: channel.id },
+        "Impossible d'envoyer le message de contrôle dans le salon vocal"
+      );
     }
   }
 
@@ -224,10 +242,16 @@ class TempVoiceService {
       if (fetchedChannel.members.size === 0) {
         this.activeChannels.delete(fetchedChannel.id);
         await fetchedChannel.delete('Salon vocal temporaire vide').catch(() => null);
-        logger.info({ channelId: fetchedChannel.id }, 'Temporary voice channel deleted because it is empty');
+        logger.info(
+          { channelId: fetchedChannel.id },
+          'Temporary voice channel deleted because it is empty'
+        );
       }
     } catch (err) {
-      logger.warn({ error: err.message, channelId: channel.id }, 'Erreur lors de la suppression du salon vocal temporaire');
+      logger.warn(
+        { error: err.message, channelId: channel.id },
+        'Erreur lors de la suppression du salon vocal temporaire'
+      );
     }
   }
 
@@ -249,7 +273,7 @@ class TempVoiceService {
       const channel = interaction.guild.channels.cache.get(channelId);
 
       if (!channel) {
-        return interaction.reply({ content: '❌ Ce salon vocal n\'existe plus.', ephemeral: true });
+        return interaction.reply({ content: "❌ Ce salon vocal n'existe plus.", ephemeral: true });
       }
 
       // Seul le propriétaire ou un administrateur Discord peut modifier le salon
@@ -260,7 +284,7 @@ class TempVoiceService {
         const ownerMention = voiceData ? `<@${voiceData.ownerId}>` : 'son créateur';
         return interaction.reply({
           content: `❌ Seul le propriétaire de ce salon (${ownerMention}) a l'autorisation de le modifier.`,
-          ephemeral: true
+          ephemeral: true,
         });
       }
 
@@ -288,11 +312,11 @@ class TempVoiceService {
       if (action === 'limit') {
         const modal = new ModalBuilder()
           .setCustomId(`tempvoice_modal_limit_${channelId}`)
-          .setTitle('👥 Modifier la limite d\'utilisateurs');
+          .setTitle("👥 Modifier la limite d'utilisateurs");
 
         const limitInput = new TextInputBuilder()
           .setCustomId('tempvoice_limit_input')
-          .setLabel('Nombre max d\'utilisateurs (0 = illimité)')
+          .setLabel("Nombre max d'utilisateurs (0 = illimité)")
           .setStyle(TextInputStyle.Short)
           .setPlaceholder('0 à 99 (0 pour aucune limite)')
           .setValue(channel.userLimit.toString())
@@ -306,13 +330,16 @@ class TempVoiceService {
 
       // Action: Verrouiller / Déverrouiller
       if (action === 'lock') {
-        const currentData = this.activeChannels.get(channelId) || { locked: false, ownerId: interaction.user.id };
+        const currentData = this.activeChannels.get(channelId) || {
+          locked: false,
+          ownerId: interaction.user.id,
+        };
         const newLocked = !currentData.locked;
         currentData.locked = newLocked;
         this.activeChannels.set(channelId, currentData);
 
         await channel.permissionOverwrites.edit(interaction.guild.id, {
-          Connect: newLocked ? false : null
+          Connect: newLocked ? false : null,
         });
 
         const statusTxt = newLocked
@@ -324,11 +351,13 @@ class TempVoiceService {
 
       // Action: Expulser un membre -> Menu déroulant des membres présents
       if (action === 'kick') {
-        const connectedMembers = channel.members.filter(m => m.id !== interaction.user.id && !m.user.bot);
+        const connectedMembers = channel.members.filter(
+          m => m.id !== interaction.user.id && !m.user.bot
+        );
         if (connectedMembers.size === 0) {
           return interaction.reply({
-            content: 'ℹ️ Il n\'y a aucun autre membre à expulser dans votre salon.',
-            ephemeral: true
+            content: "ℹ️ Il n'y a aucun autre membre à expulser dans votre salon.",
+            ephemeral: true,
           });
         }
 
@@ -348,17 +377,19 @@ class TempVoiceService {
         return interaction.reply({
           content: 'Choisissez le membre que vous souhaitez expulser :',
           components: [new ActionRowBuilder().addComponents(selectMenu)],
-          ephemeral: true
+          ephemeral: true,
         });
       }
 
       // Action: Transférer la propriété
       if (action === 'transfer') {
-        const otherMembers = channel.members.filter(m => m.id !== interaction.user.id && !m.user.bot);
+        const otherMembers = channel.members.filter(
+          m => m.id !== interaction.user.id && !m.user.bot
+        );
         if (otherMembers.size === 0) {
           return interaction.reply({
-            content: 'ℹ️ Il n\'y a aucun autre membre à qui transférer la propriété de votre salon.',
-            ephemeral: true
+            content: "ℹ️ Il n'y a aucun autre membre à qui transférer la propriété de votre salon.",
+            ephemeral: true,
           });
         }
 
@@ -378,7 +409,7 @@ class TempVoiceService {
         return interaction.reply({
           content: 'Choisissez à quel membre vous souhaitez céder les commandes du salon :',
           components: [new ActionRowBuilder().addComponents(selectMenu)],
-          ephemeral: true
+          ephemeral: true,
         });
       }
     }
@@ -393,19 +424,22 @@ class TempVoiceService {
 
       const channel = interaction.guild.channels.cache.get(channelId);
       if (!channel) {
-        return interaction.reply({ content: '❌ Ce salon vocal n\'existe plus.', ephemeral: true });
+        return interaction.reply({ content: "❌ Ce salon vocal n'existe plus.", ephemeral: true });
       }
 
       if (action === 'rename') {
         const newName = interaction.fields.getTextInputValue('tempvoice_name_input').trim();
         if (!newName) {
-          return interaction.reply({ content: '❌ Le nom ne peut pas être vide.', ephemeral: true });
+          return interaction.reply({
+            content: '❌ Le nom ne peut pas être vide.',
+            ephemeral: true,
+          });
         }
 
         await channel.setName(newName);
         return interaction.reply({
           content: `✅ Votre salon vocal a été renommé en : **${newName}** !`,
-          ephemeral: true
+          ephemeral: true,
         });
       }
 
@@ -415,15 +449,16 @@ class TempVoiceService {
 
         if (isNaN(limit) || limit < 0 || limit > 99) {
           return interaction.reply({
-            content: '❌ La limite doit être un nombre compris entre 0 et 99 (0 pour aucune limite).',
-            ephemeral: true
+            content:
+              '❌ La limite doit être un nombre compris entre 0 et 99 (0 pour aucune limite).',
+            ephemeral: true,
           });
         }
 
         await channel.setUserLimit(limit);
         return interaction.reply({
           content: `✅ La limite d'utilisateurs a été définie à : **${limit === 0 ? 'Illimitée' : `${limit} membres`}** !`,
-          ephemeral: true
+          ephemeral: true,
         });
       }
     }
@@ -438,32 +473,34 @@ class TempVoiceService {
 
       const channel = interaction.guild.channels.cache.get(channelId);
       if (!channel) {
-        return interaction.reply({ content: '❌ Ce salon vocal n\'existe plus.', ephemeral: true });
+        return interaction.reply({ content: "❌ Ce salon vocal n'existe plus.", ephemeral: true });
       }
 
       const selectedMemberId = interaction.values[0];
-      const targetMember = await interaction.guild.members.fetch(selectedMemberId).catch(() => null);
+      const targetMember = await interaction.guild.members
+        .fetch(selectedMemberId)
+        .catch(() => null);
 
       if (action === 'kick') {
         if (!targetMember || targetMember.voice.channelId !== channelId) {
           return interaction.update({
-            content: '❌ Ce membre n\'est plus dans votre salon vocal.',
-            components: []
+            content: "❌ Ce membre n'est plus dans votre salon vocal.",
+            components: [],
           });
         }
 
         await targetMember.voice.disconnect('Expulsé par le propriétaire du salon temporaire');
         return interaction.update({
           content: `🚫 **${targetMember.user.tag}** a été expulsé de votre salon vocal avec succès.`,
-          components: []
+          components: [],
         });
       }
 
       if (action === 'transfer') {
         if (!targetMember || targetMember.voice.channelId !== channelId) {
           return interaction.update({
-            content: '❌ Ce membre n\'est plus dans votre salon vocal.',
-            components: []
+            content: "❌ Ce membre n'est plus dans votre salon vocal.",
+            components: [],
           });
         }
 
@@ -478,22 +515,22 @@ class TempVoiceService {
           Connect: true,
           Speak: true,
           ManageChannels: true,
-          MoveMembers: true
+          MoveMembers: true,
         });
 
         // Retirer les droits spéciaux de l'ancien propriétaire
         await channel.permissionOverwrites.edit(interaction.user.id, {
           ManageChannels: null,
-          MoveMembers: null
+          MoveMembers: null,
         });
 
         await channel.send({
-          content: `👑 <@${interaction.user.id}> a transféré la propriété du salon vocal à <@${targetMember.id}> !`
+          content: `👑 <@${interaction.user.id}> a transféré la propriété du salon vocal à <@${targetMember.id}> !`,
         });
 
         return interaction.update({
           content: `👑 La propriété de votre salon a été transférée à **${targetMember.user.tag}** avec succès.`,
-          components: []
+          components: [],
         });
       }
     }

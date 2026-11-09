@@ -25,7 +25,7 @@ export class WelcomeCardService {
    */
   static drawGeometricBackground(ctx, width, height) {
     ctx.save();
-    
+
     // Grille de losanges dorés fins (#d4af35)
     const spacing = 75;
     ctx.lineWidth = 1.5;
@@ -63,9 +63,10 @@ export class WelcomeCardService {
     const ctx = canvas.getContext('2d');
 
     const user = member.user;
-    const tag = user.discriminator && user.discriminator !== '0'
-      ? `${user.username}#${user.discriminator}`
-      : `${user.username}`;
+    const tag =
+      user.discriminator && user.discriminator !== '0'
+        ? `${user.username}#${user.discriminator}`
+        : `${user.username}`;
     const memberCount = member.guild?.memberCount || 1;
 
     // 1. Découpage du conteneur à coins arrondis
@@ -85,7 +86,14 @@ export class WelcomeCardService {
     this.drawGeometricBackground(ctx, width, height);
 
     // Vignette douce sur les bords
-    const vignette = ctx.createRadialGradient(width / 2, height / 2, 120, width / 2, height / 2, width * 0.7);
+    const vignette = ctx.createRadialGradient(
+      width / 2,
+      height / 2,
+      120,
+      width / 2,
+      height / 2,
+      width * 0.7
+    );
     vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
     vignette.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
     ctx.fillStyle = vignette;
@@ -121,7 +129,14 @@ export class WelcomeCardService {
     const avatarRadius = 78;
 
     // Halo doux sous l'avatar
-    const haloGrad = ctx.createRadialGradient(avatarCenterX, avatarCenterY, 50, avatarCenterX, avatarCenterY, 105);
+    const haloGrad = ctx.createRadialGradient(
+      avatarCenterX,
+      avatarCenterY,
+      50,
+      avatarCenterX,
+      avatarCenterY,
+      105
+    );
     haloGrad.addColorStop(0, 'rgba(233, 209, 92, 0.18)');
     haloGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = haloGrad;

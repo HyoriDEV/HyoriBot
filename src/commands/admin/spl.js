@@ -1,8 +1,4 @@
-import {
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-  EmbedBuilder
-} from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import { PermissionService, PERMISSION_LEVELS } from '../../services/permissionService.js';
 
 export const splCommand = {
@@ -27,26 +23,36 @@ export const splCommand = {
     });
 
     const embed = new EmbedBuilder()
-      .setColor(0x5865F2)
+      .setColor(0x5865f2)
       .setTitle('🛡️ Répertoire des Permissions Hyori Bot')
-      .setDescription('Voici la liste des rôles et des membres ayant un niveau spécifique attribué :')
+      .setDescription(
+        'Voici la liste des rôles et des membres ayant un niveau spécifique attribué :'
+      )
       .addFields(
         {
           name: '🎭 Rôles Configurés',
-          value: rolesLines.length > 0 ? rolesLines.join('\n') : '*Aucun rôle spécifique configuré (utilisez `/setperm` ou `/sp`)*',
-          inline: false
+          value:
+            rolesLines.length > 0
+              ? rolesLines.join('\n')
+              : '*Aucun rôle spécifique configuré (utilisez `/setperm` ou `/sp`)*',
+          inline: false,
         },
         {
           name: '👤 Membres Configurés',
-          value: usersLines.length > 0 ? usersLines.join('\n') : '*Aucun membre spécifique configuré (utilisez `/setperm` ou `/sp`)*',
-          inline: false
+          value:
+            usersLines.length > 0
+              ? usersLines.join('\n')
+              : '*Aucun membre spécifique configuré (utilisez `/setperm` ou `/sp`)*',
+          inline: false,
         }
       )
-      .setFooter({ text: 'Raccourcis : /sp (assigner) • /spr (reset) • /spl (liste) • /setperm-cmds (niveaux commandes)' })
+      .setFooter({
+        text: 'Raccourcis : /sp (assigner) • /spr (reset) • /spl (liste) • /setperm-cmds (niveaux commandes)',
+      })
       .setTimestamp();
 
     return interaction.reply({ embeds: [embed] });
-  }
+  },
 };
 
 export default splCommand;

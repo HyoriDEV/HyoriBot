@@ -8,5 +8,5 @@ export default {
 
     // Contrôle Anti-Spam
     await antiSpamService.handleMessage(message);
-  }
+  },
 };

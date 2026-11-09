@@ -4,22 +4,31 @@ import { getEnv } from '../../config/env.js';
 
 export const COMMAND_CATEGORIES = {
   '🛡️ Modération & Sanctions': [
-    'warn', 'warnlist', 'clearwarns', 'timeout', 'untimeout',
-    'tempban', 'to', 'untempban', 'unto',
-    'mute', 'unmute', 'kick', 'ban', 'unban'
+    'warn',
+    'warnlist',
+    'clearwarns',
+    'timeout',
+    'untimeout',
+    'tempban',
+    'to',
+    'untempban',
+    'unto',
+    'mute',
+    'unmute',
+    'kick',
+    'ban',
+    'unban',
   ],
-  '💬 Salons & Chat': [
-    'clear', 'purge', 'lock', 'unlock', 'slowmode'
-  ],
-  '⚙️ Système de Permissions': [
-    'setperm', 'sp', 'spr', 'spl', 'setperm-cmds'
-  ],
+  '💬 Salons & Chat': ['clear', 'purge', 'lock', 'unlock', 'slowmode'],
+  '⚙️ Système de Permissions': ['setperm', 'sp', 'spr', 'spl', 'setperm-cmds'],
   '📁 Déploiement & Configuration': [
-    'setup-logs', 'config-logs', 'config-welcome', 'configtempban', 'setup-vocal'
+    'setup-logs',
+    'config-logs',
+    'config-welcome',
+    'configtempban',
+    'setup-vocal',
   ],
-  'ℹ️ Utilitaires & Informations': [
-    'cmds', 'help', 'ping', 'userinfo', 'serverinfo'
-  ]
+  'ℹ️ Utilitaires & Informations': ['cmds', 'help', 'ping', 'userinfo', 'serverinfo'],
 };
 
 export async function buildCmdsEmbed(member) {
@@ -32,12 +41,12 @@ export async function buildCmdsEmbed(member) {
     .setTitle('📜 Répertoire des Commandes — Hyori RP')
     .setDescription(
       `Toutes les commandes fonctionnent en **Slash command (\`/\`)** ou via le préfixe textuel **\`${prefix}\`**.\n\n` +
-      `**Légende de vos accès :**\n` +
-      `🟢 = Vous avez la permission d'exécuter cette commande\n` +
-      `🔒 = Verrouillé (permissions insuffisantes pour votre rôle/niveau)\n`
+        `**Légende de vos accès :**\n` +
+        `🟢 = Vous avez la permission d'exécuter cette commande\n` +
+        `🔒 = Verrouillé (permissions insuffisantes pour votre rôle/niveau)\n`
     )
     .setFooter({
-      text: `Hyori RP • Préfixe textuel : ${prefix} • Tapez ${prefix}help ou /help pour plus de détails`
+      text: `Hyori RP • Préfixe textuel : ${prefix} • Tapez ${prefix}help ou /help pour plus de détails`,
     })
     .setTimestamp();
 
@@ -58,7 +67,7 @@ export async function buildCmdsEmbed(member) {
       embed.addFields({
         name: categoryTitle,
         value: lines.join('\n'),
-        inline: false
+        inline: false,
       });
     }
   }
@@ -69,11 +78,13 @@ export async function buildCmdsEmbed(member) {
 export default {
   data: new SlashCommandBuilder()
     .setName('cmds')
-    .setDescription('Afficher la liste de toutes les commandes disponibles et vos permissions d\'accès')
+    .setDescription(
+      "Afficher la liste de toutes les commandes disponibles et vos permissions d'accès"
+    )
     .addStringOption(opt =>
       opt
         .setName('commande')
-        .setDescription('Nom d\'une commande spécifique pour voir ses détails')
+        .setDescription("Nom d'une commande spécifique pour voir ses détails")
         .setRequired(false)
     ),
 
@@ -86,7 +97,7 @@ export default {
       if (!cmd) {
         return interaction.reply({
           content: `❌ La commande \`/${specificCmdName}\` n'existe pas.`,
-          ephemeral: true
+          ephemeral: true,
         });
       }
 
@@ -96,12 +107,22 @@ export default {
       const lvlInfo = PERMISSION_LEVELS[requiredLevel] || PERMISSION_LEVELS[0];
 
       const embed = new EmbedBuilder()
-        .setColor(canUserRun.allowed ? 0xe9d15c : 0xED4245)
+        .setColor(canUserRun.allowed ? 0xe9d15c : 0xed4245)
         .setTitle(`📖 Détails de la commande : /${cmd.data.name}`)
         .setDescription(cmd.data.description || 'Aucune description fournie')
         .addFields(
-          { name: 'Niveau requis', value: `${lvlInfo.emoji} ${lvlInfo.name} (Niveau ${requiredLevel})`, inline: true },
-          { name: 'Votre statut', value: canUserRun.allowed ? '🟢 **Autorisé**' : `🔒 **Verrouillé** (${canUserRun.reason || 'Niveau insuffisant'})`, inline: true }
+          {
+            name: 'Niveau requis',
+            value: `${lvlInfo.emoji} ${lvlInfo.name} (Niveau ${requiredLevel})`,
+            inline: true,
+          },
+          {
+            name: 'Votre statut',
+            value: canUserRun.allowed
+              ? '🟢 **Autorisé**'
+              : `🔒 **Verrouillé** (${canUserRun.reason || 'Niveau insuffisant'})`,
+            inline: true,
+          }
         )
         .setFooter({ text: 'Hyori RP • Système de Permissions' })
         .setTimestamp();
@@ -111,5 +132,5 @@ export default {
 
     const embed = await buildCmdsEmbed(interaction.member);
     return interaction.reply({ embeds: [embed], ephemeral: true });
-  }
+  },
 };

@@ -8,21 +8,15 @@ export default {
     .setDescription('Bannir définitivement un membre du serveur')
     .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
     .addUserOption(opt =>
-      opt
-        .setName('membre')
-        .setDescription('Le membre à bannir')
-        .setRequired(true)
+      opt.setName('membre').setDescription('Le membre à bannir').setRequired(true)
     )
     .addStringOption(opt =>
-      opt
-        .setName('raison')
-        .setDescription('Raison du bannissement')
-        .setRequired(false)
+      opt.setName('raison').setDescription('Raison du bannissement').setRequired(false)
     )
     .addIntegerOption(opt =>
       opt
         .setName('supprimer_jours')
-        .setDescription('Supprimer l\'historique des messages (0 à 7 jours)')
+        .setDescription("Supprimer l'historique des messages (0 à 7 jours)")
         .setMinValue(0)
         .setMaxValue(7)
         .setRequired(false)
@@ -39,35 +33,42 @@ export default {
     if (member) {
       if (!member.bannable) {
         return interaction.reply({
-          content: '❌ Je n\'ai pas la permission de bannir ce membre (rôle supérieur ou permissions manquantes).',
-          ephemeral: true
+          content:
+            "❌ Je n'ai pas la permission de bannir ce membre (rôle supérieur ou permissions manquantes).",
+          ephemeral: true,
         });
       }
 
-      if (member.roles.highest.position >= interaction.member.roles.highest.position && interaction.user.id !== interaction.guild.ownerId) {
+      if (
+        member.roles.highest.position >= interaction.member.roles.highest.position &&
+        interaction.user.id !== interaction.guild.ownerId
+      ) {
         return interaction.reply({
-          content: '❌ Vous ne pouvez pas bannir un membre ayant un rôle supérieur ou égal au vôtre.',
-          ephemeral: true
+          content:
+            '❌ Vous ne pouvez pas bannir un membre ayant un rôle supérieur ou égal au vôtre.',
+          ephemeral: true,
         });
       }
 
       // Notification en MP avant le ban
-      await member.send({
-        embeds: [
-          new EmbedBuilder()
-            .setColor(0xED4245)
-            .setTitle(`🔨 Vous avez été banni de ${interaction.guild.name}`)
-            .setDescription(`**Raison :** ${reason}`)
-            .setTimestamp()
-        ]
-      }).catch(() => {});
+      await member
+        .send({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(0xed4245)
+              .setTitle(`🔨 Vous avez été banni de ${interaction.guild.name}`)
+              .setDescription(`**Raison :** ${reason}`)
+              .setTimestamp(),
+          ],
+        })
+        .catch(() => {});
     }
 
     await interaction.deferReply({ ephemeral: true });
 
     await interaction.guild.bans.create(targetUser.id, {
       deleteMessageSeconds,
-      reason: `${interaction.user.tag}: ${reason}`
+      reason: `${interaction.user.tag}: ${reason}`,
     });
 
     const now = Date.now();
@@ -80,13 +81,13 @@ export default {
         moderatorId: interaction.user.id,
         type: 'BAN',
         reason,
-        timestamp: now
+        timestamp: now,
       });
       return data;
     });
 
     const embed = new EmbedBuilder()
-      .setColor(0xED4245)
+      .setColor(0xed4245)
       .setTitle('🔨 Membre Banni')
       .addFields(
         { name: 'Membre', value: `${targetUser.tag} (\`${targetUser.id}\`)`, inline: true },
@@ -98,5 +99,5 @@ export default {
 
     await interaction.editReply({ embeds: [embed] });
     await sendModLog(interaction.guild, embed);
-  }
+  },
 };
