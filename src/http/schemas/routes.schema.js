@@ -169,3 +169,17 @@ export const SyncStaffRoleSchema = z.object({
 export const BatchMembersRolesSchema = z.object({
   discordIds: z.array(z.string().regex(discordIdRegex, 'Invalid Discord ID format')).optional(),
 });
+
+export const CreateTopicSchema = z.object({
+  title: z.string().min(1, 'Le titre est obligatoire').max(120),
+  slug: z.string().max(100).optional().nullable(),
+  context: z.string().min(1, 'Le contexte est obligatoire'),
+  actions: z.string().min(1, 'Les actions sont obligatoires'),
+  ticketId: z.string().optional().nullable(),
+  ticketSubject: z.string().optional().nullable(),
+  ticketUrl: z.string().url('ticketUrl must be a valid URL').optional().nullable(),
+});
+
+export const ArchiveTopicSchema = z.object({
+  channelId: z.string().min(1, 'channelId is required'),
+});
