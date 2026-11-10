@@ -33,12 +33,11 @@ export async function notificationRoutes(fastify) {
         details: parseResult.error.flatten(),
       });
     }
-    const { discordId, status, playerSpaceUrl, assignedClass, override } = parseResult.data;
+    const { discordId, status, playerSpaceUrl, assignedClass } = parseResult.data;
     const result = await notificationService.notifyRegistrationStatus(
       discordId,
       status,
       playerSpaceUrl,
-      override,
       assignedClass
     );
     return reply.status(200).send(result);
@@ -60,12 +59,11 @@ export async function notificationRoutes(fastify) {
         details: parseResult.error.flatten(),
       });
     }
-    const { discordId, status, playerSpaceUrl, override } = parseResult.data;
+    const { discordId, status, playerSpaceUrl } = parseResult.data;
     const result = await notificationService.notifyCharacterSheetStatus(
       discordId,
       status,
-      playerSpaceUrl,
-      override
+      playerSpaceUrl
     );
     return reply.status(200).send(result);
   });
@@ -113,12 +111,11 @@ export async function notificationRoutes(fastify) {
         details: parseResult.error.flatten(),
       });
     }
-    const { discordId, discordIds, interviewUrl, override } = parseResult.data;
+    const { discordId, discordIds, interviewUrl } = parseResult.data;
     const target = discordIds && discordIds.length > 0 ? discordIds : discordId;
     const result = await notificationService.notifyInterviewReminder(
       target,
-      interviewUrl,
-      override
+      interviewUrl
     );
     return reply.status(200).send(result);
   });

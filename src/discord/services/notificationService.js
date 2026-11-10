@@ -88,7 +88,6 @@ export class NotificationService {
     discordId,
     status,
     playerSpaceUrl,
-    override = null,
     assignedClass = null
   ) {
     if (status === 'NEW') {
@@ -137,7 +136,6 @@ export class NotificationService {
     const { embed, components } = buildRegistrationStatusEmbed(
       status,
       playerSpaceUrl,
-      override,
       village
     );
     return this.sendDirectMessage(discordId, `notifyRegistrationStatus:${status}`, {
@@ -145,7 +143,7 @@ export class NotificationService {
       components,
     });
   }
-  async notifyCharacterSheetStatus(discordId, status, playerSpaceUrl, override = null) {
+  async notifyCharacterSheetStatus(discordId, status, playerSpaceUrl) {
     const notifyStatuses = ['PENDING_PLAYER', 'VALIDATED', 'REOPENED'];
     if (!notifyStatuses.includes(status)) {
       logger.debug(
@@ -161,7 +159,7 @@ export class NotificationService {
         message: `Character sheet status ${status} does not trigger a notification`,
       };
     }
-    const { embed, components } = buildCharacterSheetStatusEmbed(status, playerSpaceUrl, override);
+    const { embed, components } = buildCharacterSheetStatusEmbed(status, playerSpaceUrl);
     return this.sendDirectMessage(discordId, `notifyCharacterSheetStatus:${status}`, {
       embeds: [embed],
       components,
@@ -174,9 +172,9 @@ export class NotificationService {
       components,
     });
   }
-  async notifyInterviewReminder(target, interviewUrl, override = null) {
+  async notifyInterviewReminder(target, interviewUrl) {
     const discordIds = Array.isArray(target) ? target : [target];
-    const { embed, components } = buildInterviewReminderEmbed(interviewUrl, override);
+    const { embed, components } = buildInterviewReminderEmbed(interviewUrl);
 
     let sent = 0;
     let failed = 0;
@@ -236,14 +234,12 @@ export class NotificationService {
     authorName,
     messagePreview,
     ticketUrl,
-    override = null,
   }) {
     const { embed, components } = buildTicketMessageNotificationEmbed(
       ticketSubject,
       authorName,
       messagePreview,
-      ticketUrl,
-      override
+      ticketUrl
     );
     return this.sendDirectMessage(discordId, `notifyTicketMessage:${ticketId}`, {
       embeds: [embed],
@@ -256,14 +252,12 @@ export class NotificationService {
     messagePreview,
     rpTrackingUrl,
     characterName = null,
-    override = null,
   }) {
     const { embed, components } = buildRpTrackingMessageNotificationEmbed({
       authorName,
       messagePreview,
       rpTrackingUrl,
       characterName,
-      override,
     });
     return this.sendDirectMessage(discordId, `notifyRpTrackingMessage:${discordId}`, {
       embeds: [embed],
@@ -301,7 +295,6 @@ export class NotificationService {
       authorName,
       ticketDescription,
       ticketStaffUrl,
-      override = null,
     } = ticket;
 
     if (!targetChannelId) {
@@ -334,7 +327,6 @@ export class NotificationService {
           authorName,
           ticketDescription,
           ticketStaffUrl,
-          override,
         });
 
         const content = roleId ? `<@&${roleId}>` : undefined;
@@ -382,7 +374,6 @@ export class NotificationService {
     minecraftUuid,
     avatarUrl,
     waitlistStaffUrl,
-    override = null,
   }) {
     const targetChannelId = channelId || discordConfig.channels.waitlistNotifications;
     const roleId =
@@ -431,7 +422,6 @@ export class NotificationService {
           discordId,
           waitlistStaffUrl,
           avatarUrl: effectiveAvatarUrl,
-          override,
         });
 
         const content = roleId ? `<@&${roleId}>` : undefined;
