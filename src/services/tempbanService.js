@@ -12,7 +12,7 @@ export class TempbanService {
     return {
       roleId: tempban.roleId || config.roles?.mutedRoleId || null,
       allowedChannels: tempban.allowedChannels || [],
-      lastSyncedAt: tempban.lastSyncedAt || null
+      lastSyncedAt: tempban.lastSyncedAt || null,
     };
   }
 
@@ -46,8 +46,9 @@ export class TempbanService {
     let role = null;
 
     if (cfg.roleId) {
-      role = guild.roles.cache.get(cfg.roleId) ||
-             await guild.roles.fetch(cfg.roleId).catch(() => null);
+      role =
+        guild.roles.cache.get(cfg.roleId) ||
+        (await guild.roles.fetch(cfg.roleId).catch(() => null));
     }
 
     if (!role) {
@@ -59,7 +60,7 @@ export class TempbanService {
       role = await guild.roles.create({
         name: 'Tempban',
         color: '#4f545c',
-        reason: 'Rôle d\'isolement pour le système de tempban'
+        reason: "Rôle d'isolement pour le système de tempban",
       });
 
       await this.saveConfig({ roleId: role.id });
@@ -77,7 +78,8 @@ export class TempbanService {
    * @param {string[]} allowedChannelIds
    */
   static async applyPermissions(guild, roleId, allowedChannelIds = []) {
-    const role = guild.roles.cache.get(roleId) || await guild.roles.fetch(roleId).catch(() => null);
+    const role =
+      guild.roles.cache.get(roleId) || (await guild.roles.fetch(roleId).catch(() => null));
     if (!role) {
       throw new Error('Le rôle configuré est introuvable sur le serveur Discord.');
     }
@@ -93,21 +95,29 @@ export class TempbanService {
       try {
         if (isAllowed) {
           // Salon visible par le rôle sanctionné (ex: salon d'isolement/ticket/tribunal)
-          await channel.permissionOverwrites.edit(role, {
-            ViewChannel: true,
-            SendMessages: true,
-            ReadMessageHistory: true,
-            AddReactions: true,
-            Connect: true,
-            Speak: true
-          }, { reason: 'Configuration Tempban: Salon autorisé d\'accès' });
+          await channel.permissionOverwrites.edit(
+            role,
+            {
+              ViewChannel: true,
+              SendMessages: true,
+              ReadMessageHistory: true,
+              AddReactions: true,
+              Connect: true,
+              Speak: true,
+            },
+            { reason: "Configuration Tempban: Salon autorisé d'accès" }
+          );
           allowedCount++;
         } else {
           // Salon interdit et totalement masqué
-          await channel.permissionOverwrites.edit(role, {
-            ViewChannel: false,
-            Connect: false
-          }, { reason: 'Configuration Tempban: Salon masqué et verrouillé' });
+          await channel.permissionOverwrites.edit(
+            role,
+            {
+              ViewChannel: false,
+              Connect: false,
+            },
+            { reason: 'Configuration Tempban: Salon masqué et verrouillé' }
+          );
           hiddenCount++;
         }
       } catch (err) {
@@ -123,7 +133,7 @@ export class TempbanService {
     return {
       total: allowedCount + hiddenCount,
       allowedCount,
-      hiddenCount
+      hiddenCount,
     };
   }
 }

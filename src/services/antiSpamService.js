@@ -54,9 +54,11 @@ class AntiSpamService {
         );
 
         // Avertissement temporaire dans le salon
-        const warning = await message.channel.send({
-          content: `⚠️ ${message.author}, vous avez été sanctionné par l'anti-spam (${timeoutDurationStr}) pour envoi excessif de messages.`
-        }).catch(() => null);
+        const warning = await message.channel
+          .send({
+            content: `⚠️ ${message.author}, vous avez été sanctionné par l'anti-spam (${timeoutDurationStr}) pour envoi excessif de messages.`,
+          })
+          .catch(() => null);
 
         if (warning) {
           setTimeout(() => warning.delete().catch(() => {}), 6000);
@@ -64,10 +66,14 @@ class AntiSpamService {
 
         // Log de modération
         const alertEmbed = new EmbedBuilder()
-          .setColor(0xED4245)
+          .setColor(0xed4245)
           .setTitle('🚨 Sanction Anti-Spam Automatique')
           .addFields(
-            { name: 'Membre', value: `${message.author.tag} (\`${message.author.id}\`)`, inline: true },
+            {
+              name: 'Membre',
+              value: `${message.author.tag} (\`${message.author.id}\`)`,
+              inline: true,
+            },
             { name: 'Salon', value: `${message.channel}`, inline: true },
             { name: 'Sanction', value: `Timeout customisé (${timeoutDurationStr})`, inline: true },
             { name: 'Raison', value: reason, inline: false }
@@ -75,9 +81,15 @@ class AntiSpamService {
           .setTimestamp();
 
         await sendModLog(message.guild, alertEmbed);
-        logger.warn({ user: message.author.tag, channel: message.channel.name }, 'Anti-Spam déclenché');
+        logger.warn(
+          { user: message.author.tag, channel: message.channel.name },
+          'Anti-Spam déclenché'
+        );
       } catch (err) {
-        logger.error({ err, user: message.author.tag }, 'Échec de l\'application de la sanction anti-spam');
+        logger.error(
+          { err, user: message.author.tag },
+          "Échec de l'application de la sanction anti-spam"
+        );
       }
     }
   }

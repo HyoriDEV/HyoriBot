@@ -7,6 +7,7 @@ import { notificationRoutes } from './routes/notifications.js';
 import { sanctionRoutes } from './routes/sanctions.js';
 import { roleRoutes } from './routes/roles.js';
 import { memberRoutes } from './routes/members.js';
+import { topicRoutes } from './routes/topics.js';
 export async function createHttpServer() {
   const env = getEnv();
   const fastify = Fastify({
@@ -79,6 +80,7 @@ export async function createHttpServer() {
       await apiV1.register(sanctionRoutes);
       await apiV1.register(roleRoutes);
       await apiV1.register(memberRoutes);
+      await apiV1.register(topicRoutes);
     },
     {
       prefix: '/api/v1',

@@ -5,7 +5,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ChannelType
+  ChannelType,
 } from 'discord.js';
 import { buttonRolesStore } from '../../storage/index.js';
 
@@ -15,10 +15,7 @@ export default {
     .setDescription('Créer un panneau de sélection de rôles par boutons cliquables')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addStringOption(opt =>
-      opt
-        .setName('titre')
-        .setDescription('Titre du panneau')
-        .setRequired(true)
+      opt.setName('titre').setDescription('Titre du panneau').setRequired(true)
     )
     .addStringOption(opt =>
       opt
@@ -27,10 +24,7 @@ export default {
         .setRequired(true)
     )
     .addRoleOption(opt =>
-      opt
-        .setName('role_1')
-        .setDescription('Premier rôle à attribuer')
-        .setRequired(true)
+      opt.setName('role_1').setDescription('Premier rôle à attribuer').setRequired(true)
     )
     .addStringOption(opt =>
       opt
@@ -39,69 +33,33 @@ export default {
         .setRequired(false)
     )
     .addStringOption(opt =>
-      opt
-        .setName('emoji_1')
-        .setDescription('Emoji sur le 1er bouton (ex: 🔔)')
-        .setRequired(false)
+      opt.setName('emoji_1').setDescription('Emoji sur le 1er bouton (ex: 🔔)').setRequired(false)
     )
-    .addRoleOption(opt =>
-      opt
-        .setName('role_2')
-        .setDescription('Deuxième rôle')
-        .setRequired(false)
+    .addRoleOption(opt => opt.setName('role_2').setDescription('Deuxième rôle').setRequired(false))
+    .addStringOption(opt =>
+      opt.setName('label_2').setDescription('Texte affiché sur le 2ème bouton').setRequired(false)
     )
     .addStringOption(opt =>
-      opt
-        .setName('label_2')
-        .setDescription('Texte affiché sur le 2ème bouton')
-        .setRequired(false)
+      opt.setName('emoji_2').setDescription('Emoji sur le 2ème bouton (ex: 🎮)').setRequired(false)
+    )
+    .addRoleOption(opt => opt.setName('role_3').setDescription('Troisième rôle').setRequired(false))
+    .addStringOption(opt =>
+      opt.setName('label_3').setDescription('Texte affiché sur le 3ème bouton').setRequired(false)
     )
     .addStringOption(opt =>
-      opt
-        .setName('emoji_2')
-        .setDescription('Emoji sur le 2ème bouton (ex: 🎮)')
-        .setRequired(false)
+      opt.setName('emoji_3').setDescription('Emoji sur le 3ème bouton').setRequired(false)
     )
-    .addRoleOption(opt =>
-      opt
-        .setName('role_3')
-        .setDescription('Troisième rôle')
-        .setRequired(false)
+    .addRoleOption(opt => opt.setName('role_4').setDescription('Quatrième rôle').setRequired(false))
+    .addStringOption(opt =>
+      opt.setName('label_4').setDescription('Texte affiché sur le 4ème bouton').setRequired(false)
     )
     .addStringOption(opt =>
-      opt
-        .setName('label_3')
-        .setDescription('Texte affiché sur le 3ème bouton')
-        .setRequired(false)
-    )
-    .addStringOption(opt =>
-      opt
-        .setName('emoji_3')
-        .setDescription('Emoji sur le 3ème bouton')
-        .setRequired(false)
-    )
-    .addRoleOption(opt =>
-      opt
-        .setName('role_4')
-        .setDescription('Quatrième rôle')
-        .setRequired(false)
-    )
-    .addStringOption(opt =>
-      opt
-        .setName('label_4')
-        .setDescription('Texte affiché sur le 4ème bouton')
-        .setRequired(false)
-    )
-    .addStringOption(opt =>
-      opt
-        .setName('emoji_4')
-        .setDescription('Emoji sur le 4ème bouton')
-        .setRequired(false)
+      opt.setName('emoji_4').setDescription('Emoji sur le 4ème bouton').setRequired(false)
     )
     .addChannelOption(opt =>
       opt
         .setName('salon')
-        .setDescription('Salon d\'envoi (salon actuel par défaut)')
+        .setDescription("Salon d'envoi (salon actuel par défaut)")
         .setRequired(false)
         .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
     ),
@@ -124,14 +82,14 @@ export default {
         id: role.id,
         name: role.name,
         label: label.slice(0, 80),
-        emoji
+        emoji,
       });
     }
 
     if (rolesConfig.length === 0) {
       return interaction.reply({
         content: '❌ Veuillez spécifier au moins un rôle valide.',
-        ephemeral: true
+        ephemeral: true,
       });
     }
 
@@ -153,14 +111,16 @@ export default {
     }
 
     const embed = new EmbedBuilder()
-      .setColor(0x5865F2)
+      .setColor(0x5865f2)
       .setTitle(`🎭 ${title}`)
-      .setDescription(`${description}\n\n*Cliquez sur un bouton ci-dessous pour ajouter ou retirer le rôle correspondant.*`)
+      .setDescription(
+        `${description}\n\n*Cliquez sur un bouton ci-dessous pour ajouter ou retirer le rôle correspondant.*`
+      )
       .setFooter({ text: 'Sélection de rôles automatique' });
 
     const sentMessage = await targetChannel.send({
       embeds: [embed],
-      components: [row]
+      components: [row],
     });
 
     // Enregistrement persistant dans buttonRoles.json
@@ -173,14 +133,14 @@ export default {
         guildId: interaction.guild.id,
         title,
         roles: rolesConfig,
-        createdAt: Date.now()
+        createdAt: Date.now(),
       });
       return data;
     });
 
     await interaction.reply({
       content: `✅ Panneau de rôles déployé avec succès dans <#${targetChannel.id}> !`,
-      ephemeral: true
+      ephemeral: true,
     });
-  }
+  },
 };

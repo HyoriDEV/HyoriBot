@@ -16,13 +16,14 @@ export async function sendAuditLog(guild, channelKey, embed) {
     const channelId = config.logs?.[channelKey];
     if (!channelId) return;
 
-    const channel = guild.channels.cache.get(channelId) ||
-                    await guild.channels.fetch(channelId).catch(() => null);
+    const channel =
+      guild.channels.cache.get(channelId) ||
+      (await guild.channels.fetch(channelId).catch(() => null));
 
     if (!channel || !channel.isTextBased()) return;
 
     await channel.send({ embeds: [embed] }).catch(() => {});
   } catch (error) {
-    logger.error({ error, channelKey }, 'Erreur lors de l\'envoi du log d\'audit');
+    logger.error({ error, channelKey }, "Erreur lors de l'envoi du log d'audit");
   }
 }

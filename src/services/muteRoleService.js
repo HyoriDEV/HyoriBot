@@ -13,13 +13,15 @@ export class MuteRoleService {
     let role = null;
 
     if (config.tempban?.roleId) {
-      role = guild.roles.cache.get(config.tempban.roleId) ||
-             await guild.roles.fetch(config.tempban.roleId).catch(() => null);
+      role =
+        guild.roles.cache.get(config.tempban.roleId) ||
+        (await guild.roles.fetch(config.tempban.roleId).catch(() => null));
     }
 
     if (!role && config.roles?.mutedRoleId) {
-      role = guild.roles.cache.get(config.roles.mutedRoleId) ||
-             await guild.roles.fetch(config.roles.mutedRoleId).catch(() => null);
+      role =
+        guild.roles.cache.get(config.roles.mutedRoleId) ||
+        (await guild.roles.fetch(config.roles.mutedRoleId).catch(() => null));
     }
 
     if (!role) {
@@ -32,7 +34,7 @@ export class MuteRoleService {
       role = await guild.roles.create({
         name: 'Muted-Restricted',
         color: '#4f545c',
-        reason: 'Rôle de restriction automatique pour timeout customisé'
+        reason: 'Rôle de restriction automatique pour timeout customisé',
       });
 
       await configStore.update(data => {
@@ -54,15 +56,19 @@ export class MuteRoleService {
   static async updateChannelPermissions(channel, role, restrict = true) {
     try {
       if (restrict) {
-        await channel.permissionOverwrites.edit(role, {
-          SendMessages: false,
-          SendMessagesInThreads: false,
-          CreatePublicThreads: false,
-          CreatePrivateThreads: false,
-          AddReactions: false,
-          Speak: false,
-          SendVoiceMessages: false
-        }, { reason: 'Application de la restriction salon (Blacklist)' });
+        await channel.permissionOverwrites.edit(
+          role,
+          {
+            SendMessages: false,
+            SendMessagesInThreads: false,
+            CreatePublicThreads: false,
+            CreatePrivateThreads: false,
+            AddReactions: false,
+            Speak: false,
+            SendVoiceMessages: false,
+          },
+          { reason: 'Application de la restriction salon (Blacklist)' }
+        );
       } else {
         await channel.permissionOverwrites.delete(role, 'Retrait du salon de la blacklist');
       }

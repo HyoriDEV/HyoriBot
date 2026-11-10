@@ -96,6 +96,11 @@ export const discordConfig = {
       DEVELOPER: '1557676856847900752',
     },
   },
+
+  categories: {
+    topics: process.env.DISCORD_TOPICS_CATEGORY_ID || null,
+    archivedTopics: process.env.DISCORD_ARCHIVED_TOPICS_CATEGORY_ID || null,
+  },
 };
 
 /**

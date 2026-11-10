@@ -14,7 +14,7 @@ export const configStore = new JsonStore(path.join(DATA_DIR, 'config.json'), {
   roles: {
     mutedRoleId: '',
     staffRoleIds: [],
-    levelRewards: {}
+    levelRewards: {},
   },
   moderation: {
     blacklistedChannels: [],
@@ -23,56 +23,55 @@ export const configStore = new JsonStore(path.join(DATA_DIR, 'config.json'), {
       maxMessagesPerInterval: 5,
       intervalMs: 3000,
       action: 'timeout',
-      timeoutDuration: '10m'
+      timeoutDuration: '10m',
     },
     antiRaid: {
       enabled: true,
       joinThreshold: 10,
-      intervalSeconds: 10
-    }
+      intervalSeconds: 10,
+    },
   },
   logs: {
     messagesChannelId: '',
     membersChannelId: '',
     voiceChannelId: '',
-    moderationChannelId: ''
+    moderationChannelId: '',
   },
   tickets: {
     categoryId: '',
-    transcriptFormat: 'txt'
+    transcriptFormat: 'txt',
   },
   levels: {
     cooldownSeconds: 60,
     xpPerMessage: { min: 15, max: 25 },
-    xpPerVoiceMinute: 10
-  }
+    xpPerVoiceMinute: 10,
+  },
 });
 
 export const timeoutsStore = new JsonStore(path.join(DATA_DIR, 'timeouts.json'), {
   version: 1,
-  activeTimeouts: []
+  activeTimeouts: [],
 });
 
 export const warnsStore = new JsonStore(path.join(DATA_DIR, 'warns.json'), {
   version: 1,
-  sanctions: []
+  sanctions: [],
 });
 
 export const buttonRolesStore = new JsonStore(path.join(DATA_DIR, 'buttonRoles.json'), {
   version: 1,
-  panels: []
+  panels: [],
 });
 
 export const ticketsStore = new JsonStore(path.join(DATA_DIR, 'tickets.json'), {
   version: 1,
   ticketCounter: 0,
-  tickets: []
+  tickets: [],
 });
 
 export const permissionsStore = new JsonStore(path.join(DATA_DIR, 'permissions.json'), {
   version: 1,
-  commands: {}
+  commands: {},
 });
 
 export { DATA_DIR };
-

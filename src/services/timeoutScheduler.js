@@ -77,7 +77,7 @@ export class TimeoutScheduler {
         reason,
         startsAt: now,
         expiresAt,
-        completed: false
+        completed: false,
       });
       return data;
     });
@@ -93,7 +93,7 @@ export class TimeoutScheduler {
         type: 'TIMEOUT',
         durationMs,
         reason,
-        timestamp: now
+        timestamp: now,
       });
       return data;
     });
@@ -109,10 +109,8 @@ export class TimeoutScheduler {
     const role = await TempbanService.getOrCreateTempbanRole(guild);
 
     // 1. Sauvegarde et retrait des rôles actuels (sauf @everyone et rôles d'intégrations de bot)
-    const rolesToRemove = member.roles.cache.filter(r =>
-      r.id !== guild.id &&
-      !r.managed &&
-      r.id !== role.id
+    const rolesToRemove = member.roles.cache.filter(
+      r => r.id !== guild.id && !r.managed && r.id !== role.id
     );
     const savedRoleIds = rolesToRemove.map(r => r.id);
 
@@ -123,7 +121,10 @@ export class TimeoutScheduler {
           `Tempban appliqué par ${moderatorUser.tag || 'Staff'} - Sauvegarde pour rerank`
         );
       } catch (err) {
-        logger.warn({ memberId: member.id, err: err.message }, 'Erreur lors du retrait des rôles pour le tempban');
+        logger.warn(
+          { memberId: member.id, err: err.message },
+          'Erreur lors du retrait des rôles pour le tempban'
+        );
       }
     }
 
@@ -152,7 +153,7 @@ export class TimeoutScheduler {
         reason,
         startsAt: now,
         expiresAt,
-        completed: false
+        completed: false,
       });
       return data;
     });
@@ -167,7 +168,7 @@ export class TimeoutScheduler {
         type: 'TEMPBAN',
         durationMs,
         reason,
-        timestamp: now
+        timestamp: now,
       });
       return data;
     });
@@ -212,7 +213,12 @@ export class TimeoutScheduler {
     await timeoutsStore.update(data => {
       data.activeTimeouts = data.activeTimeouts || [];
       for (const t of data.activeTimeouts) {
-        if (t.guildId === guild.id && t.userId === member.id && !t.completed && t.type === 'TEMPBAN') {
+        if (
+          t.guildId === guild.id &&
+          t.userId === member.id &&
+          !t.completed &&
+          t.type === 'TEMPBAN'
+        ) {
           t.completed = true;
           t.unbannedAt = Date.now();
           t.unbanReason = reason;
@@ -234,7 +240,10 @@ export class TimeoutScheduler {
           await member.roles.add(validRoles, 'Rerank post-tempban');
           restoredCount = validRoles.length;
         } catch (err) {
-          logger.warn({ memberId: member.id, err: err.message }, 'Erreur lors du rerank manuel post-tempban');
+          logger.warn(
+            { memberId: member.id, err: err.message },
+            'Erreur lors du rerank manuel post-tempban'
+          );
         }
       }
     }
@@ -261,19 +270,22 @@ export class TimeoutScheduler {
 
       for (const item of expired) {
         try {
-          const guild = this.client.guilds.cache.get(item.guildId) ||
-                        await this.client.guilds.fetch(item.guildId).catch(() => null);
+          const guild =
+            this.client.guilds.cache.get(item.guildId) ||
+            (await this.client.guilds.fetch(item.guildId).catch(() => null));
           if (!guild) {
             item.completed = true;
             continue;
           }
 
-          const member = guild.members.cache.get(item.userId) ||
-                         await guild.members.fetch(item.userId).catch(() => null);
+          const member =
+            guild.members.cache.get(item.userId) ||
+            (await guild.members.fetch(item.userId).catch(() => null));
 
           if (member) {
-            const role = guild.roles.cache.get(item.roleId) ||
-                         await guild.roles.fetch(item.roleId).catch(() => null);
+            const role =
+              guild.roles.cache.get(item.roleId) ||
+              (await guild.roles.fetch(item.roleId).catch(() => null));
             const isTempban = item.type === 'TEMPBAN';
             const actionLabel = isTempban ? 'Tempban' : 'Timeout';
 
@@ -290,23 +302,36 @@ export class TimeoutScheduler {
                   await member.roles.add(validRoles, 'Rerank automatique après fin du tempban');
                   restoredCount = validRoles.length;
                 } catch (err) {
-                  logger.warn({ memberId: member.id, err: err.message }, 'Erreur lors du rerank automatique');
+                  logger.warn(
+                    { memberId: member.id, err: err.message },
+                    'Erreur lors du rerank automatique'
+                  );
                 }
               }
             }
 
             // Log d'audit automatique dans le salon de logs
             const embed = new EmbedBuilder()
-              .setColor(0x57F287)
+              .setColor(0x57f287)
               .setTitle(`🔓 Fin de ${actionLabel} Automatique`)
               .setDescription(
-                `Le rôle ${isTempban ? "d'isolement (Tempban)" : "restrictif (Timeout)"} a été retiré à <@${item.userId}>.` +
-                (isTempban && restoredCount > 0 ? `\n✨ **Rerank :** ${restoredCount} rôle(s) restitué(s) avec succès.` : '')
+                `Le rôle ${isTempban ? "d'isolement (Tempban)" : 'restrictif (Timeout)'} a été retiré à <@${item.userId}>.` +
+                  (isTempban && restoredCount > 0
+                    ? `\n✨ **Rerank :** ${restoredCount} rôle(s) restitué(s) avec succès.`
+                    : '')
               )
               .addFields(
-                { name: 'Utilisateur', value: `${member.user.tag} (\`${member.id}\`)`, inline: true },
+                {
+                  name: 'Utilisateur',
+                  value: `${member.user.tag} (\`${member.id}\`)`,
+                  inline: true,
+                },
                 { name: 'Motif initial', value: item.reason || 'Aucun motif', inline: true },
-                { name: 'Durée purgée', value: `<t:${Math.floor(item.startsAt / 1000)}:R> ➔ <t:${Math.floor(now / 1000)}:R>`, inline: false }
+                {
+                  name: 'Durée purgée',
+                  value: `<t:${Math.floor(item.startsAt / 1000)}:R> ➔ <t:${Math.floor(now / 1000)}:R>`,
+                  inline: false,
+                }
               )
               .setTimestamp();
 

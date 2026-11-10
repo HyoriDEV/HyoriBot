@@ -27,10 +27,7 @@ export default {
         .setName('remove')
         .setDescription('Retirer un membre du ticket')
         .addUserOption(opt =>
-          opt
-            .setName('membre')
-            .setDescription('Le membre à exclure du ticket')
-            .setRequired(true)
+          opt.setName('membre').setDescription('Le membre à exclure du ticket').setRequired(true)
         )
     ),
 
@@ -47,7 +44,7 @@ export default {
     if (!isTicketChannel && !channel.name.startsWith('ticket-')) {
       return interaction.reply({
         content: '❌ Cette commande ne peut être exécutée que dans un salon de ticket actif.',
-        ephemeral: true
+        ephemeral: true,
       });
     }
 
@@ -63,12 +60,12 @@ export default {
         ViewChannel: true,
         SendMessages: true,
         ReadMessageHistory: true,
-        AttachFiles: true
+        AttachFiles: true,
       });
 
       return interaction.reply({
         content: `✅ ${targetUser} a été ajouté au ticket avec succès.`,
-        ephemeral: true
+        ephemeral: true,
       });
     }
 
@@ -78,8 +75,8 @@ export default {
 
       return interaction.reply({
         content: `✅ ${targetUser} a été retiré du ticket.`,
-        ephemeral: true
+        ephemeral: true,
       });
     }
-  }
+  },
 };

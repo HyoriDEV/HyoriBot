@@ -6,7 +6,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  AttachmentBuilder
+  AttachmentBuilder,
 } from 'discord.js';
 import { configStore } from '../../storage/index.js';
 import { WelcomeCardService } from '../../services/welcomeCardService.js';
@@ -48,7 +48,7 @@ export const configWelcomeCommand = {
     .addSubcommand(sub =>
       sub
         .setName('toggle')
-        .setDescription('Activer ou désactiver l\'envoi des messages de bienvenue')
+        .setDescription("Activer ou désactiver l'envoi des messages de bienvenue")
         .addBooleanOption(opt =>
           opt
             .setName('actif')
@@ -85,7 +85,7 @@ export const configWelcomeCommand = {
 
       return interaction.reply({
         content: `✅ Le salon de bienvenue est configuré sur <#${channel.id}> (${activate ? '🟢 Activé' : '🔴 Désactivé'}).`,
-        ephemeral: true
+        ephemeral: true,
       });
     }
 
@@ -102,7 +102,7 @@ export const configWelcomeCommand = {
         content: role
           ? `✅ Les nouveaux membres recevront désormais automatiquement le rôle <@&${role.id}>.`
           : `✅ L'attribution automatique de rôle à l'arrivée a été désactivée.`,
-        ephemeral: true
+        ephemeral: true,
       });
     }
 
@@ -117,7 +117,7 @@ export const configWelcomeCommand = {
 
       return interaction.reply({
         content: `✅ Système de bienvenue : **${active ? '🟢 Activé' : '🔴 Désactivé'}**.`,
-        ephemeral: true
+        ephemeral: true,
       });
     }
 
@@ -130,12 +130,18 @@ export const configWelcomeCommand = {
       const embed = new EmbedBuilder()
         .setColor(0xe9d15c)
         .setTitle('🏛️ Configuration du Système de Bienvenue')
-        .setDescription('Voici l\'état actuel du module de bienvenue personnalisé selon la charte Hyori :')
+        .setDescription(
+          "Voici l'état actuel du module de bienvenue personnalisé selon la charte Hyori :"
+        )
         .addFields(
           { name: 'État du module', value: statusText, inline: true },
           { name: 'Salon de Bienvenue', value: channelText, inline: true },
           { name: 'Rôle Automatique (Auto-Role)', value: roleText, inline: true },
-          { name: 'Bannière Hyori', value: 'Génération dynamique haute fidélité (`@napi-rs/canvas`)', inline: false }
+          {
+            name: 'Bannière Hyori',
+            value: 'Génération dynamique haute fidélité (`@napi-rs/canvas`)',
+            inline: false,
+          }
         )
         .setFooter({ text: 'Pour tester le rendu visuel, tapez /config-welcome test' })
         .setTimestamp();
@@ -152,10 +158,10 @@ export const configWelcomeCommand = {
 
       return interaction.editReply({
         content: `Bienvenue sur **Hyori RP**, <@${member.id}> !`,
-        files: [attachment]
+        files: [attachment],
       });
     }
-  }
+  },
 };
 
 export default configWelcomeCommand;

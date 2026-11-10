@@ -33,9 +33,7 @@ export class SanctionService {
           );
         }
         let currentRoleIds = member.roles.cache
-          .filter(
-            role => role.id !== guild.id && !role.managed && role.id !== sanctionedRoleId
-          )
+          .filter(role => role.id !== guild.id && !role.managed && role.id !== sanctionedRoleId)
           .map(role => role.id);
         const existingActiveBackup = await roleBackupRepository.getActiveBackup(discordId);
         if (
@@ -66,9 +64,7 @@ export class SanctionService {
           metadata,
         });
         const rolesToRemove = member.roles.cache
-          .filter(
-            role => role.id !== guild.id && !role.managed && role.id !== sanctionedRoleId
-          )
+          .filter(role => role.id !== guild.id && !role.managed && role.id !== sanctionedRoleId)
           .map(role => role.id);
         if (rolesToRemove.length > 0 && member.manageable) {
           await member.roles

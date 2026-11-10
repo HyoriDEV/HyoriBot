@@ -18,7 +18,7 @@ export async function loadCommands(client, commandsDir) {
     return;
   }
 
-  const readCommands = (dir) => {
+  const readCommands = dir => {
     let files = [];
     const items = fs.readdirSync(dir, { withFileTypes: true });
     for (const item of items) {

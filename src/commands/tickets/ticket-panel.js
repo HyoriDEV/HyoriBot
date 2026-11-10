@@ -5,7 +5,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ChannelType
+  ChannelType,
 } from 'discord.js';
 import { configStore } from '../../storage/index.js';
 
@@ -42,14 +42,14 @@ export default {
     }
 
     const panelEmbed = new EmbedBuilder()
-      .setColor(0x5865F2)
-      .setTitle('📩 Centre d\'Assistance & Support')
+      .setColor(0x5865f2)
+      .setTitle("📩 Centre d'Assistance & Support")
       .setDescription(
-        'Besoin d\'aide, d\'une assistance technique ou de contacter l\'équipe ?\n\n' +
-        'Cliquez sur l\'un des boutons ci-dessous correspondant à votre demande pour ouvrir un salon de discussion privé avec l\'équipe du serveur.\n\n' +
-        '• 🎫 **Support Général** : Questions, aide, problèmes en jeu/serveur\n' +
-        '• 🚨 **Signalement** : Signaler un joueur, un comportement ou un abus\n' +
-        '• ❓ **Autre Demande** : Partenariats, questions diverses'
+        "Besoin d'aide, d'une assistance technique ou de contacter l'équipe ?\n\n" +
+          "Cliquez sur l'un des boutons ci-dessous correspondant à votre demande pour ouvrir un salon de discussion privé avec l'équipe du serveur.\n\n" +
+          '• 🎫 **Support Général** : Questions, aide, problèmes en jeu/serveur\n' +
+          '• 🚨 **Signalement** : Signaler un joueur, un comportement ou un abus\n' +
+          '• ❓ **Autre Demande** : Partenariats, questions diverses'
       )
       .setImage('https://dummyimage.com/600x200/2b2d31/ffffff&text=SUPPORT+&+TICKETS')
       .setFooter({ text: 'Merci de ne pas ouvrir de ticket sans motif valable.' });
@@ -74,12 +74,12 @@ export default {
 
     await targetChannel.send({
       embeds: [panelEmbed],
-      components: [buttonsRow]
+      components: [buttonsRow],
     });
 
     await interaction.reply({
       content: `✅ Panneau de ticket déployé avec succès dans <#${targetChannel.id}> !`,
-      ephemeral: true
+      ephemeral: true,
     });
-  }
+  },
 };

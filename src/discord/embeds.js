@@ -266,9 +266,7 @@ export function buildRpTrackingMessageNotificationEmbed({
   const embed = createHyoriEmbed();
 
   embed.setTitle(
-    characterName
-      ? `Suivi RP — Nouveau message (${characterName})`
-      : 'Suivi RP — Nouveau message'
+    characterName ? `Suivi RP — Nouveau message (${characterName})` : 'Suivi RP — Nouveau message'
   );
 
   let description = `Un nouveau message a été posté par **${authorName}** dans votre suivi RP.`;
@@ -309,12 +307,40 @@ export function buildTicketCreatedNotificationEmbed({
   const url = ticketStaffUrl || `${env.ATLAS_BASE_URL}/staff/tickets`;
   const embed = createHyoriEmbed();
 
-  embed.setTitle(`Nouveau Ticket — ${ticketCategory || 'Support'}`);
+  const isSpoiler =
+    ticketCategory === 'SECRET' ||
+    ticketCategory === 'Ticket secret' ||
+    (typeof ticketCategory === 'string' && ticketCategory.toLowerCase().includes('spoiler')) ||
+    (typeof override?.title === 'string' && override.title.toLowerCase().includes('spoiler')) ||
+    (typeof override?.title === 'string' && override.title.toLowerCase().includes('secret'));
 
-  let description = `Un nouveau ticket a été ouvert par **${authorName}**.\n\n**Catégorie :** ${ticketCategory}\n**Sujet :** ${ticketSubject}`;
+  const isTechnique =
+    (typeof ticketCategory === 'string' && ticketCategory.toLowerCase().includes('tech')) ||
+    (typeof override?.title === 'string' && override.title.toLowerCase().includes('tech'));
+
+  let defaultTitle = '🎫 Nouveau Ticket RP';
+  if (isSpoiler) {
+    defaultTitle = '🔒 Nouveau Ticket RP (Spoiler)';
+  } else if (isTechnique) {
+    defaultTitle = '🛠️ Nouveau Ticket Technique';
+  }
+  embed.setTitle(defaultTitle);
+
+  const categoryDisplay = ticketCategory || (isTechnique ? 'Technique' : 'Roleplay');
+  let description =
+    `Un nouveau ticket a été créé par **${authorName}**.\n\n` +
+    `**Catégorie :** ${categoryDisplay}\n` +
+    `**Sujet :** ${ticketSubject}`;
+
+  if (isSpoiler) {
+    description =
+      `⚠️ **Ce ticket contient des spoils ou des informations confidentielles (projets sensibles, capture, RPK...).**\n\n` +
+      description;
+  }
+
   if (ticketDescription && ticketDescription.trim()) {
     const excerpt =
-      ticketDescription.length > 300 ? `${ticketDescription.slice(0, 297)}...` : ticketDescription;
+      ticketDescription.length > 500 ? `${ticketDescription.slice(0, 497)}...` : ticketDescription;
     description += `\n\n> ${excerpt.replace(/\n+/g, '\n> ')}`;
   }
   description += "\n\nConsultez et prenez en charge le ticket depuis l'espace staff.";
@@ -329,7 +355,9 @@ export function buildTicketCreatedNotificationEmbed({
   }
 
   const buttonUrl = override?.buttonUrl || url;
-  const buttonLabel = override?.buttonLabel || 'Consulter le ticket';
+  const buttonLabel =
+    override?.buttonLabel ||
+    (isSpoiler ? 'Consulter le ticket confidentiel' : 'Consulter le ticket');
   const row = createPlayerSpaceButton(buttonUrl, buttonLabel);
   return {
     embed,

@@ -9,10 +9,7 @@ export const tempbanCommand = {
     .setDescription('Bannir temporairement un membre avec isolement sur les salons autorisés')
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
     .addUserOption(opt =>
-      opt
-        .setName('membre')
-        .setDescription('Le membre à sanctionner')
-        .setRequired(true)
+      opt.setName('membre').setDescription('Le membre à sanctionner').setRequired(true)
     )
     .addStringOption(opt =>
       opt
@@ -21,14 +18,13 @@ export const tempbanCommand = {
         .setRequired(true)
     )
     .addStringOption(opt =>
-      opt
-        .setName('raison')
-        .setDescription('Raison de la sanction')
-        .setRequired(false)
+      opt.setName('raison').setDescription('Raison de la sanction').setRequired(false)
     ),
 
   async execute(interactionOrMessage, args = []) {
-    const isInteraction = typeof interactionOrMessage.isCommand === 'function' || interactionOrMessage.isChatInputCommand?.();
+    const isInteraction =
+      typeof interactionOrMessage.isCommand === 'function' ||
+      interactionOrMessage.isChatInputCommand?.();
     const guild = interactionOrMessage.guild;
     const author = isInteraction ? interactionOrMessage.user : interactionOrMessage.author;
     const authorMember = isInteraction ? interactionOrMessage.member : interactionOrMessage.member;
@@ -47,7 +43,9 @@ export const tempbanCommand = {
       reason = interactionOrMessage.options.getString('raison') || 'Aucun motif spécifié';
     } else {
       if (!args[0] || !args[1]) {
-        return interactionOrMessage.reply('❌ Utilisation : `?tempban <@membre|ID> <durée (ex: 1d, 7d)> [raison...]`');
+        return interactionOrMessage.reply(
+          '❌ Utilisation : `?tempban <@membre|ID> <durée (ex: 1d, 7d)> [raison...]`'
+        );
       }
       const targetId = args[0].replace(/[<@!>]/g, '');
       targetUser = await interactionOrMessage.client.users.fetch(targetId).catch(() => null);
@@ -63,14 +61,15 @@ export const tempbanCommand = {
 
     const durationMs = ms(durationInput);
     if (!durationMs || durationMs < 60000 || durationMs > 365 * 24 * 60 * 60 * 1000) {
-      const err = '❌ Format de durée invalide. Exemples : `1h`, `12h`, `1d`, `7d`, `30d` (minimum 1 minute, maximum 365 jours).';
+      const err =
+        '❌ Format de durée invalide. Exemples : `1h`, `12h`, `1d`, `7d`, `30d` (minimum 1 minute, maximum 365 jours).';
       if (isInteraction) return interactionOrMessage.reply({ content: err, ephemeral: true });
       return interactionOrMessage.reply(err);
     }
 
     const member = await guild.members.fetch(targetUser.id).catch(() => null);
     if (!member) {
-      const err = '❌ Ce membre n\'est pas présent sur le serveur.';
+      const err = "❌ Ce membre n'est pas présent sur le serveur.";
       if (isInteraction) return interactionOrMessage.reply({ content: err, ephemeral: true });
       return interactionOrMessage.reply(err);
     }
@@ -82,7 +81,7 @@ export const tempbanCommand = {
     }
 
     if (member.id === interactionOrMessage.client.user.id) {
-      const err = '❌ Je ne peux pas m\'appliquer cette sanction.';
+      const err = "❌ Je ne peux pas m'appliquer cette sanction.";
       if (isInteraction) return interactionOrMessage.reply({ content: err, ephemeral: true });
       return interactionOrMessage.reply(err);
     }
@@ -92,7 +91,8 @@ export const tempbanCommand = {
       member.roles.highest.position >= authorMember.roles.highest.position &&
       author.id !== guild.ownerId
     ) {
-      const err = '❌ Vous ne pouvez pas sanctionner un membre ayant un rôle supérieur ou égal au vôtre.';
+      const err =
+        '❌ Vous ne pouvez pas sanctionner un membre ayant un rôle supérieur ou égal au vôtre.';
       if (isInteraction) return interactionOrMessage.reply({ content: err, ephemeral: true });
       return interactionOrMessage.reply(err);
     }
@@ -109,34 +109,48 @@ export const tempbanCommand = {
       );
 
       // Notification en message privé
-      await member.send({
-        embeds: [
-          new EmbedBuilder()
-            .setColor(0xED4245)
-            .setTitle(`⚖️ Notification de Sanction — ${guild.name}`)
-            .setDescription(`Vous avez été **temporairement banni (isolé)** sur **${guild.name}**. Vos rôles ont été temporairement retirés et vous seront restitués à la fin de votre sanction.`)
-            .addFields(
-              { name: 'Motif', value: reason },
-              { name: 'Durée', value: `\`${durationInput}\``, inline: true },
-              { name: 'Fin de la sanction', value: `<t:${Math.floor(expiresAt / 1000)}:F> (<t:${Math.floor(expiresAt / 1000)}:R>)`, inline: true }
-            )
-            .setFooter({ text: 'Si vous avez accès à un salon de réclamation, vous pouvez y échanger avec l\'équipe.' })
-            .setTimestamp()
-        ]
-      }).catch(() => {});
+      await member
+        .send({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(0xed4245)
+              .setTitle(`⚖️ Notification de Sanction — ${guild.name}`)
+              .setDescription(
+                `Vous avez été **temporairement banni (isolé)** sur **${guild.name}**. Vos rôles ont été temporairement retirés et vous seront restitués à la fin de votre sanction.`
+              )
+              .addFields(
+                { name: 'Motif', value: reason },
+                { name: 'Durée', value: `\`${durationInput}\``, inline: true },
+                {
+                  name: 'Fin de la sanction',
+                  value: `<t:${Math.floor(expiresAt / 1000)}:F> (<t:${Math.floor(expiresAt / 1000)}:R>)`,
+                  inline: true,
+                }
+              )
+              .setFooter({
+                text: "Si vous avez accès à un salon de réclamation, vous pouvez y échanger avec l'équipe.",
+              })
+              .setTimestamp(),
+          ],
+        })
+        .catch(() => {});
 
       const embed = new EmbedBuilder()
-        .setColor(0xED4245)
+        .setColor(0xed4245)
         .setTitle('⚖️ Membre Temporairement Banni (Tempban)')
         .setDescription(
           `Le membre ${member} a reçu le rôle d'isolement <@&${role.id}>.\n` +
-          `🔒 **Rôles retirés :** ${savedRoleIds.length} rôle(s) sauvegardé(s) pour rerank automatique à la fin du tempban.`
+            `🔒 **Rôles retirés :** ${savedRoleIds.length} rôle(s) sauvegardé(s) pour rerank automatique à la fin du tempban.`
         )
         .addFields(
           { name: '👤 Membre', value: `${member.user.tag} (\`${member.id}\`)`, inline: true },
           { name: '🛡️ Modérateur', value: `${author.tag}`, inline: true },
           { name: '⏳ Durée', value: `\`${durationInput}\``, inline: true },
-          { name: '🔓 Expiration', value: `<t:${Math.floor(expiresAt / 1000)}:F> (<t:${Math.floor(expiresAt / 1000)}:R>)`, inline: true },
+          {
+            name: '🔓 Expiration',
+            value: `<t:${Math.floor(expiresAt / 1000)}:F> (<t:${Math.floor(expiresAt / 1000)}:R>)`,
+            inline: true,
+          },
           { name: '📝 Raison', value: reason, inline: false }
         )
         .setFooter({ text: 'Hyori RP • Modération & Sécurité' })
@@ -164,19 +178,16 @@ export const tempbanCommand = {
         await interactionOrMessage.reply(errTxt);
       }
     }
-  }
+  },
 };
 
 export const toCommand = {
   data: new SlashCommandBuilder()
     .setName('to')
-    .setDescription('(Raccourci /tempban) Bannir temporairement un membre avec rôle d\'isolement')
+    .setDescription("(Raccourci /tempban) Bannir temporairement un membre avec rôle d'isolement")
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
     .addUserOption(opt =>
-      opt
-        .setName('membre')
-        .setDescription('Le membre à sanctionner')
-        .setRequired(true)
+      opt.setName('membre').setDescription('Le membre à sanctionner').setRequired(true)
     )
     .addStringOption(opt =>
       opt
@@ -185,12 +196,9 @@ export const toCommand = {
         .setRequired(true)
     )
     .addStringOption(opt =>
-      opt
-        .setName('raison')
-        .setDescription('Raison de la sanction')
-        .setRequired(false)
+      opt.setName('raison').setDescription('Raison de la sanction').setRequired(false)
     ),
-  execute: tempbanCommand.execute
+  execute: tempbanCommand.execute,
 };
 
 export default tempbanCommand;

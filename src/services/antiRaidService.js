@@ -33,18 +33,26 @@ class AntiRaidService {
 
       logger.warn(
         { guildId: guild.id, joinsCount: joins.length },
-        'Alerte Raid déclenchée ! Détection d\'arrivées massives'
+        "Alerte Raid déclenchée ! Détection d'arrivées massives"
       );
 
       const alertEmbed = new EmbedBuilder()
-        .setColor(0xED4245)
+        .setColor(0xed4245)
         .setTitle('🚨 ALERTE ANTI-RAID DÉCLENCHÉE')
         .setDescription(
           `**Détection d'arrivées massives anormales :** \`${joins.length}\` membres ont rejoint le serveur en moins de ${intervalMs / 1000} secondes !`
         )
         .addFields(
-          { name: 'Dernier membre entré', value: `${member.user.tag} (\`${member.id}\`)`, inline: true },
-          { name: 'Mesure recommandée', value: 'Vérifiez les invitations ou activez le mode lent / pause des invitations.', inline: false }
+          {
+            name: 'Dernier membre entré',
+            value: `${member.user.tag} (\`${member.id}\`)`,
+            inline: true,
+          },
+          {
+            name: 'Mesure recommandée',
+            value: 'Vérifiez les invitations ou activez le mode lent / pause des invitations.',
+            inline: false,
+          }
         )
         .setTimestamp();
 

@@ -14,8 +14,8 @@ export default {
           'Commande Slash inconnue reçue'
         );
         return interaction.reply({
-          content: '❌ Cette commande est introuvable ou n\'est plus disponible.',
-          ephemeral: true
+          content: "❌ Cette commande est introuvable ou n'est plus disponible.",
+          ephemeral: true,
         });
       }
 
@@ -24,12 +24,12 @@ export default {
       } catch (error) {
         logger.error(
           { commandName: interaction.commandName, error, user: interaction.user.tag },
-          'Erreur lors de l\'exécution de la commande Slash'
+          "Erreur lors de l'exécution de la commande Slash"
         );
 
         const errorMessage = {
-          content: '⚠️ Une erreur inattendue est survenue lors de l\'exécution de cette commande.',
-          ephemeral: true
+          content: "⚠️ Une erreur inattendue est survenue lors de l'exécution de cette commande.",
+          ephemeral: true,
         };
 
         if (interaction.replied || interaction.deferred) {
@@ -59,5 +59,5 @@ export default {
       client.emit('customSelectInteraction', interaction);
       return;
     }
-  }
+  },
 };

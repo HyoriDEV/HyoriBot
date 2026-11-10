@@ -137,7 +137,7 @@ export class VillageGatekeeperService {
         } catch (roleError) {
           logger.error(
             { error: roleError.message, memberId: member.id, village: village.name },
-            'Impossible d\'attribuer le rôle Habitant au membre'
+            "Impossible d'attribuer le rôle Habitant au membre"
           );
         }
       }
@@ -149,14 +149,14 @@ export class VillageGatekeeperService {
           village: village.name,
           class: village.class,
         },
-        'Vérification d\'entrée village validée et rôle Habitant synchronisé'
+        "Vérification d'entrée village validée et rôle Habitant synchronisé"
       );
 
       return { allowed: true, isVillage: true, village };
     } catch (error) {
       logger.error(
         { error: error.message, userId: member.id, villageGuildId: guildId },
-        'Erreur inattendue lors de la vérification d\'entrée village'
+        "Erreur inattendue lors de la vérification d'entrée village"
       );
       return { allowed: false, isVillage: true, error: error.message };
     }
@@ -190,7 +190,7 @@ export class VillageGatekeeperService {
     } catch (kickError) {
       logger.error(
         { error: kickError.message, memberId: member.id, guildId: member.guild.id },
-        'Échec lors de l\'exclusion du membre'
+        "Échec lors de l'exclusion du membre"
       );
     }
 
@@ -207,7 +207,7 @@ export class VillageGatekeeperService {
         reason: `${GENERIC_KICK_REASON} [Détail staff : ${internalReason}]`,
       });
     } catch (logError) {
-      logger.warn({ error: logError.message }, 'Impossible d\'envoyer le log d\'exclusion village');
+      logger.warn({ error: logError.message }, "Impossible d'envoyer le log d'exclusion village");
     }
   }
 }

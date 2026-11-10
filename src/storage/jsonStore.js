@@ -60,10 +60,12 @@ export class JsonStore {
   async write(data) {
     await this.init();
     // Enchaînement dans la queue FIFO pour garantir la séquence
-    this.queue = this.queue.then(() => this.writeRaw(data)).catch((err) => {
-      // Préserve la chaîne même en cas d'erreur
-      throw err;
-    });
+    this.queue = this.queue
+      .then(() => this.writeRaw(data))
+      .catch(err => {
+        // Préserve la chaîne même en cas d'erreur
+        throw err;
+      });
     return this.queue;
   }
 

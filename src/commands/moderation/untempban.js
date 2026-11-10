@@ -5,23 +5,19 @@ import { sendModLog } from '../../utils/modLogger.js';
 export const untempbanCommand = {
   data: new SlashCommandBuilder()
     .setName('untempban')
-    .setDescription('Lever le tempban / isolement d\'un membre avant son expiration')
+    .setDescription("Lever le tempban / isolement d'un membre avant son expiration")
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
     .addUserOption(opt =>
-      opt
-        .setName('membre')
-        .setDescription('Le membre à libérer du tempban')
-        .setRequired(true)
+      opt.setName('membre').setDescription('Le membre à libérer du tempban').setRequired(true)
     )
     .addStringOption(opt =>
-      opt
-        .setName('raison')
-        .setDescription('Raison de la levée de sanction')
-        .setRequired(false)
+      opt.setName('raison').setDescription('Raison de la levée de sanction').setRequired(false)
     ),
 
   async execute(interactionOrMessage, args = []) {
-    const isInteraction = typeof interactionOrMessage.isCommand === 'function' || interactionOrMessage.isChatInputCommand?.();
+    const isInteraction =
+      typeof interactionOrMessage.isCommand === 'function' ||
+      interactionOrMessage.isChatInputCommand?.();
     const guild = interactionOrMessage.guild;
     const author = isInteraction ? interactionOrMessage.user : interactionOrMessage.author;
 
@@ -53,7 +49,7 @@ export const untempbanCommand = {
 
     const member = await guild.members.fetch(targetUser.id).catch(() => null);
     if (!member) {
-      const err = '❌ Ce membre n\'est pas sur le serveur.';
+      const err = "❌ Ce membre n'est pas sur le serveur.";
       if (isInteraction) return interactionOrMessage.reply({ content: err, ephemeral: true });
       return interactionOrMessage.reply(err);
     }
@@ -64,11 +60,13 @@ export const untempbanCommand = {
       const { restoredCount } = await timeoutScheduler.removeTempban(guild, member, reason, author);
 
       const embed = new EmbedBuilder()
-        .setColor(0x57F287)
+        .setColor(0x57f287)
         .setTitle('🔓 Tempban Levé & Rerank Effectué')
         .setDescription(
           `Le rôle d'isolement a été retiré à ${member}. Le membre retrouve ses accès normaux.` +
-          (restoredCount > 0 ? `\n✨ **Rerank automatique :** **${restoredCount} rôle(s)** ont été restitués avec succès.` : '')
+            (restoredCount > 0
+              ? `\n✨ **Rerank automatique :** **${restoredCount} rôle(s)** ont été restitués avec succès.`
+              : '')
         )
         .addFields(
           { name: '👤 Membre', value: `${member.user.tag} (\`${member.id}\`)`, inline: true },
@@ -99,27 +97,21 @@ export const untempbanCommand = {
         await interactionOrMessage.reply(errTxt);
       }
     }
-  }
+  },
 };
 
 export const untoCommand = {
   data: new SlashCommandBuilder()
     .setName('unto')
-    .setDescription('(Raccourci /untempban) Lever le tempban d\'un membre')
+    .setDescription("(Raccourci /untempban) Lever le tempban d'un membre")
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
     .addUserOption(opt =>
-      opt
-        .setName('membre')
-        .setDescription('Le membre à libérer du tempban')
-        .setRequired(true)
+      opt.setName('membre').setDescription('Le membre à libérer du tempban').setRequired(true)
     )
     .addStringOption(opt =>
-      opt
-        .setName('raison')
-        .setDescription('Raison de la levée de sanction')
-        .setRequired(false)
+      opt.setName('raison').setDescription('Raison de la levée de sanction').setRequired(false)
     ),
-  execute: untempbanCommand.execute
+  execute: untempbanCommand.execute,
 };
 
 export default untempbanCommand;
