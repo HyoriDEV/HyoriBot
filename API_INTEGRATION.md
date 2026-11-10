@@ -380,15 +380,10 @@ Envoie une notification dans un salon Discord (pouvant être situé sur un autre
   "mentionRoleId": "987654321098765432",
   "ticketId": "cm1234567890",
   "ticketSubject": "Demande de concession de terrain",
-  "ticketCategory": "Demande RP",
+  "ticketCategory": "RP",
   "authorName": "Joueur_Alex",
   "ticketDescription": "Bonjour, je sollicite un terrain pour implanter une forge...",
-  "ticketStaffUrl": "https://hyori-rp.fr/staff/tickets/cm1234567890",
-  "override": {
-    "title": "Nouveau Ticket — {category}",
-    "description": "Un ticket a été ouvert par {author}...",
-    "buttonLabel": "Consulter le ticket"
-  }
+  "ticketStaffUrl": "https://hyori-rp.fr/staff/tickets/cm1234567890"
 }
 ```
 
@@ -398,11 +393,10 @@ Envoie une notification dans un salon Discord (pouvant être situé sur un autre
 - `mentionRoleId` (string, optionnel) : ID du rôle Discord à mentionner (16-21 chiffres). S'il n'est pas fourni, le bot utilise `roles.ticketMention` défini dans `discordConfig.js`. Si configuré, le bot préfixe le message par `<@&roleId>`.
 - `ticketId` (string, requis) : Identifiant unique du ticket.
 - `ticketSubject` (string, requis) : Sujet du ticket.
-- `ticketCategory` (string, requis) : Libellé de la catégorie du ticket.
+- `ticketCategory` (string, requis) : Libellé de la catégorie du ticket (`RP` ou `TECHNIQUE`).
 - `authorName` (string, requis) : Pseudo ou nom de l'auteur créateur du ticket.
 - `ticketDescription` (string, optionnel) : Contenu du premier message d'ouverture.
 - `ticketStaffUrl` (string, optionnel) : URL directe vers le ticket dans l'espace staff.
-- `override` (objet, optionnel) : Objet de personnalisation dynamique de l'embed (`title`, `description`, `buttonLabel`, `buttonUrl`).
 
 #### Réponse HTTP 200 :
 
@@ -435,15 +429,10 @@ Même format que `ticket-created`, plus `team` :
   "mentionRoleId": "987654321098765432",
   "ticketId": "cm1234567890",
   "ticketSubject": "Demande de concession de terrain",
-  "ticketCategory": "Demande RP",
+  "ticketCategory": "RP",
   "authorName": "Joueur_Alex",
   "ticketDescription": "Bonjour, je sollicite un terrain pour implanter une forge...",
-  "ticketStaffUrl": "https://hyori-rp.fr/staff/tickets/cm1234567890",
-  "override": {
-    "title": "Nouveau Ticket — {category}",
-    "description": "Un ticket a été ouvert par {author}...",
-    "buttonLabel": "Consulter le ticket"
-  }
+  "ticketStaffUrl": "https://hyori-rp.fr/staff/tickets/cm1234567890"
 }
 ```
 
@@ -470,12 +459,7 @@ Alerte les administrateurs dans leur salon dédié sur le serveur staff (`Direct
   "minecraftUsername": "Alex_Craft",
   "minecraftUuid": "069a79f4-44e9-4726-a5be-fca90e38aaf5",
   "avatarUrl": "https://cdn.discordapp.com/avatars/123456789012345678/abc.png",
-  "waitlistStaffUrl": "https://hyori-rp.fr/staff/waitlist",
-  "override": {
-    "title": "Nouvelle Inscription — Liste d'attente",
-    "description": "Un nouveau joueur s'est inscrit...",
-    "buttonLabel": "Consulter la liste d'attente"
-  }
+  "waitlistStaffUrl": "https://hyori-rp.fr/staff/waitlist"
 }
 ```
 
@@ -489,7 +473,6 @@ Alerte les administrateurs dans leur salon dédié sur le serveur staff (`Direct
 - `minecraftUuid` (string, optionnel) : UUID Minecraft lié.
 - `avatarUrl` (string, optionnel) : URL de l'avatar du joueur pour la miniature de l'embed.
 - `waitlistStaffUrl` (string, optionnel) : URL vers la gestion de la liste d'attente dans l'espace staff.
-- `override` (objet, optionnel) : Personnalisation dynamique de l'embed (`title`, `description`, `buttonLabel`, `buttonUrl`).
 
 #### Réponse HTTP 200 :
 

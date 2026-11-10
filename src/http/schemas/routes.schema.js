@@ -1,19 +1,11 @@
 import { z } from 'zod';
 const discordIdRegex = /^\d{16,21}$/;
 
-export const EmbedOverrideSchema = z.object({
-  title: z.string().max(200).optional().nullable(),
-  description: z.string().max(2000).optional().nullable(),
-  buttonLabel: z.string().max(100).optional().nullable(),
-  buttonUrl: z.string().url('buttonUrl must be a valid URL').optional().nullable(),
-});
-
 export const RegistrationStatusNotificationSchema = z.object({
   discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format'),
   status: z.enum(['NEW', 'WAITLIST', 'WHITELIST_IN_PROGRESS', 'WHITELISTED', 'REJECTED']),
   playerSpaceUrl: z.string().url('playerSpaceUrl must be a valid URL').optional(),
   assignedClass: z.string().max(50).optional().nullable(),
-  override: EmbedOverrideSchema.optional().nullable(),
 });
 
 export const BroadcastVillageInvitesSchema = z
@@ -26,7 +18,6 @@ export const CharacterSheetStatusNotificationSchema = z.object({
   discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format'),
   status: z.enum(['DRAFT', 'PENDING_STAFF', 'VALIDATED', 'PENDING_PLAYER', 'REOPENED']),
   playerSpaceUrl: z.string().url('playerSpaceUrl must be a valid URL').optional(),
-  override: EmbedOverrideSchema.optional().nullable(),
 });
 
 export const InterviewReminderNotificationSchema = z
@@ -34,7 +25,6 @@ export const InterviewReminderNotificationSchema = z
     discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format').optional(),
     discordIds: z.array(z.string().regex(discordIdRegex, 'Invalid Discord ID format')).optional(),
     interviewUrl: z.string().url('interviewUrl must be a valid URL').optional(),
-    override: EmbedOverrideSchema.optional().nullable(),
   })
   .refine(data => Boolean(data.discordId || (data.discordIds && data.discordIds.length > 0)), {
     message: 'Either discordId or discordIds must be provided',
@@ -55,7 +45,6 @@ export const TicketMessageNotificationSchema = z.object({
   authorName: z.string().min(1, 'authorName must not be empty').max(100),
   messagePreview: z.string().max(1000).optional().nullable(),
   ticketUrl: z.string().url('ticketUrl must be a valid URL').optional(),
-  override: EmbedOverrideSchema.optional().nullable(),
 });
 
 export const RpTrackingMessageNotificationSchema = z.object({
@@ -64,7 +53,6 @@ export const RpTrackingMessageNotificationSchema = z.object({
   messagePreview: z.string().max(1000).optional().nullable(),
   rpTrackingUrl: z.string().url('rpTrackingUrl must be a valid URL').optional(),
   characterName: z.string().max(100).optional().nullable(),
-  override: EmbedOverrideSchema.optional().nullable(),
 });
 
 export const TicketCreatedNotificationSchema = z.object({
@@ -80,7 +68,6 @@ export const TicketCreatedNotificationSchema = z.object({
   authorName: z.string().min(1, 'authorName must not be empty').max(100),
   ticketDescription: z.string().max(2000).optional().nullable(),
   ticketStaffUrl: z.string().url('ticketStaffUrl must be a valid URL').optional().nullable(),
-  override: EmbedOverrideSchema.optional().nullable(),
 });
 
 export const TICKET_TEAMS = ['RP_TRACKING', 'CONFLICT_MANAGEMENT', 'EVENT', 'DEVELOPER'];
@@ -105,7 +92,6 @@ export const WaitlistRegistrationNotificationSchema = z.object({
   minecraftUuid: z.string().max(64).optional().nullable(),
   avatarUrl: z.string().url('avatarUrl must be a valid URL').optional().nullable(),
   waitlistStaffUrl: z.string().url('waitlistStaffUrl must be a valid URL').optional().nullable(),
-  override: EmbedOverrideSchema.optional().nullable(),
 });
 
 export const ApplySanctionSchema = z.object({

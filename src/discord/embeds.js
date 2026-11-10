@@ -1,7 +1,9 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { getEnv } from '../config/env.js';
+
 export const HYORI_COLOR = 0xe9d15c;
 export const HYORI_FOOTER = 'Hyori RP';
+
 export function createHyoriEmbed() {
   return new EmbedBuilder()
     .setColor(HYORI_COLOR)
@@ -10,6 +12,7 @@ export function createHyoriEmbed() {
     })
     .setTimestamp();
 }
+
 export function createPlayerSpaceButton(customUrl, customLabel) {
   const env = getEnv();
   const url = customUrl || env.ATLAS_PLAYER_SPACE_URL;
@@ -17,56 +20,50 @@ export function createPlayerSpaceButton(customUrl, customLabel) {
   const button = new ButtonBuilder().setLabel(label).setStyle(ButtonStyle.Link).setURL(url);
   return new ActionRowBuilder().addComponents(button);
 }
-export function buildRegistrationStatusEmbed(status, customUrl, override = null, village = null) {
+
+export function buildRegistrationStatusEmbed(status, customUrl, village = null) {
   const env = getEnv();
   const url = customUrl || env.ATLAS_PLAYER_SPACE_URL;
   const embed = createHyoriEmbed();
+
   switch (status) {
     case 'WHITELIST_IN_PROGRESS':
       embed
-        .setTitle('Inscription — Candidature acceptée')
+        .setTitle('Candidature acceptée')
         .setDescription(
-          "Votre candidature pour rejoindre **Hyori RP** a été acceptée par l'équipe staff.\n\nVous pouvez dès à présent accéder à votre espace joueur pour préparer votre fiche personnage et réserver votre entretien vocal."
+          "Votre candidature pour rejoindre Hyori RP a été acceptée par l'équipe staff.\n\nVous pouvez dès à présent accéder à votre espace joueur pour préparer votre fiche personnage et réserver votre entretien vocal."
         );
       break;
     case 'WHITELISTED': {
       let desc =
-        "Félicitations, votre inscription sur **Hyori RP** a été validée !\n\nVous disposez désormais d'un accès complet au site, au serveur Discord communautaire et au serveur Minecraft.";
+        "Votre inscription sur Hyori RP a été validée.\n\nVous disposez désormais d'un accès complet au site, au serveur Discord communautaire et au serveur Minecraft.";
       if (village?.inviteUrl) {
-        desc += `\n\n🏛️ **Serveur Discord de votre classe (${village.name}) :**\nRejoignez vos concitoyens sur le serveur de votre village :\n${village.inviteUrl}`;
+        desc += `\n\nServeur Discord de votre classe (${village.name}) :\n${village.inviteUrl}`;
       }
-      embed.setTitle('Whitelist — Validation définitive').setDescription(desc);
+      embed.setTitle('Validation whitelist').setDescription(desc);
       break;
     }
     case 'REJECTED':
       embed
-        .setTitle('Inscription — Candidature non retenue')
+        .setTitle('Candidature non retenue')
         .setDescription(
-          "Ta candidature pour rejoindre **Hyori RP** n'a pas été retenue par l'équipe staff.\n\nTu peux consulter les détails depuis ton espace joueur."
+          "Votre candidature pour rejoindre Hyori RP n'a pas été retenue par l'équipe staff.\n\nVous pouvez consulter les détails depuis votre espace joueur."
         );
       break;
     case 'WAITLIST':
       embed
-        .setTitle("Inscription — Liste d'attente")
+        .setTitle("Liste d'attente")
         .setDescription(
-          "Votre candidature a été réintégrée sur la liste d'attente de **Hyori RP** par l'équipe staff.\n\nVous pouvez suivre l'évolution de votre statut depuis votre espace joueur."
+          "Votre candidature a été réintégrée sur la liste d'attente de Hyori RP par l'équipe staff.\n\nVous pouvez suivre l'évolution de votre statut depuis votre espace joueur."
         );
       break;
   }
-  if (override?.title) {
-    embed.setTitle(override.title);
-  }
-  if (override?.description) {
-    let desc = override.description;
-    if (status === 'WHITELISTED' && village?.inviteUrl && !desc.includes(village.inviteUrl)) {
-      desc += `\n\n🏛️ **Serveur Discord de votre classe (${village.name}) :**\n${village.inviteUrl}`;
-    }
-    embed.setDescription(desc);
-  }
-  const buttonUrl = override?.buttonUrl || url;
-  const buttonLabel = override?.buttonLabel || 'Accéder à mon espace joueur';
+
   const buttons = [
-    new ButtonBuilder().setLabel(buttonLabel).setStyle(ButtonStyle.Link).setURL(buttonUrl),
+    new ButtonBuilder()
+      .setLabel('Accéder à mon espace joueur')
+      .setStyle(ButtonStyle.Link)
+      .setURL(url),
   ];
 
   if (status === 'WHITELISTED' && village?.inviteUrl) {
@@ -94,9 +91,9 @@ export function buildVillageInviteNotificationEmbed({ village, memberName }) {
     .setTitle(`Serveur Discord — ${village.name}`)
     .setDescription(
       `Bonjour${memberName ? ` **${memberName}**` : ''},\n\n` +
-        `En tant que joueur whitelisté de **Hyori RP** affilié à la classe **${village.name}** (${village.class}), voici le lien d'invitation permanent vers le serveur Discord réservé à votre village :\n\n` +
-        `🔗 **${village.inviteUrl}**\n\n` +
-        `Ce serveur privé permet aux habitants de votre village d'échanger, d'organiser la vie communautaire et de suivre les annonces locales.`
+        `En tant que joueur affilié à la classe **${village.name}** (${village.class}), voici le lien permanent vers le serveur Discord de votre village :\n` +
+        `${village.inviteUrl}\n\n` +
+        `Ce serveur privé permet aux habitants de votre village d'échanger et de suivre les annonces locales.`
     );
 
   const button = new ButtonBuilder()
@@ -112,7 +109,7 @@ export function buildVillageInviteNotificationEmbed({ village, memberName }) {
   };
 }
 
-export function buildCharacterSheetStatusEmbed(status, customUrl, override = null) {
+export function buildCharacterSheetStatusEmbed(status, customUrl) {
   const env = getEnv();
   const url = customUrl || env.ATLAS_PLAYER_SPACE_URL;
   const embed = createHyoriEmbed();
@@ -120,134 +117,110 @@ export function buildCharacterSheetStatusEmbed(status, customUrl, override = nul
   switch (status) {
     case 'VALIDATED':
       embed
-        .setTitle('Fiche Personnage — Validée')
+        .setTitle('Fiche personnage validée')
         .setDescription(
-          "Félicitations, votre fiche personnage a été validée par l'équipe staff !\n\nVous pouvez dès à présent la consulter dans votre espace joueur et poursuivre les étapes de votre inscription."
+          "Votre fiche personnage a été validée par l'équipe staff.\n\nVous pouvez la consulter sur votre espace joueur et poursuivre les étapes de votre inscription."
         );
       break;
     case 'REOPENED':
       embed
-        .setTitle('Fiche Personnage — Réouverture')
+        .setTitle('Fiche personnage rouverte')
         .setDescription(
-          "Votre fiche personnage a été rouverte par l'équipe staff.\n\nVous pouvez dès à présent la modifier et la soumettre à nouveau depuis votre espace joueur."
+          "Votre fiche personnage a été rouverte par l'équipe staff.\n\nVous pouvez apporter les modifications nécessaires et la soumettre à nouveau depuis votre espace joueur."
         );
       break;
     case 'PENDING_PLAYER':
     default:
       embed
-        .setTitle('Fiche Personnage — Retours disponibles')
+        .setTitle('Fiche personnage — Retours disponibles')
         .setDescription(
-          "Des retours ont été déposés sur votre fiche personnage par l'équipe staff.\n\nConsultez les remarques directement sur votre fiche pour apporter les ajustements demandés."
+          "Des retours ont été formulés sur votre fiche personnage par l'équipe staff.\n\nConsultez les remarques directement sur votre fiche pour effectuer les ajustements demandés."
         );
       break;
   }
 
-  if (override?.title) {
-    embed.setTitle(override.title);
-  }
-  if (override?.description) {
-    embed.setDescription(override.description);
-  }
-
-  const buttonUrl = override?.buttonUrl || url;
-  const buttonLabel = override?.buttonLabel || 'Consulter ma fiche personnage';
-  const row = createPlayerSpaceButton(buttonUrl, buttonLabel);
+  const row = createPlayerSpaceButton(url, 'Consulter ma fiche personnage');
   return {
     embed,
     components: [row],
   };
 }
-export function buildInterviewReminderEmbed(customUrl, override = null) {
+
+export function buildInterviewReminderEmbed(customUrl) {
   const env = getEnv();
   const url = customUrl || `${env.ATLAS_PLAYER_SPACE_URL}/interview`;
   const embed = createHyoriEmbed();
   embed
-    .setTitle('Entretien Whitelist — Réserve ton créneau')
+    .setTitle('Entretien vocal — Réservation')
     .setDescription(
-      "Bonne nouvelle ! Ta fiche personnage a été validée par l'équipe staff et tu es désormais invité·e à passer ton entretien vocal de whitelist.\n\nDes créneaux sont actuellement ouverts. Rends-toi sur ton espace joueur pour choisir et réserver le créneau qui te convient le mieux !"
+      "Votre fiche personnage a été validée par l'équipe staff et des créneaux d'entretien vocal sont disponibles.\n\nRendez-vous sur votre espace joueur pour réserver votre créneau."
     );
 
-  if (override?.title) {
-    embed.setTitle(override.title);
-  }
-  if (override?.description) {
-    embed.setDescription(override.description);
-  }
-
-  const buttonUrl = override?.buttonUrl || url;
-  const buttonLabel = override?.buttonLabel || 'Réserver un créneau';
-  const row = createPlayerSpaceButton(buttonUrl, buttonLabel);
+  const row = createPlayerSpaceButton(url, 'Réserver un créneau');
   return {
     embed,
     components: [row],
   };
 }
+
 export function buildSanctionNotificationEmbed(type, reason, duration, appealUrl) {
   const env = getEnv();
   const url = appealUrl || env.ATLAS_BASE_URL;
   const embed = createHyoriEmbed();
+
   switch (type) {
     case 'WARNING':
       embed
-        .setTitle('Sanction Disciplinaire — Avertissement')
-        .setDescription(`Tu as reçu un avertissement pour la raison suivante :\n\n> **${reason}**`);
+        .setTitle('Sanction — Avertissement')
+        .setDescription(`Un avertissement vous a été attribué pour la raison suivante :\n\n> ${reason}`);
       break;
     case 'SUSPENSION': {
       const dur = duration || 'temporaire';
       embed
-        .setTitle('Sanction Disciplinaire — Suspension')
+        .setTitle('Sanction — Suspension')
         .setDescription(
-          `Tu as été suspendu du projet Hyori pour une durée de **${dur}** pour la raison suivante :\n\n> **${reason}**\n\nTu as la possibilité de contester cette décision en formulant un unique appel par ticket.`
+          `Votre compte a été suspendu pour une durée de **${dur}** pour la raison suivante :\n\n> ${reason}\n\nVous pouvez contester cette décision en ouvrant un recours via un ticket.`
         );
       break;
     }
     case 'EXCLUSION':
       embed
-        .setTitle('Sanction Disciplinaire — Exclusion Définitive')
+        .setTitle('Sanction — Exclusion définitive')
         .setDescription(
-          `Tu as été exclu du projet Hyori pour la raison suivante :\n\n> **${reason}**\n\nTu as la possibilité de contester cette décision en formulant un unique appel par ticket.`
+          `Votre compte a été définitivement exclu pour la raison suivante :\n\n> ${reason}\n\nVous pouvez contester cette décision en formulant un unique recours par ticket.`
         );
       break;
   }
-  const row = createPlayerSpaceButton(url);
+
+  const row = createPlayerSpaceButton(url, "Accéder à l'espace joueur");
   return {
     embed,
     components: [row],
   };
 }
+
 export function buildTicketMessageNotificationEmbed(
   ticketSubject,
   authorName,
   messagePreview,
-  ticketUrl,
-  override = null
+  ticketUrl
 ) {
   const env = getEnv();
   const url = ticketUrl || `${env.ATLAS_PLAYER_SPACE_URL}/tickets`;
   const embed = createHyoriEmbed();
 
-  embed.setTitle('Ticket — Nouveau message');
+  embed.setTitle('Nouveau message — Ticket');
 
-  let description = `Un nouveau message a été posté par **${authorName}** dans votre ticket **« ${ticketSubject} »**.`;
+  let description = `Nouveau message de **${authorName}** dans le ticket **« ${ticketSubject} »**.`;
   if (messagePreview && messagePreview.trim()) {
     const cleanPreview =
       messagePreview.length > 300 ? `${messagePreview.slice(0, 297)}...` : messagePreview;
     description += `\n\n> ${cleanPreview.replace(/\n+/g, '\n> ')}`;
   }
-  description += "\n\nRendez-vous sur votre espace joueur pour consulter l'échange et y répondre.";
 
   embed.setDescription(description);
 
-  if (override?.title) {
-    embed.setTitle(override.title);
-  }
-  if (override?.description) {
-    embed.setDescription(override.description);
-  }
-
-  const buttonUrl = override?.buttonUrl || url;
-  const buttonLabel = override?.buttonLabel || 'Consulter le ticket';
-  const row = createPlayerSpaceButton(buttonUrl, buttonLabel);
+  const row = createPlayerSpaceButton(url, 'Consulter le ticket');
   return {
     embed,
     components: [row],
@@ -259,36 +232,25 @@ export function buildRpTrackingMessageNotificationEmbed({
   messagePreview,
   rpTrackingUrl,
   characterName = null,
-  override = null,
 }) {
   const env = getEnv();
   const url = rpTrackingUrl || `${env.ATLAS_PLAYER_SPACE_URL}/rp-tracking`;
   const embed = createHyoriEmbed();
 
   embed.setTitle(
-    characterName ? `Suivi RP — Nouveau message (${characterName})` : 'Suivi RP — Nouveau message'
+    characterName ? `Nouveau message — Suivi RP (${characterName})` : 'Nouveau message — Suivi RP'
   );
 
-  let description = `Un nouveau message a été posté par **${authorName}** dans votre suivi RP.`;
+  let description = `Nouveau message de **${authorName}** sur votre suivi RP.`;
   if (messagePreview && messagePreview.trim()) {
     const cleanPreview =
       messagePreview.length > 300 ? `${messagePreview.slice(0, 297)}...` : messagePreview;
     description += `\n\n> ${cleanPreview.replace(/\n+/g, '\n> ')}`;
   }
-  description += "\n\nRendez-vous sur votre espace joueur pour consulter l'échange et y répondre.";
 
   embed.setDescription(description);
 
-  if (override?.title) {
-    embed.setTitle(override.title);
-  }
-  if (override?.description) {
-    embed.setDescription(override.description);
-  }
-
-  const buttonUrl = override?.buttonUrl || url;
-  const buttonLabel = override?.buttonLabel || 'Consulter mon suivi RP';
-  const row = createPlayerSpaceButton(buttonUrl, buttonLabel);
+  const row = createPlayerSpaceButton(url, 'Consulter mon suivi RP');
   return {
     embed,
     components: [row],
@@ -301,64 +263,33 @@ export function buildTicketCreatedNotificationEmbed({
   authorName,
   ticketDescription,
   ticketStaffUrl,
-  override = null,
 }) {
   const env = getEnv();
   const url = ticketStaffUrl || `${env.ATLAS_BASE_URL}/staff/tickets`;
   const embed = createHyoriEmbed();
 
-  const isSpoiler =
-    ticketCategory === 'SECRET' ||
-    ticketCategory === 'Ticket secret' ||
-    (typeof ticketCategory === 'string' && ticketCategory.toLowerCase().includes('spoiler')) ||
-    (typeof override?.title === 'string' && override.title.toLowerCase().includes('spoiler')) ||
-    (typeof override?.title === 'string' && override.title.toLowerCase().includes('secret'));
-
   const isTechnique =
-    (typeof ticketCategory === 'string' && ticketCategory.toLowerCase().includes('tech')) ||
-    (typeof override?.title === 'string' && override.title.toLowerCase().includes('tech'));
+    typeof ticketCategory === 'string' &&
+    (ticketCategory.toUpperCase() === 'TECHNIQUE' || ticketCategory.toLowerCase().includes('tech'));
 
-  let defaultTitle = '🎫 Nouveau Ticket RP';
-  if (isSpoiler) {
-    defaultTitle = '🔒 Nouveau Ticket RP (Spoiler)';
-  } else if (isTechnique) {
-    defaultTitle = '🛠️ Nouveau Ticket Technique';
-  }
-  embed.setTitle(defaultTitle);
+  const categoryLabel = isTechnique ? 'Technique' : 'Roleplay';
 
-  const categoryDisplay = ticketCategory || (isTechnique ? 'Technique' : 'Roleplay');
+  embed.setTitle(`Nouveau ticket — ${categoryLabel}`);
+
   let description =
-    `Un nouveau ticket a été créé par **${authorName}**.\n\n` +
-    `**Catégorie :** ${categoryDisplay}\n` +
-    `**Sujet :** ${ticketSubject}`;
-
-  if (isSpoiler) {
-    description =
-      `⚠️ **Ce ticket contient des spoils ou des informations confidentielles (projets sensibles, capture, RPK...).**\n\n` +
-      description;
-  }
+    `Auteur : **${authorName}**\n` +
+    `Catégorie : **${categoryLabel}**\n` +
+    `Sujet : **${ticketSubject}**`;
 
   if (ticketDescription && ticketDescription.trim()) {
     const excerpt =
       ticketDescription.length > 500 ? `${ticketDescription.slice(0, 497)}...` : ticketDescription;
     description += `\n\n> ${excerpt.replace(/\n+/g, '\n> ')}`;
   }
-  description += "\n\nConsultez et prenez en charge le ticket depuis l'espace staff.";
 
   embed.setDescription(description);
 
-  if (override?.title) {
-    embed.setTitle(override.title);
-  }
-  if (override?.description) {
-    embed.setDescription(override.description);
-  }
-
-  const buttonUrl = override?.buttonUrl || url;
-  const buttonLabel =
-    override?.buttonLabel ||
-    (isSpoiler ? 'Consulter le ticket confidentiel' : 'Consulter le ticket');
-  const row = createPlayerSpaceButton(buttonUrl, buttonLabel);
+  const row = createPlayerSpaceButton(url, 'Consulter le ticket');
   return {
     embed,
     components: [row],
@@ -371,19 +302,16 @@ export function buildWaitlistRegistrationNotificationEmbed({
   discordId,
   waitlistStaffUrl,
   avatarUrl = null,
-  override = null,
 }) {
   const env = getEnv();
   const url = waitlistStaffUrl || `${env.ATLAS_BASE_URL}/staff/waitlist`;
   const embed = createHyoriEmbed();
 
-  embed.setTitle("Nouvelle Inscription — Liste d'attente");
+  embed.setTitle("Nouvelle inscription — Liste d'attente");
 
-  let description =
-    `Nouveau inscrit sur la liste d'attente..\n\n` +
-    `**Joueur :** ${playerName || 'Inconnu'}${discordId ? ` (<@${discordId}>)` : ''}\n` +
-    `**Compte Minecraft :** \`${minecraftUsername || 'Non renseigné'}\`\n\n` +
-    `Consulte la liste d'attente depuis l'espace staff.`;
+  const description =
+    `Joueur : **${playerName || 'Inconnu'}**${discordId ? ` (<@${discordId}>)` : ''}\n` +
+    `Compte Minecraft : \`${minecraftUsername || 'Non renseigné'}\``;
 
   embed.setDescription(description);
 
@@ -391,16 +319,7 @@ export function buildWaitlistRegistrationNotificationEmbed({
     embed.setThumbnail(avatarUrl);
   }
 
-  if (override?.title) {
-    embed.setTitle(override.title);
-  }
-  if (override?.description) {
-    embed.setDescription(override.description);
-  }
-
-  const buttonUrl = override?.buttonUrl || url;
-  const buttonLabel = override?.buttonLabel || "Consulter la liste d'attente";
-  const row = createPlayerSpaceButton(buttonUrl, buttonLabel);
+  const row = createPlayerSpaceButton(url, "Consulter la liste d'attente");
   return {
     embed,
     components: [row],
