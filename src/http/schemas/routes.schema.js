@@ -70,15 +70,6 @@ export const TicketCreatedNotificationSchema = z.object({
   ticketStaffUrl: z.string().url('ticketStaffUrl must be a valid URL').optional().nullable(),
 });
 
-export const TICKET_TEAMS = ['RP_TRACKING', 'CONFLICT_MANAGEMENT', 'EVENT', 'DEVELOPER'];
-
-export const TicketTeamSummonedNotificationSchema = TicketCreatedNotificationSchema.extend({
-  team: z.enum(TICKET_TEAMS),
-});
-
-// Ancienne route `ticket-rp-summoned` : même charge utile, équipe implicite.
-export const TicketRpSummonedNotificationSchema = TicketCreatedNotificationSchema;
-
 export const WaitlistRegistrationNotificationSchema = z.object({
   channelId: z.string().regex(discordIdRegex, 'Invalid Discord ID format').optional().nullable(),
   mentionRoleId: z

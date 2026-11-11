@@ -85,7 +85,6 @@ export async function callDiscordBot<TResponse = unknown>(
 | `POST`  | `/notifications/interview-reminder`        | Relance le(s) joueur(s) pour réserver leur créneau d'entretien             | Module 1.c |
 | `POST`  | `/notifications/ticket-message`            | Notifie le joueur d'un nouveau message dans un ticket dont il fait partie  | Module 1.d |
 | `POST`  | `/notifications/ticket-created`            | Alerte sur un salon Discord externe lors de l'ouverture d'un ticket        | Module 1.e |
-| `POST`  | `/notifications/ticket-team-summoned`      | Transmet un ticket à une équipe sur son salon dédié (embed d'ouverture)    | Module 1.e |
 | `POST`  | `/notifications/waitlist-registration`     | Alerte les administrateurs dans leur salon dédié lors d'une inscription WL | Module 1.f |
 | `POST`  | `/notifications/sanction`                  | Envoie une notification de sanction (Avertissement, Suspension, Exclusion) | Module 1.g |
 | `POST`  | `/sanctions/apply`                         | Applique une sanction, sauvegarde les rôles et attribue le rôle sanctionné | Module 2   |
@@ -410,37 +409,7 @@ Envoie une notification dans un salon Discord (pouvant être situé sur un autre
 
 ---
 
-### 4.8. `POST /api/v1/notifications/ticket-team-summoned`
-
-Transmet un ticket à une équipe du staff sur son salon Discord dédié, lorsqu'un administrateur ou un helper la convoque sur ce ticket. L'embed est strictement identique à celui d'une ouverture de ticket (`ticket-created`) : rien n'indique qu'il s'agit d'une convocation.
-
-- `team` : `RP_TRACKING`, `CONFLICT_MANAGEMENT`, `EVENT` ou `DEVELOPER`.
-- Salon : `channelId` de la requête, sinon `channels.ticketTeamNotifications[team]` dans `discordConfig.js`. Il n'y a **pas** de repli sur le salon tickets général : sans salon configuré, la réponse est `{ "success": false, "notified": false }`.
-- Mention : `mentionRoleId` de la requête, sinon `roles.ticketTeamMention[team]` (aucune mention si `null`).
-
-#### Corps de la requête (JSON) :
-
-Même format que `ticket-created`, plus `team` :
-
-```json
-{
-  "team": "RP_TRACKING",
-  "channelId": "123456789012345678",
-  "mentionRoleId": "987654321098765432",
-  "ticketId": "cm1234567890",
-  "ticketSubject": "Demande de concession de terrain",
-  "ticketCategory": "RP",
-  "authorName": "Joueur_Alex",
-  "ticketDescription": "Bonjour, je sollicite un terrain pour implanter une forge...",
-  "ticketStaffUrl": "https://hyori-rp.fr/staff/tickets/cm1234567890"
-}
-```
-
-> L'ancienne route `POST /api/v1/notifications/ticket-rp-summoned` reste disponible comme alias de `team: "RP_TRACKING"` (compatibilité de déploiement).
-
----
-
-### 4.9. `POST /api/v1/notifications/waitlist-registration`
+### 4.8. `POST /api/v1/notifications/waitlist-registration`
 
 Alerte les administrateurs dans leur salon dédié sur le serveur staff (`Direction ⭐ / ⏳・liste-attente`) lorsqu'un joueur s'inscrit sur la liste d'attente après avoir lié son compte Minecraft sur Hyori Atlas.
 
@@ -486,7 +455,7 @@ Alerte les administrateurs dans leur salon dédié sur le serveur staff (`Direct
 
 ---
 
-### 4.10. `POST /api/v1/sanctions/apply`
+### 4.9. `POST /api/v1/sanctions/apply`
 
 Applique une sanction lourde (`SUSPENSION` ou `EXCLUSION`) sur Discord avec le cycle complet :
 
@@ -534,7 +503,7 @@ Applique une sanction lourde (`SUSPENSION` ou `EXCLUSION`) sur Discord avec le c
 
 ---
 
-### 4.9. `POST /api/v1/sanctions/rollback`
+### 4.10. `POST /api/v1/sanctions/rollback`
 
 Lève manuellement une sanction sur Discord :
 
