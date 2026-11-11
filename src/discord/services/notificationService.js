@@ -273,20 +273,6 @@ export class NotificationService {
     });
   }
 
-  /**
-   * Transmet un ticket à une équipe sur son salon dédié. L'embed est celui d'une ouverture de
-   * ticket, et aucun repli sur le salon tickets général n'est fait : sans salon configuré pour
-   * l'équipe, rien n'est envoyé.
-   */
-  async notifyTicketTeamSummoned({ team, channelId, mentionRoleId, ...ticket }) {
-    return this.sendTicketChannelNotification({
-      label: `ticket-team-summoned:${team}`,
-      targetChannelId: channelId || discordConfig.channels.ticketTeamNotifications[team],
-      roleId: mentionRoleId || discordConfig.roles.ticketTeamMention[team],
-      ticket,
-    });
-  }
-
   async sendTicketChannelNotification({ label, targetChannelId, roleId, ticket }) {
     const {
       ticketId,
