@@ -1,4 +1,10 @@
-import { ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import {
+  ChannelType,
+  PermissionsBitField,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} from 'discord.js';
 import { discordBot } from '../discord/client.js';
 import { discordConfig } from '../config/discordConfig.js';
 import { GuildRegistry } from '../discord/services/guildRegistry.js';
@@ -41,11 +47,10 @@ export class StaffTopicService {
    * Trouve ou crée la catégorie "Sujets" active.
    */
   async resolveActiveCategory(guild) {
-    // 1. Vérification par ID configuré
+    // 1. Vérification par ID configuré dans discordConfig
     const configuredId =
       discordConfig.categories?.topics ||
-      discordConfig.channels?.topicsCategory ||
-      process.env.DISCORD_TOPICS_CATEGORY_ID;
+      discordConfig.channels?.topicsCategory;
 
     if (configuredId) {
       try {
@@ -87,11 +92,10 @@ export class StaffTopicService {
    * Trouve ou crée la catégorie "Sujets archivés".
    */
   async resolveArchivedCategory(guild) {
-    // 1. Vérification par ID configuré
+    // 1. Vérification par ID configuré dans discordConfig
     const configuredId =
       discordConfig.categories?.archivedTopics ||
-      discordConfig.channels?.archivedTopicsCategory ||
-      process.env.DISCORD_ARCHIVED_TOPICS_CATEGORY_ID;
+      discordConfig.channels?.archivedTopicsCategory;
 
     if (configuredId) {
       try {
@@ -127,6 +131,12 @@ export class StaffTopicService {
     return await guild.channels.create({
       name: 'Sujets archivés',
       type: ChannelType.GuildCategory,
+      permissionOverwrites: [
+        {
+          id: guild.roles.everyone.id,
+          deny: [PermissionsBitField.Flags.SendMessages],
+        },
+      ],
       reason: 'Catégorie pour les salons de discussion staff archivés (Hyori Atlas)',
     });
   }
@@ -229,7 +239,7 @@ export class StaffTopicService {
 
     const archivedCategory = await this.resolveArchivedCategory(guild);
 
-    await channel.setParent(archivedCategory.id, { lockPermissions: false });
+    await channel.setParent(archivedCategory.id, { lockPermissions: true });
 
     await channel.send({
       content: "🔒 **Ce sujet a été archivé par l'équipe staff.**",

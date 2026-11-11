@@ -263,6 +263,8 @@ export function buildTicketCreatedNotificationEmbed({
   authorName,
   ticketDescription,
   ticketStaffUrl,
+  discordId = null,
+  avatarUrl = null,
 }) {
   const env = getEnv();
   const url = ticketStaffUrl || `${env.ATLAS_BASE_URL}/staff/tickets`;
@@ -277,7 +279,7 @@ export function buildTicketCreatedNotificationEmbed({
   embed.setTitle(`Nouveau ticket — ${categoryLabel}`);
 
   let description =
-    `Auteur : **${authorName}**\n` +
+    `Joueur : **${authorName || 'Inconnu'}**${discordId ? ` (<@${discordId}>)` : ''}\n` +
     `Catégorie : **${categoryLabel}**\n` +
     `Sujet : **${ticketSubject}**`;
 
@@ -288,6 +290,10 @@ export function buildTicketCreatedNotificationEmbed({
   }
 
   embed.setDescription(description);
+
+  if (avatarUrl) {
+    embed.setThumbnail(avatarUrl);
+  }
 
   const row = createPlayerSpaceButton(url, 'Consulter le ticket');
   return {
@@ -307,11 +313,12 @@ export function buildWaitlistRegistrationNotificationEmbed({
   const url = waitlistStaffUrl || `${env.ATLAS_BASE_URL}/staff/waitlist`;
   const embed = createHyoriEmbed();
 
-  embed.setTitle("Nouvelle inscription — Liste d'attente");
+  embed.setTitle("Admissions — Inscription en liste d'attente");
 
   const description =
     `Joueur : **${playerName || 'Inconnu'}**${discordId ? ` (<@${discordId}>)` : ''}\n` +
-    `Compte Minecraft : \`${minecraftUsername || 'Non renseigné'}\``;
+    `Compte Minecraft : \`${minecraftUsername || 'Non renseigné'}\`\n` +
+    `Statut : **En attente de whitelist**`;
 
   embed.setDescription(description);
 
@@ -320,6 +327,89 @@ export function buildWaitlistRegistrationNotificationEmbed({
   }
 
   const row = createPlayerSpaceButton(url, "Consulter la liste d'attente");
+  return {
+    embed,
+    components: [row],
+  };
+}
+
+export function buildCharacterSheetSubmittedNotificationEmbed({
+  playerName,
+  minecraftUsername,
+  characterName,
+  characterClass = null,
+  discordId = null,
+  evaluationStaffUrl = null,
+  avatarUrl = null,
+}) {
+  const env = getEnv();
+  const url = evaluationStaffUrl || `${env.ATLAS_BASE_URL}/staff/atlas`;
+  const embed = createHyoriEmbed();
+
+  embed.setTitle('Admissions — Fiche RP en évaluation');
+
+  let description =
+    `Joueur : **${playerName || 'Inconnu'}**${discordId ? ` (<@${discordId}>)` : ''}\n` +
+    `Compte Minecraft : \`${minecraftUsername || 'Non renseigné'}\`\n` +
+    `Personnage : **${characterName || 'Non renseigné'}**` +
+    (characterClass ? ` · *${characterClass}*` : '') +
+    `\nStatut : **En attente d'évaluation staff**`;
+
+  embed.setDescription(description);
+
+  if (avatarUrl) {
+    embed.setThumbnail(avatarUrl);
+  }
+
+  const row = createPlayerSpaceButton(url, 'Évaluer la fiche RP');
+  return {
+    embed,
+    components: [row],
+  };
+}
+
+export function buildInterviewSlotBookedNotificationEmbed({
+  playerName,
+  minecraftUsername,
+  slotDate,
+  discordId = null,
+  interviewStaffUrl = null,
+  avatarUrl = null,
+}) {
+  const env = getEnv();
+  const url = interviewStaffUrl || `${env.ATLAS_BASE_URL}/staff/interview-slots`;
+  const embed = createHyoriEmbed();
+
+  embed.setTitle("Admissions — Créneau d'entretien réservé");
+
+  const dateObj = new Date(slotDate);
+  const isValidDate = !Number.isNaN(dateObj.getTime());
+  const formattedDate = isValidDate
+    ? new Intl.DateTimeFormat('fr-FR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Europe/Paris',
+      }).format(dateObj)
+    : slotDate;
+  const discordRelative = isValidDate ? ` (<t:${Math.floor(dateObj.getTime() / 1000)}:R>)` : '';
+
+  const description =
+    `Joueur : **${playerName || 'Inconnu'}**${discordId ? ` (<@${discordId}>)` : ''}\n` +
+    `Compte Minecraft : \`${minecraftUsername || 'Non renseigné'}\`\n` +
+    `Créneau réservé : **${formattedDate}**${discordRelative}\n` +
+    `Statut : **Entretien oral planifié**`;
+
+  embed.setDescription(description);
+
+  if (avatarUrl) {
+    embed.setThumbnail(avatarUrl);
+  }
+
+  const row = createPlayerSpaceButton(url, 'Consulter le planning');
   return {
     embed,
     components: [row],
