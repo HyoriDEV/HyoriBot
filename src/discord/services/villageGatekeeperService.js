@@ -1,5 +1,7 @@
+import { PermissionFlagsBits } from 'discord.js';
 import { GuildRegistry } from './guildRegistry.js';
 import { discordConfig } from '../../config/discordConfig.js';
+import { configStore } from '../../storage/index.js';
 import { modLogService } from './modLogService.js';
 import { logger } from '../../logger/index.js';
 
@@ -69,44 +71,78 @@ export class VillageGatekeeperService {
         return { allowed: false, isVillage: true, reason: 'Absent du serveur communautaire' };
       }
 
-      // Vérification 1 : Rôle Whitelist
-      const whitelistRoleId = discordConfig.roles.whitelist;
-      const hasWhitelistRole = Boolean(
-        whitelistRoleId && communityMember.roles.cache.has(whitelistRoleId)
-      );
+      // =========================================================================
+      // Vérification Staff (Bypass de la restriction de classe village)
+      // =========================================================================
+      const staffConfig = discordConfig.roles.staff;
+      const staticStaffRoleIds =
+        typeof staffConfig === 'string'
+          ? [staffConfig]
+          : typeof staffConfig === 'object' && staffConfig !== null
+            ? Object.values(staffConfig).filter(Boolean)
+            : [];
 
-      // Vérification 2 : Rôle de classe correspondant au village
-      const classRoleId = discordConfig.roles.classes[village.class];
-      const hasClassRole = Boolean(classRoleId && communityMember.roles.cache.has(classRoleId));
+      const config = await configStore.read().catch(() => ({}));
+      const dynamicStaffRoleIds = config.roles?.staffRoleIds || [];
+      const allStaffRoleIds = [...new Set([...staticStaffRoleIds, ...dynamicStaffRoleIds])];
 
-      if (!hasWhitelistRole || !hasClassRole) {
-        let internalReason = '';
-        if (!hasWhitelistRole && !hasClassRole) {
-          internalReason = `Non whitelisté et classe incorrecte (requis : ${village.class})`;
-        } else if (!hasWhitelistRole) {
-          internalReason = 'Joueur non whitelisté';
-        } else {
-          internalReason = `Classe incorrecte pour ce village (requis : ${village.class})`;
-        }
+      const isStaff =
+        communityMember.id === communityGuild.ownerId ||
+        Boolean(communityMember.permissions?.has(PermissionFlagsBits.Administrator)) ||
+        allStaffRoleIds.some(roleId => communityMember.roles.cache.has(roleId));
 
+      if (isStaff) {
         logger.info(
           {
             userId: member.id,
             userTag: member.user.tag,
             village: village.name,
-            hasWhitelistRole,
-            hasClassRole,
-            requiredClass: village.class,
           },
-          'Accès au village refusé - Exclusion du joueur'
+          'Accès au village autorisé : Membre du Staff (Bypass des restrictions de classe)'
+        );
+      } else {
+        // =========================================================================
+        // Joueur standard : Contrôle Whitelist + Classe du village
+        // =========================================================================
+        // Vérification 1 : Rôle Whitelist
+        const whitelistRoleId = discordConfig.roles.whitelist;
+        const hasWhitelistRole = Boolean(
+          whitelistRoleId && communityMember.roles.cache.has(whitelistRoleId)
         );
 
-        await this.rejectMember(member, village, internalReason);
-        return { allowed: false, isVillage: true, reason: internalReason };
+        // Vérification 2 : Rôle de classe correspondant au village
+        const classRoleId = discordConfig.roles.classes[village.class];
+        const hasClassRole = Boolean(classRoleId && communityMember.roles.cache.has(classRoleId));
+
+        if (!hasWhitelistRole || !hasClassRole) {
+          let internalReason = '';
+          if (!hasWhitelistRole && !hasClassRole) {
+            internalReason = `Non whitelisté et classe incorrecte (requis : ${village.class})`;
+          } else if (!hasWhitelistRole) {
+            internalReason = 'Joueur non whitelisté';
+          } else {
+            internalReason = `Classe incorrecte pour ce village (requis : ${village.class})`;
+          }
+
+          logger.info(
+            {
+              userId: member.id,
+              userTag: member.user.tag,
+              village: village.name,
+              hasWhitelistRole,
+              hasClassRole,
+              requiredClass: village.class,
+            },
+            'Accès au village refusé - Exclusion du joueur'
+          );
+
+          await this.rejectMember(member, village, internalReason);
+          return { allowed: false, isVillage: true, reason: internalReason };
+        }
       }
 
       // =========================================================================
-      // Joueur validé : attribution automatique du rôle par défaut "Habitant"
+      // Membre validé (Staff ou Habitant RP) : attribution automatique du rôle "Habitant"
       // =========================================================================
       if (!village.habitantRoleId) {
         logger.warn(
@@ -122,10 +158,17 @@ export class VillageGatekeeperService {
           if (habitantRole) {
             await member.roles.add(
               habitantRole,
-              'Attribution automatique du rôle Habitant après validation de la classe'
+              isStaff
+                ? 'Attribution automatique du rôle Habitant (Membre du Staff)'
+                : 'Attribution automatique du rôle Habitant après validation de la classe'
             );
             logger.info(
-              { memberId: member.id, village: village.name, roleId: village.habitantRoleId },
+              {
+                memberId: member.id,
+                village: village.name,
+                roleId: village.habitantRoleId,
+                isStaff,
+              },
               'Rôle Habitant attribué avec succès sur le village'
             );
           } else {
@@ -148,11 +191,14 @@ export class VillageGatekeeperService {
           userTag: member.user.tag,
           village: village.name,
           class: village.class,
+          isStaff,
         },
-        "Vérification d'entrée village validée et rôle Habitant synchronisé"
+        isStaff
+          ? "Vérification d'entrée village validée (Membre Staff - Accès accordé)"
+          : "Vérification d'entrée village validée et rôle Habitant synchronisé"
       );
 
-      return { allowed: true, isVillage: true, village };
+      return { allowed: true, isVillage: true, village, isStaff };
     } catch (error) {
       logger.error(
         { error: error.message, userId: member.id, villageGuildId: guildId },

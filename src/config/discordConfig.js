@@ -62,6 +62,7 @@ export const discordConfig = {
     },
 
     staff: {
+      STAFF: '1541040543570595982',
       GC: '1539770379864899684',
       COMMUNICATION: '1539770378778452029',
       RP_TRACKING: '1539770188671483935',
