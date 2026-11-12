@@ -62,6 +62,8 @@ export const TicketCreatedNotificationSchema = z.object({
     .regex(discordIdRegex, 'Invalid Discord ID format')
     .optional()
     .nullable(),
+  discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format').optional().nullable(),
+  avatarUrl: z.string().url('avatarUrl must be a valid URL').optional().nullable(),
   ticketId: z.string().min(1, 'ticketId must not be empty'),
   ticketSubject: z.string().min(1, 'ticketSubject must not be empty').max(200),
   ticketCategory: z.string().min(1, 'ticketCategory must not be empty').max(50),
@@ -83,6 +85,37 @@ export const WaitlistRegistrationNotificationSchema = z.object({
   minecraftUuid: z.string().max(64).optional().nullable(),
   avatarUrl: z.string().url('avatarUrl must be a valid URL').optional().nullable(),
   waitlistStaffUrl: z.string().url('waitlistStaffUrl must be a valid URL').optional().nullable(),
+});
+
+export const CharacterSheetSubmittedNotificationSchema = z.object({
+  channelId: z.string().regex(discordIdRegex, 'Invalid Discord ID format').optional().nullable(),
+  mentionRoleId: z
+    .string()
+    .regex(discordIdRegex, 'Invalid Discord ID format')
+    .optional()
+    .nullable(),
+  discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format').optional().nullable(),
+  playerName: z.string().min(1, 'playerName must not be empty').max(100),
+  minecraftUsername: z.string().max(50).optional().nullable(),
+  characterName: z.string().min(1, 'characterName must not be empty').max(100),
+  characterClass: z.string().max(50).optional().nullable(),
+  avatarUrl: z.string().url('avatarUrl must be a valid URL').optional().nullable(),
+  evaluationStaffUrl: z.string().url('evaluationStaffUrl must be a valid URL').optional().nullable(),
+});
+
+export const InterviewSlotBookedNotificationSchema = z.object({
+  channelId: z.string().regex(discordIdRegex, 'Invalid Discord ID format').optional().nullable(),
+  mentionRoleId: z
+    .string()
+    .regex(discordIdRegex, 'Invalid Discord ID format')
+    .optional()
+    .nullable(),
+  discordId: z.string().regex(discordIdRegex, 'Invalid Discord ID format').optional().nullable(),
+  playerName: z.string().min(1, 'playerName must not be empty').max(100),
+  minecraftUsername: z.string().max(50).optional().nullable(),
+  slotDate: z.string().min(1, 'slotDate must not be empty'),
+  avatarUrl: z.string().url('avatarUrl must be a valid URL').optional().nullable(),
+  interviewStaffUrl: z.string().url('interviewStaffUrl must be a valid URL').optional().nullable(),
 });
 
 export const ApplySanctionSchema = z.object({

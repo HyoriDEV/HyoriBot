@@ -8,6 +8,8 @@ import {
   RpTrackingMessageNotificationSchema,
   TicketCreatedNotificationSchema,
   WaitlistRegistrationNotificationSchema,
+  CharacterSheetSubmittedNotificationSchema,
+  InterviewSlotBookedNotificationSchema,
 } from '../schemas/routes.schema.js';
 import { notificationService } from '../../discord/services/notificationService.js';
 import { discordConfig } from '../../config/discordConfig.js';
@@ -196,6 +198,48 @@ export async function notificationRoutes(fastify) {
       });
     }
     const result = await notificationService.notifyWaitlistRegistration(parseResult.data);
+    return reply.status(200).send(result);
+  });
+
+  fastify.post('/notifications/character-sheet-submitted', async (request, reply) => {
+    const parseResult = CharacterSheetSubmittedNotificationSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      logger.warn(
+        {
+          errors: parseResult.error.format(),
+        },
+        'Invalid payload for character-sheet-submitted notification'
+      );
+      return reply.status(400).send({
+        success: false,
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'Invalid request payload',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const result = await notificationService.notifyCharacterSheetSubmitted(parseResult.data);
+    return reply.status(200).send(result);
+  });
+
+  fastify.post('/notifications/interview-slot-booked', async (request, reply) => {
+    const parseResult = InterviewSlotBookedNotificationSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      logger.warn(
+        {
+          errors: parseResult.error.format(),
+        },
+        'Invalid payload for interview-slot-booked notification'
+      );
+      return reply.status(400).send({
+        success: false,
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'Invalid request payload',
+        details: parseResult.error.flatten(),
+      });
+    }
+    const result = await notificationService.notifyInterviewSlotBooked(parseResult.data);
     return reply.status(200).send(result);
   });
 

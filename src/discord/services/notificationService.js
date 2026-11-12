@@ -13,6 +13,8 @@ import {
   buildRpTrackingMessageNotificationEmbed,
   buildTicketCreatedNotificationEmbed,
   buildWaitlistRegistrationNotificationEmbed,
+  buildCharacterSheetSubmittedNotificationEmbed,
+  buildInterviewSlotBookedNotificationEmbed,
 } from '../embeds.js';
 export class NotificationService {
   async sendDirectMessage(discordId, actionName, messagePayload) {
@@ -267,8 +269,8 @@ export class NotificationService {
   async notifyTicketCreated({ channelId, mentionRoleId, ...ticket }) {
     return this.sendTicketChannelNotification({
       label: 'ticket-created',
-      targetChannelId: channelId || discordConfig.channels.ticketNotifications,
-      roleId: mentionRoleId || discordConfig.roles.ticketMention,
+      targetChannelId: channelId,
+      roleId: mentionRoleId || null,
       ticket,
     });
   }
@@ -281,6 +283,8 @@ export class NotificationService {
       authorName,
       ticketDescription,
       ticketStaffUrl,
+      discordId,
+      avatarUrl,
     } = ticket;
 
     if (!targetChannelId) {
@@ -307,12 +311,26 @@ export class NotificationService {
           };
         }
 
+        let effectiveAvatarUrl = avatarUrl;
+        if (!effectiveAvatarUrl && discordId) {
+          try {
+            const user = await discordBot.client.users.fetch(discordId);
+            if (user) {
+              effectiveAvatarUrl = user.displayAvatarURL({ size: 256 });
+            }
+          } catch {
+            // Non bloquant
+          }
+        }
+
         const { embed, components } = buildTicketCreatedNotificationEmbed({
           ticketSubject,
           ticketCategory,
           authorName,
           ticketDescription,
           ticketStaffUrl,
+          discordId,
+          avatarUrl: effectiveAvatarUrl,
         });
 
         const content = roleId ? `<@&${roleId}>` : undefined;
@@ -348,7 +366,7 @@ export class NotificationService {
   }
 
   /**
-   * Notifie les administrateurs sur le salon Discord dédié du serveur staff
+   * Notifie les administrateurs sur le salon Discord dédié du serveur staff (#admissions)
    * lors de l'inscription d'un nouveau joueur sur la liste d'attente.
    */
   async notifyWaitlistRegistration({
@@ -361,9 +379,8 @@ export class NotificationService {
     avatarUrl,
     waitlistStaffUrl,
   }) {
-    const targetChannelId = channelId || discordConfig.channels.waitlistNotifications;
-    const roleId =
-      mentionRoleId !== undefined ? mentionRoleId : discordConfig.roles.waitlistMention;
+    const targetChannelId = channelId;
+    const roleId = mentionRoleId || null;
 
     if (!targetChannelId) {
       logger.warn('No channel configured for waitlist-registration notification');
@@ -432,6 +449,198 @@ export class NotificationService {
         logger.error(
           { targetChannelId, error },
           'Failed to send waitlist-registration notification to channel'
+        );
+        return {
+          success: false,
+          notified: false,
+          error: error?.message || 'Failed to send message to Discord channel',
+        };
+      }
+    });
+  }
+
+  /**
+   * Notifie l'équipe staff sur le salon #admissions
+   * lorsqu'un joueur soumet sa fiche RP pour relecture et évaluation.
+   */
+  async notifyCharacterSheetSubmitted({
+    channelId,
+    mentionRoleId,
+    discordId,
+    playerName,
+    minecraftUsername,
+    characterName,
+    characterClass,
+    avatarUrl,
+    evaluationStaffUrl,
+  }) {
+    const targetChannelId = channelId;
+    const roleId = mentionRoleId || null;
+
+    if (!targetChannelId) {
+      logger.warn('No channel configured for character-sheet-submitted notification');
+      return {
+        success: false,
+        notified: false,
+        error: 'No target channel configured for character-sheet-submitted notification',
+      };
+    }
+
+    const queueKey = `character-sheet-submitted:${discordId || playerName || Date.now()}`;
+    return discordQueue.enqueue(queueKey, async () => {
+      try {
+        const channel = await discordBot.client.channels.fetch(targetChannelId);
+        if (!channel || !channel.isTextBased()) {
+          logger.warn(
+            { targetChannelId },
+            'Target channel not found or not text-based for character-sheet-submitted notification'
+          );
+          return {
+            success: false,
+            notified: false,
+            error: `Target channel ${targetChannelId} not found or not text-based`,
+          };
+        }
+
+        let effectiveAvatarUrl = avatarUrl;
+        if (!effectiveAvatarUrl && discordId) {
+          try {
+            const user = await discordBot.client.users.fetch(discordId);
+            if (user) {
+              effectiveAvatarUrl = user.displayAvatarURL({ size: 256 });
+            }
+          } catch {
+            // Non bloquant
+          }
+        }
+
+        const { embed, components } = buildCharacterSheetSubmittedNotificationEmbed({
+          playerName,
+          minecraftUsername,
+          characterName,
+          characterClass,
+          discordId,
+          evaluationStaffUrl,
+          avatarUrl: effectiveAvatarUrl,
+        });
+
+        const content = roleId ? `<@&${roleId}>` : undefined;
+
+        await channel.send({
+          content,
+          embeds: [embed],
+          components,
+        });
+
+        logger.info(
+          { targetChannelId, playerName, characterName, roleId },
+          'Character sheet submitted notification sent successfully to channel'
+        );
+
+        return {
+          success: true,
+          notified: true,
+          message: 'Character sheet submitted notification sent successfully to channel',
+        };
+      } catch (error) {
+        logger.error(
+          { targetChannelId, error },
+          'Failed to send character-sheet-submitted notification to channel'
+        );
+        return {
+          success: false,
+          notified: false,
+          error: error?.message || 'Failed to send message to Discord channel',
+        };
+      }
+    });
+  }
+
+  /**
+   * Notifie l'équipe staff sur le salon #admissions
+   * lorsqu'un joueur réserve un créneau d'entretien oral.
+   */
+  async notifyInterviewSlotBooked({
+    channelId,
+    mentionRoleId,
+    discordId,
+    playerName,
+    minecraftUsername,
+    slotDate,
+    avatarUrl,
+    interviewStaffUrl,
+  }) {
+    const targetChannelId = channelId;
+    const roleId = mentionRoleId || null;
+
+    if (!targetChannelId) {
+      logger.warn('No channel configured for interview-slot-booked notification');
+      return {
+        success: false,
+        notified: false,
+        error: 'No target channel configured for interview-slot-booked notification',
+      };
+    }
+
+    const queueKey = `interview-slot-booked:${discordId || playerName || Date.now()}`;
+    return discordQueue.enqueue(queueKey, async () => {
+      try {
+        const channel = await discordBot.client.channels.fetch(targetChannelId);
+        if (!channel || !channel.isTextBased()) {
+          logger.warn(
+            { targetChannelId },
+            'Target channel not found or not text-based for interview-slot-booked notification'
+          );
+          return {
+            success: false,
+            notified: false,
+            error: `Target channel ${targetChannelId} not found or not text-based`,
+          };
+        }
+
+        let effectiveAvatarUrl = avatarUrl;
+        if (!effectiveAvatarUrl && discordId) {
+          try {
+            const user = await discordBot.client.users.fetch(discordId);
+            if (user) {
+              effectiveAvatarUrl = user.displayAvatarURL({ size: 256 });
+            }
+          } catch {
+            // Non bloquant
+          }
+        }
+
+        const { embed, components } = buildInterviewSlotBookedNotificationEmbed({
+          playerName,
+          minecraftUsername,
+          slotDate,
+          discordId,
+          interviewStaffUrl,
+          avatarUrl: effectiveAvatarUrl,
+        });
+
+        const content = roleId ? `<@&${roleId}>` : undefined;
+
+        await channel.send({
+          content,
+          embeds: [embed],
+          components,
+        });
+
+        logger.info(
+          { targetChannelId, playerName, slotDate, roleId },
+          'Interview slot booked notification sent successfully to channel'
+        );
+
+        return {
+          success: true,
+          notified: true,
+          message: 'Interview slot booked notification sent successfully to channel',
+        };
+      } catch (error) {
+        logger.error(
+          { targetChannelId, error },
+          'Failed to send interview-slot-booked notification to channel'
         );
         return {
           success: false,

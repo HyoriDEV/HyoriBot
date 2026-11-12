@@ -85,7 +85,9 @@ export async function callDiscordBot<TResponse = unknown>(
 | `POST`  | `/notifications/interview-reminder`        | Relance le(s) joueur(s) pour réserver leur créneau d'entretien             | Module 1.c |
 | `POST`  | `/notifications/ticket-message`            | Notifie le joueur d'un nouveau message dans un ticket dont il fait partie  | Module 1.d |
 | `POST`  | `/notifications/ticket-created`            | Alerte sur un salon Discord externe lors de l'ouverture d'un ticket        | Module 1.e |
-| `POST`  | `/notifications/waitlist-registration`     | Alerte les administrateurs dans leur salon dédié lors d'une inscription WL | Module 1.f |
+| `POST`  | `/notifications/waitlist-registration`     | Alerte les administrateurs dans #admissions lors d'une inscription WL      | Module 1.f |
+| `POST`  | `/notifications/character-sheet-submitted` | Alerte le staff dans #admissions lors de la soumission d'une fiche RP      | Module 1.f |
+| `POST`  | `/notifications/interview-slot-booked`     | Alerte le staff dans #admissions lors de la réservation d'un créneau vocal | Module 1.f |
 | `POST`  | `/notifications/sanction`                  | Envoie une notification de sanction (Avertissement, Suspension, Exclusion) | Module 1.g |
 | `POST`  | `/sanctions/apply`                         | Applique une sanction, sauvegarde les rôles et attribue le rôle sanctionné | Module 2   |
 | `POST`  | `/sanctions/rollback`                      | Lève une sanction, retire le rôle sanctionné et restaure les rôles         | Module 2   |
@@ -450,6 +452,77 @@ Alerte les administrateurs dans leur salon dédié sur le serveur staff (`Direct
   "success": true,
   "notified": true,
   "message": "Waitlist registration notification sent successfully to channel"
+}
+```
+
+---
+
+### 4.9. `POST /api/v1/notifications/character-sheet-submitted`
+
+Alerte l'équipe staff sur le salon `#admissions` lorsqu'un joueur soumet sa fiche personnage RP pour évaluation.
+
+- **Salon** : `channelId` de la requête (ID de salon configuré dans les paramètres Atlas).
+- **Mention** : `mentionRoleId` de la requête (optionnel).
+- **Design de l'embed** : Couleur dorée Hyori (`#E9D15C`), titre `Admissions — Fiche RP en évaluation`, nom du joueur, pseudo Minecraft, nom du personnage, statut `En attente d'évaluation staff`, miniature de l'avatar et bouton interactif vers `/staff/atlas/:id/evaluation`.
+
+#### Corps de la requête (JSON) :
+
+```json
+{
+  "channelId": "1557096333683331172",
+  "mentionRoleId": null,
+  "discordId": "123456789012345678",
+  "playerName": "Alex",
+  "minecraftUsername": "Alex_Craft",
+  "characterName": "Takeshi",
+  "characterClass": "PAYSAN",
+  "avatarUrl": "https://cdn.discordapp.com/avatars/123456789012345678/abc.png",
+  "evaluationStaffUrl": "https://hyori-rp.fr/staff/atlas/usr_123/evaluation"
+}
+```
+
+#### Réponse HTTP 200 :
+
+```json
+{
+  "success": true,
+  "notified": true,
+  "message": "Character sheet submitted notification sent successfully to channel"
+}
+```
+
+---
+
+### 4.10. `POST /api/v1/notifications/interview-slot-booked`
+
+Alerte l'équipe staff sur le salon `#admissions` lorsqu'un joueur admissible réserve un créneau d'entretien oral.
+
+- **Salon** : `channelId` de la requête (ID de salon configuré dans les paramètres Atlas).
+- **Mention** : `mentionRoleId` de la requête (optionnel).
+- **Design de l'embed** : Couleur dorée Hyori (`#E9D15C`), titre `Admissions — Créneau d'entretien réservé`, nom du joueur, pseudo Minecraft, date/heure du créneau formatée en heure de Paris + timestamp relatif Discord, statut `Entretien oral planifié`, miniature de l'avatar et bouton interactif vers `/staff/interview-slots`.
+
+#### Corps de la requête (JSON) :
+
+```json
+{
+  "channelId": "1557096333683331172",
+  "mentionRoleId": null,
+  "discordId": "123456789012345678",
+  "playerName": "Alex",
+  "minecraftUsername": "Alex_Craft",
+  "slotDate": "2026-11-15T19:30:00.000Z",
+  "avatarUrl": "https://cdn.discordapp.com/avatars/123456789012345678/abc.png",
+  "interviewStaffUrl": "https://hyori-rp.fr/staff/interview-slots"
+}
+```
+
+#### Réponse HTTP 200 :
+
+```json
+{
+  "success": true,
+  "notified": true,
+  "message": "Interview slot booked notification sent successfully to channel"
 }
 ```
 

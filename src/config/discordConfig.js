@@ -69,21 +69,16 @@ export const discordConfig = {
       DEVELOPER: '1539770187270725672',
       ADMIN: '1539770126314901635',
     },
-
-    ticketMention: null,
-    waitlistMention: null,
   },
 
   channels: {
     modLogs: '1545033853809332324',
     memberLogs: '1545033895777673297',
-    ticketNotifications: '1552506859670347776',
-    waitlistNotifications: '1557096333683331172',
   },
 
   categories: {
-    topics: process.env.DISCORD_TOPICS_CATEGORY_ID || null,
-    archivedTopics: process.env.DISCORD_ARCHIVED_TOPICS_CATEGORY_ID || null,
+    topics: '1567249063609376839',
+    archivedTopics: '1570212579782037624',
   },
 };
 
