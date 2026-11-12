@@ -10,14 +10,13 @@ export default {
     }
 
     try {
+      await interaction.deferReply({ ephemeral: true });
+
       if (!interaction.guild || !interaction.channel || !interaction.channel.isTextBased()) {
-        return interaction.reply({
+        return interaction.editReply({
           content: '❌ Cette action ne peut être exécutée que dans un salon textuel.',
-          ephemeral: true,
         });
       }
-
-      await interaction.deferReply({ ephemeral: true });
 
       const result = await staffTopicService.archiveTopic({
         channelId: interaction.channelId,
