@@ -174,7 +174,6 @@ export class StaffTopicService {
           .setLabel('Voir le ticket')
           .setStyle(ButtonStyle.Link)
           .setURL(finalTicketUrl)
-          .setEmoji('🎫')
       );
     }
 
@@ -183,7 +182,6 @@ export class StaffTopicService {
         .setCustomId('topic_archive')
         .setLabel('Archiver')
         .setStyle(ButtonStyle.Secondary)
-        .setEmoji('📁')
     );
 
     const components = [buttonRow];
