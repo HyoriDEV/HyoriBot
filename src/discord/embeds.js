@@ -270,17 +270,48 @@ export function buildTicketCreatedNotificationEmbed({
   const url = ticketStaffUrl || `${env.ATLAS_BASE_URL}/staff/tickets`;
   const embed = createHyoriEmbed();
 
+  const rawCat = (typeof ticketCategory === 'string' ? ticketCategory : '').trim();
+  const lowerCat = rawCat.toLowerCase();
+
+  const isDev =
+    lowerCat === 'dev' ||
+    lowerCat.startsWith('dev') ||
+    lowerCat.includes('dev') ||
+    lowerCat.includes('développement') ||
+    lowerCat.includes('developpement');
+
   const isTechnique =
-    typeof ticketCategory === 'string' &&
-    (ticketCategory.toUpperCase() === 'TECHNIQUE' || ticketCategory.toLowerCase().includes('tech'));
+    isDev ||
+    lowerCat === 'technique' ||
+    lowerCat.includes('tech') ||
+    lowerCat.includes('bug');
 
-  const categoryLabel = isTechnique ? 'Technique' : 'Roleplay';
+  // Déterminer le libellé pour le titre : DEV > Technique > RP (jamais "Roleplay")
+  let titleCategory = 'RP';
+  if (isDev) {
+    titleCategory = 'DEV';
+  } else if (isTechnique) {
+    titleCategory = 'Technique';
+  } else if (rawCat && !lowerCat.includes('roleplay') && !lowerCat.includes('rp')) {
+    titleCategory = rawCat;
+  }
 
-  embed.setTitle(`Nouveau ticket — ${categoryLabel}`);
+  embed.setTitle(`Nouveau ticket — ${titleCategory}`);
+
+  // Catégorie affichée dans la description : remplacer "Roleplay" par "RP" et nettoyer les préfixes redondants
+  let categoryDisplay = rawCat ? rawCat.replace(/roleplay/gi, 'RP') : titleCategory;
+  categoryDisplay = categoryDisplay
+    .replace(/^Ticket\s+RP(\s*·\s*|$)/i, 'RP$1')
+    .replace(/^Ticket\s+technique(\s*·\s*|$)/i, 'Technique$1')
+    .replace(/^Ticket\s+dev(\s*·\s*|$)/i, 'DEV$1');
+
+  if (!categoryDisplay) {
+    categoryDisplay = titleCategory;
+  }
 
   let description =
     `Joueur : **${authorName || 'Inconnu'}**${discordId ? ` (<@${discordId}>)` : ''}\n` +
-    `Catégorie : **${categoryLabel}**\n` +
+    `Catégorie : **${categoryDisplay}**\n` +
     `Sujet : **${ticketSubject}**`;
 
   if (ticketDescription && ticketDescription.trim()) {
