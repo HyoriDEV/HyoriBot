@@ -166,47 +166,45 @@ export class StaffTopicService {
     const finalTicketUrl =
       ticketUrl || (ticketId ? `${atlasBaseUrl}/staff/tickets/${ticketId}` : null);
 
-    // Composants (Bouton vers le ticket si associé)
-    const components = [];
+    // Composants (Bouton "Voir le ticket" si associé + Bouton "Archiver" rapide)
+    const buttonRow = new ActionRowBuilder();
     if (finalTicketUrl) {
-      const buttonRow = new ActionRowBuilder().addComponents(
+      buttonRow.addComponents(
         new ButtonBuilder()
-          .setLabel('Voir le ticket associé')
+          .setLabel('Voir le ticket')
           .setStyle(ButtonStyle.Link)
           .setURL(finalTicketUrl)
           .setEmoji('🎫')
       );
-      components.push(buttonRow);
     }
+
+    buttonRow.addComponents(
+      new ButtonBuilder()
+        .setCustomId('topic_archive')
+        .setLabel('Archiver')
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji('📁')
+    );
+
+    const components = [buttonRow];
 
     // Formatage markdown strict demandé : titres de niveau 1 pour # Contexte et # Actions
     const content = `# Contexte\n${context.trim()}\n\n# Actions\n${actions.trim()}`;
 
     if (content.length <= 2000) {
-      const message = await channel.send({
+      await channel.send({
         content,
         components,
       });
-      try {
-        await message.pin();
-      } catch (pinErr) {
-        logger.warn({ pinErr }, 'Impossible d’épingler le message initial du sujet');
-      }
     } else {
       // Si le contenu dépasse la limite d'un message Discord (2000 caractères), envoi propre en deux messages
-      const contextMsg = await channel.send({
+      await channel.send({
         content: `# Contexte\n${context.trim()}`.slice(0, 2000),
       });
-      const actionsMsg = await channel.send({
+      await channel.send({
         content: `# Actions\n${actions.trim()}`.slice(0, 2000),
         components,
       });
-      try {
-        await contextMsg.pin();
-        await actionsMsg.pin();
-      } catch (pinErr) {
-        logger.warn({ pinErr }, 'Impossible d’épingler les messages');
-      }
     }
 
     logger.info(
@@ -227,9 +225,9 @@ export class StaffTopicService {
   }
 
   /**
-   * Déplace un salon vers la catégorie "Sujets archivés".
+   * Déplace un salon vers la catégorie "Sujets archivés" et préfixe son nom par ✔️.
    */
-  async archiveTopic({ channelId }) {
+  async archiveTopic({ channelId, user = null }) {
     const guild = await this.getStaffGuild();
     const channel = await guild.channels.fetch(channelId);
 
@@ -239,19 +237,91 @@ export class StaffTopicService {
 
     const archivedCategory = await this.resolveArchivedCategory(guild);
 
-    await channel.setParent(archivedCategory.id, { lockPermissions: true });
+    // Vérifier si le salon n'est pas déjà archivé
+    if (channel.parentId === archivedCategory.id && channel.name.startsWith('✔️')) {
+      return {
+        success: true,
+        channelId: channel.id,
+        newName: channel.name,
+        isArchived: true,
+        alreadyArchived: true,
+      };
+    }
+
+    // Normalisation du nom en préfixant avec l'émoji ✔️ (ex: ✔️haevan-plainte)
+    const cleanName = channel.name.replace(/^(✔️|✔)+/, '');
+    const newName = `✔️${cleanName}`.slice(0, 100);
+
+    const editData = {
+      parent: archivedCategory.id,
+      lockPermissions: true,
+    };
+    if (channel.name !== newName) {
+      editData.name = newName;
+    }
+
+    try {
+      await channel.edit(editData);
+    } catch (editErr) {
+      logger.warn({ editErr, channelId }, 'Échec de l’édition groupée du salon, tentative par étapes');
+      await channel.setParent(archivedCategory.id, { lockPermissions: true });
+      if (channel.name !== newName) {
+        await channel.setName(newName).catch(nameErr => {
+          logger.warn({ nameErr, channelId }, 'Impossible de renommer le salon (possible rate-limit Discord)');
+        });
+      }
+    }
+
+    const archiverText = user ? `par ${user.toString()}` : "par l'équipe staff";
 
     await channel.send({
-      content: "🔒 **Ce sujet a été archivé par l'équipe staff.**",
+      content: `🔒 **Ce sujet a été archivé ${archiverText}.**`,
     });
 
-    logger.info({ channelId, channelName: channel.name }, 'Salon de sujet staff archivé');
+    logger.info({ channelId, oldName: channel.name, newName }, 'Salon de sujet staff archivé');
+
+    if (user) {
+      this.notifyAtlasTopicArchived({ channelId, user }).catch(err => {
+        logger.warn({ err, channelId }, 'Échec de la notification d’archivage vers Atlas');
+      });
+    }
 
     return {
       success: true,
       channelId: channel.id,
+      newName,
       isArchived: true,
     };
+  }
+
+  /**
+   * Notifie Hyori Atlas (best-effort) lorsqu'un sujet est archivé depuis Discord.
+   */
+  async notifyAtlasTopicArchived({ channelId, user }) {
+    try {
+      const env = getEnv();
+      const atlasUrl = (process.env.ATLAS_INTERNAL_URL || env.ATLAS_BASE_URL || 'https://hyori-rp.fr').replace(/\/$/, '');
+      const response = await fetch(`${atlasUrl}/api/bot/topics/archive`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${env.INTERNAL_BOT_API_KEY}`,
+        },
+        body: JSON.stringify({
+          channelId,
+          archivedBy: user ? (user.globalName || user.username || user.tag) : null,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        logger.warn({ status: response.status, errorText, channelId }, 'Atlas a retourné une erreur lors de la synchronisation d’archivage');
+      } else {
+        logger.info({ channelId }, 'Atlas synchronisé avec succès pour l’archivage du sujet');
+      }
+    } catch (err) {
+      logger.warn({ err: err?.message || err, channelId }, 'Impossible de contacter Atlas pour synchroniser l’archivage du sujet');
+    }
   }
 }
 
