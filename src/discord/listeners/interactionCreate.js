@@ -5,6 +5,12 @@ import { GuildRegistry } from '../services/guildRegistry.js';
 import { logger } from '../../logger/index.js';
 
 export async function handleInteractionCreate(interaction) {
+  // Gestionnaire spécifique pour les sujets staff (exécuté sur le serveur staff)
+  if (interaction.isButton() && interaction.customId === 'topic_archive') {
+    const topicHandler = (await import('../../events/topics/topicButtonHandler.js')).default;
+    return topicHandler.execute(interaction);
+  }
+
   // Les interactions (commandes, boutons, modales) sont autorisées sur les 6 serveurs joueurs
   if (interaction.guildId && !GuildRegistry.isPlayerGuild(interaction.guildId)) {
     return;
