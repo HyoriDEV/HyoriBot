@@ -66,7 +66,7 @@ export default {
           { name: '🔇 Rôle Restrictif Timeout', value: mutedRole, inline: false },
           {
             name: '📜 Rôles d’Adhésion & Whitelist',
-            value: `• Whitelisté : <@&${discordConfig.roles.whitelist}> (\`${discordConfig.roles.whitelist}\`)\n• Non-inscrit : <@&${discordConfig.roles.nonInscrit}> (\`${discordConfig.roles.nonInscrit}\`)`,
+            value: `• Whitelisté : <@&${discordConfig.roles.whitelist}> (\`${discordConfig.roles.whitelist}\`)\n• Non-inscrit : <@&${discordConfig.roles.noWhitelist}> (\`${discordConfig.roles.noWhitelist}\`)`,
             inline: false,
           }
         )
@@ -86,7 +86,7 @@ export default {
       await interaction.deferReply({ ephemeral: true });
 
       const whitelistRoleId = discordConfig.roles.whitelist;
-      const nonInscritRoleId = discordConfig.roles.nonInscrit;
+      const noWhitelistRoleId = discordConfig.roles.noWhitelist;
       const sanctionedRoleId = discordConfig.roles.sanctioned;
 
       const members = await interaction.guild.members.fetch();
@@ -103,12 +103,12 @@ export default {
         }
 
         const hasWhitelist = member.roles.cache.has(whitelistRoleId);
-        const hasNonInscrit = member.roles.cache.has(nonInscritRoleId);
+        const hasNoWhitelist = member.roles.cache.has(noWhitelistRoleId);
 
-        if (hasWhitelist && hasNonInscrit) {
+        if (hasWhitelist && hasNoWhitelist) {
           try {
             await member.roles.remove(
-              nonInscritRoleId,
+              noWhitelistRoleId,
               'Harmonisation manuelle : membre whitelisté'
             );
             removedCount++;
@@ -118,10 +118,10 @@ export default {
           continue;
         }
 
-        if (!hasWhitelist && !hasNonInscrit) {
+        if (!hasWhitelist && !hasNoWhitelist) {
           try {
             await member.roles.add(
-              nonInscritRoleId,
+              noWhitelistRoleId,
               'Harmonisation manuelle : membre non whitelisté'
             );
             addedCount++;

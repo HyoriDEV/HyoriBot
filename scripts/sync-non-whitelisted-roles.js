@@ -26,22 +26,22 @@ async function syncNonWhitelistedRoles() {
   console.log(`🏰 Serveur : ${guild.name} (${guild.id})`);
 
   const whitelistRoleId = discordConfig.roles.whitelist;
-  const nonInscritRoleId = discordConfig.roles.nonInscrit;
+  const noWhitelistRoleId = discordConfig.roles.noWhitelist;
   const sanctionedRoleId = discordConfig.roles.sanctioned;
 
   console.log(`📜 Rôle Whitelist   : ${whitelistRoleId}`);
-  console.log(`📜 Rôle Non-inscrit : ${nonInscritRoleId}`);
+  console.log(`📜 Rôle Non-inscrit : ${noWhitelistRoleId}`);
 
   const whitelistRole = guild.roles.cache.get(whitelistRoleId);
-  const nonInscritRole = guild.roles.cache.get(nonInscritRoleId);
+  const noWhitelistRole = guild.roles.cache.get(noWhitelistRoleId);
 
   if (!whitelistRole) {
     console.error(`❌ Erreur critique : Le rôle Whitelist (${whitelistRoleId}) est introuvable sur le serveur.`);
     process.exit(1);
   }
 
-  if (!nonInscritRole) {
-    console.error(`❌ Erreur critique : Le rôle Non-inscrit (${nonInscritRoleId}) est introuvable sur le serveur.`);
+  if (!noWhitelistRole) {
+    console.error(`❌ Erreur critique : Le rôle Non-inscrit (${noWhitelistRoleId}) est introuvable sur le serveur.`);
     process.exit(1);
   }
 
@@ -66,13 +66,13 @@ async function syncNonWhitelistedRoles() {
     }
 
     const hasWhitelist = member.roles.cache.has(whitelistRoleId);
-    const hasNonInscrit = member.roles.cache.has(nonInscritRoleId);
+    const hasNoWhitelist = member.roles.cache.has(noWhitelistRoleId);
 
     // Cas 1 : A le rôle Whitelist et le rôle Non-inscrit -> retirer Non-inscrit
-    if (hasWhitelist && hasNonInscrit) {
+    if (hasWhitelist && hasNoWhitelist) {
       try {
         await member.roles.remove(
-          nonInscritRoleId,
+          noWhitelistRoleId,
           'Harmonisation initiale : membre whitelisté (retrait du rôle Non-inscrit)'
         );
         removedCount++;
@@ -86,10 +86,10 @@ async function syncNonWhitelistedRoles() {
     }
 
     // Cas 2 : N'a pas le rôle Whitelist et n'a pas Non-inscrit -> ajouter Non-inscrit
-    if (!hasWhitelist && !hasNonInscrit) {
+    if (!hasWhitelist && !hasNoWhitelist) {
       try {
         await member.roles.add(
-          nonInscritRoleId,
+          noWhitelistRoleId,
           'Harmonisation initiale : membre non whitelisté (attribution du rôle Non-inscrit)'
         );
         addedCount++;

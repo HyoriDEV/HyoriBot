@@ -14,10 +14,10 @@ export async function handleGuildMemberUpdate(oldMember, newMember) {
   if (!GuildRegistry.isCommunityGuild(newMember.guild.id)) return;
 
   const whitelistRoleId = discordConfig.roles.whitelist;
-  const nonInscritRoleId = discordConfig.roles.nonInscrit;
+  const noWhitelistRoleId = discordConfig.roles.noWhitelist;
   const sanctionedRoleId = discordConfig.roles.sanctioned;
 
-  if (!whitelistRoleId || !nonInscritRoleId) return;
+  if (!whitelistRoleId || !noWhitelistRoleId) return;
 
   // Si le joueur est sanctionné / isolé, on ne lui applique pas le rôle Non-inscrit
   if (sanctionedRoleId && newMember.roles.cache.has(sanctionedRoleId)) {
@@ -25,13 +25,13 @@ export async function handleGuildMemberUpdate(oldMember, newMember) {
   }
 
   const hasWhitelist = newMember.roles.cache.has(whitelistRoleId);
-  const hasNonInscrit = newMember.roles.cache.has(nonInscritRoleId);
+  const hasNoWhitelist = newMember.roles.cache.has(noWhitelistRoleId);
 
   // Cas 1 : Le membre a les DEUX rôles -> Priorité absolue à la Whitelist, retrait immédiat de Non-inscrit
-  if (hasWhitelist && hasNonInscrit) {
+  if (hasWhitelist && hasNoWhitelist) {
     try {
       await newMember.roles.remove(
-        nonInscritRoleId,
+        noWhitelistRoleId,
         'Exclusivité stricte : joueur whitelisté, retrait automatique du rôle Non-inscrit'
       );
       logger.info(
@@ -48,10 +48,10 @@ export async function handleGuildMemberUpdate(oldMember, newMember) {
   }
 
   // Cas 2 : Le membre n'a AUCUN des deux rôles -> Attribution automatique de Non-inscrit
-  if (!hasWhitelist && !hasNonInscrit) {
+  if (!hasWhitelist && !hasNoWhitelist) {
     try {
       await newMember.roles.add(
-        nonInscritRoleId,
+        noWhitelistRoleId,
         'Exclusivité stricte : joueur non whitelisté, attribution automatique du rôle Non-inscrit'
       );
       logger.info(

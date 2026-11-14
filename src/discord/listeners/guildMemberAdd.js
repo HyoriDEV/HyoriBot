@@ -36,23 +36,23 @@ export async function handleGuildMemberAdd(member) {
     // Contrôle Anti-Raid automatique
     await antiRaidService.handleMemberJoin(member);
 
-    // Règle d'exclusivité Whitelist vs Non-inscrit : attribution du rôle Non-inscrit
+    // Règle d'exclusivité Whitelist vs Non-inscrit : attribution du rôle Non-inscrit (noWhitelist)
     const whitelistRoleId = discordConfig.roles.whitelist;
-    const nonInscritRoleId = discordConfig.roles.nonInscrit;
+    const noWhitelistRoleId = discordConfig.roles.noWhitelist;
 
-    if (nonInscritRoleId && !member.roles.cache.has(whitelistRoleId)) {
+    if (noWhitelistRoleId && !member.roles.cache.has(whitelistRoleId)) {
       try {
         await member.roles.add(
-          nonInscritRoleId,
+          noWhitelistRoleId,
           'Attribution automatique du rôle Non-inscrit à l’arrivée'
         );
         logger.info(
-          { memberId: member.id, roleId: nonInscritRoleId },
+          { memberId: member.id, roleId: noWhitelistRoleId },
           'Rôle Non-inscrit attribué avec succès au nouvel arrivant'
         );
       } catch (err) {
         logger.warn(
-          { error: err.message, memberId: member.id, roleId: nonInscritRoleId },
+          { error: err.message, memberId: member.id, roleId: noWhitelistRoleId },
           "Impossible d'attribuer le rôle Non-inscrit au nouvel arrivant"
         );
       }

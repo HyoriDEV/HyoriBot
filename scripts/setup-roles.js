@@ -12,7 +12,7 @@ const REQUIRED_ROLES = [
     color: 0xe9d15c,
   },
   {
-    configPath: 'roles.nonInscrit',
+    configPath: 'roles.noWhitelist',
     name: 'Non-inscrit',
     color: 0x95a5a6,
   },

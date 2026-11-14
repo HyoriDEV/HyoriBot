@@ -41,7 +41,7 @@ export async function memberRoutes(fastify) {
       }
 
       const whitelistRoleId = discordConfig.roles.whitelist;
-      const nonInscritRoleId = discordConfig.roles.nonInscrit;
+      const noWhitelistRoleId = discordConfig.roles.noWhitelist;
       const sanctionedRoleId = discordConfig.roles.sanctioned;
 
       const results = {};
@@ -69,7 +69,7 @@ export async function memberRoutes(fastify) {
             name: role.name,
             color: role.hexColor,
             isWhitelist: role.id === whitelistRoleId,
-            isNonInscrit: role.id === nonInscritRoleId,
+            isNoWhitelist: role.id === noWhitelistRoleId,
             isSanctioned: role.id === sanctionedRoleId,
             isStaff: staffRoleIds.includes(role.id),
             isClass: classRoleIds.includes(role.id),
@@ -89,7 +89,7 @@ export async function memberRoutes(fastify) {
           displayName: member.displayName ?? null,
           avatarUrl: member.user?.displayAvatarURL?.() ?? null,
           hasWhitelistRole: whitelistRoleId ? member.roles.cache.has(whitelistRoleId) : false,
-          hasNonInscritRole: nonInscritRoleId ? member.roles.cache.has(nonInscritRoleId) : false,
+          hasNoWhitelistRole: noWhitelistRoleId ? member.roles.cache.has(noWhitelistRoleId) : false,
           hasSanctionedRole: sanctionedRoleId ? member.roles.cache.has(sanctionedRoleId) : false,
           classRoleEnums,
           roles,
@@ -128,7 +128,7 @@ export async function memberRoutes(fastify) {
       const staffRoleIds = Object.values(discordConfig.roles.staff).filter(Boolean);
       const classRoleIds = Object.values(discordConfig.roles.classes).filter(Boolean);
       const whitelistRoleId = discordConfig.roles.whitelist;
-      const nonInscritRoleId = discordConfig.roles.nonInscrit;
+      const noWhitelistRoleId = discordConfig.roles.noWhitelist;
       const sanctionedRoleId = discordConfig.roles.sanctioned;
 
       const roles = member.roles.cache.map(role => ({
@@ -136,7 +136,7 @@ export async function memberRoutes(fastify) {
         name: role.name,
         color: role.hexColor,
         isWhitelist: role.id === whitelistRoleId,
-        isNonInscrit: role.id === nonInscritRoleId,
+        isNoWhitelist: role.id === noWhitelistRoleId,
         isSanctioned: role.id === sanctionedRoleId,
         isStaff: staffRoleIds.includes(role.id),
         isClass: classRoleIds.includes(role.id),
@@ -153,7 +153,7 @@ export async function memberRoutes(fastify) {
           joinedAt: member.joinedAt ? member.joinedAt.toISOString() : null,
           isSanctioned: sanctionedRoleId ? member.roles.cache.has(sanctionedRoleId) : false,
           isWhitelisted: whitelistRoleId ? member.roles.cache.has(whitelistRoleId) : false,
-          isNonInscrit: nonInscritRoleId ? member.roles.cache.has(nonInscritRoleId) : false,
+          isNoWhitelist: noWhitelistRoleId ? member.roles.cache.has(noWhitelistRoleId) : false,
           roles,
           activeBackup: activeBackup
             ? {
