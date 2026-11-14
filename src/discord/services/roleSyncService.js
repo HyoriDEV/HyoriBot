@@ -64,11 +64,15 @@ export class RoleSyncService {
         const rolesToRemove = [];
         const targetClassRoleId = classRole ? classMap[classRole.toUpperCase()] : null;
         const whitelistRoleId = discordConfig.roles.whitelist;
+        const nonInscritRoleId = discordConfig.roles.nonInscrit;
         if (whitelisted) {
-          if (whitelistRoleId) {
+          if (whitelistRoleId && !member.roles.cache.has(whitelistRoleId)) {
             rolesToAdd.push(whitelistRoleId);
           }
-          if (targetClassRoleId) {
+          if (nonInscritRoleId && member.roles.cache.has(nonInscritRoleId)) {
+            rolesToRemove.push(nonInscritRoleId);
+          }
+          if (targetClassRoleId && !member.roles.cache.has(targetClassRoleId)) {
             rolesToAdd.push(targetClassRoleId);
           }
           allClasses.forEach(roleId => {
@@ -79,6 +83,9 @@ export class RoleSyncService {
         } else {
           if (whitelistRoleId && member.roles.cache.has(whitelistRoleId)) {
             rolesToRemove.push(whitelistRoleId);
+          }
+          if (nonInscritRoleId && !member.roles.cache.has(nonInscritRoleId)) {
+            rolesToAdd.push(nonInscritRoleId);
           }
           allClasses.forEach(roleId => {
             if (member.roles.cache.has(roleId)) {

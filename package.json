@@ -9,6 +9,7 @@
     "start": "node src/index.js",
     "deploy-commands": "node scripts/deploy-commands.js",
     "clean-commands": "node scripts/clean-commands.js",
+    "sync:non-inscrits": "node scripts/sync-non-whitelisted-roles.js",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
