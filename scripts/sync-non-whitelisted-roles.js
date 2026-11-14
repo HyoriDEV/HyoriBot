@@ -18,30 +18,47 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 async function syncNonWhitelistedRoles() {
   console.log('🤖 Connexion au bot Discord pour harmonisation des rôles Non-inscrit...');
-  await client.login(process.env.DISCORD_BOT_TOKEN);
+  
+  await new Promise((resolve, reject) => {
+    client.once('ready', () => {
+      console.log(`✅ Connecté en tant que ${client.user.tag}`);
+      resolve();
+    });
+    client.login(process.env.DISCORD_BOT_TOKEN).catch(reject);
+  });
 
   const communityGuildId = GuildRegistry.getCommunityGuildId();
+  console.log(`🔍 Ciblage strict du serveur communautaire (ID: ${communityGuildId})...`);
+  
   const guild = await client.guilds.fetch(communityGuildId);
+  if (!guild || guild.id !== communityGuildId) {
+    console.error(`❌ Erreur critique : Impossible de récupérer le serveur communautaire (${communityGuildId}).`);
+    process.exit(1);
+  }
 
   console.log(`🏰 Serveur : ${guild.name} (${guild.id})`);
+
+  // Récupération explicite de tous les rôles du serveur communautaire
+  console.log('📜 Chargement des rôles du serveur communautaire...');
+  const allRoles = await guild.roles.fetch();
 
   const whitelistRoleId = discordConfig.roles.whitelist;
   const noWhitelistRoleId = discordConfig.roles.noWhitelist;
   const sanctionedRoleId = discordConfig.roles.sanctioned;
 
-  console.log(`📜 Rôle Whitelist   : ${whitelistRoleId}`);
-  console.log(`📜 Rôle Non-inscrit : ${noWhitelistRoleId}`);
+  const whitelistRole = allRoles.get(whitelistRoleId);
+  const noWhitelistRole = allRoles.get(noWhitelistRoleId);
 
-  const whitelistRole = guild.roles.cache.get(whitelistRoleId);
-  const noWhitelistRole = guild.roles.cache.get(noWhitelistRoleId);
+  console.log(`📜 Rôle Whitelist   : ${whitelistRole ? `"${whitelistRole.name}"` : 'INTROUVABLE'} (${whitelistRoleId})`);
+  console.log(`📜 Rôle Non-inscrit : ${noWhitelistRole ? `"${noWhitelistRole.name}"` : 'INTROUVABLE'} (${noWhitelistRoleId})`);
 
   if (!whitelistRole) {
-    console.error(`❌ Erreur critique : Le rôle Whitelist (${whitelistRoleId}) est introuvable sur le serveur.`);
+    console.error(`❌ Erreur critique : Le rôle Whitelist (${whitelistRoleId}) est introuvable sur le serveur ${guild.name}.`);
     process.exit(1);
   }
 
   if (!noWhitelistRole) {
-    console.error(`❌ Erreur critique : Le rôle Non-inscrit (${noWhitelistRoleId}) est introuvable sur le serveur.`);
+    console.error(`❌ Erreur critique : Le rôle Non-inscrit (${noWhitelistRoleId}) est introuvable sur le serveur ${guild.name}.`);
     process.exit(1);
   }
 
