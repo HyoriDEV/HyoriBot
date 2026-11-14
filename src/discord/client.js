@@ -8,6 +8,7 @@ import { handleMessageUpdate } from './listeners/messageUpdate.js';
 import { handleVoiceStateUpdate } from './listeners/voiceStateUpdate.js';
 import { handleGuildMemberAdd } from './listeners/guildMemberAdd.js';
 import { handleGuildMemberRemove } from './listeners/guildMemberRemove.js';
+import { handleGuildMemberUpdate } from './listeners/guildMemberUpdate.js';
 import { DeepAuditLogger } from './listeners/deepAuditLogger.js';
 import { GuildRegistry } from './services/guildRegistry.js';
 import { allSlashCommands } from './commands/index.js';
@@ -67,6 +68,9 @@ export class DiscordBotClient {
     });
     this.client.on(Events.GuildMemberRemove, async member => {
       await handleGuildMemberRemove(member);
+    });
+    this.client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
+      await handleGuildMemberUpdate(oldMember, newMember);
     });
     this.client.on(Events.Error, error => {
       logger.error(

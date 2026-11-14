@@ -51,6 +51,7 @@ export const discordConfig = {
 
   roles: {
     whitelist: '1539772827618771026',
+    noWhitelist: '1571233585976057867',
     sanctioned: '1545034091823636570',
 
     classes: {

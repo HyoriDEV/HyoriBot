@@ -12,6 +12,11 @@ const REQUIRED_ROLES = [
     color: 0xe9d15c,
   },
   {
+    configPath: 'roles.noWhitelist',
+    name: 'Non-inscrit',
+    color: 0x95a5a6,
+  },
+  {
     configPath: 'roles.sanctioned',
     name: 'Sanctionné (Isolé)',
     color: 0x808080,

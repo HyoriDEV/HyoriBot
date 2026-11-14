@@ -1,5 +1,7 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import { configStore } from '../../storage/index.js';
+import { discordConfig } from '../../config/discordConfig.js';
+import { GuildRegistry } from '../../discord/services/guildRegistry.js';
 
 export default {
   data: new SlashCommandBuilder()
@@ -32,6 +34,11 @@ export default {
     )
     .addSubcommand(sub =>
       sub.setName('view').setDescription('Afficher toute la configuration actuelle des rôles')
+    )
+    .addSubcommand(sub =>
+      sub
+        .setName('sync-non-inscrits')
+        .setDescription('Harmoniser le rôle Non-inscrit pour tous les membres du serveur communautaire')
     ),
 
   async execute(interaction) {
@@ -56,11 +63,98 @@ export default {
         .setTitle('⚙️ Configuration des Rôles')
         .addFields(
           { name: '🛡️ Rôles Staff (Accès tickets & modération)', value: staffList, inline: false },
-          { name: '🔇 Rôle Restrictif Timeout', value: mutedRole, inline: false }
+          { name: '🔇 Rôle Restrictif Timeout', value: mutedRole, inline: false },
+          {
+            name: '📜 Rôles d’Adhésion & Whitelist',
+            value: `• Whitelisté : <@&${discordConfig.roles.whitelist}> (\`${discordConfig.roles.whitelist}\`)\n• Non-inscrit : <@&${discordConfig.roles.noWhitelist}> (\`${discordConfig.roles.noWhitelist}\`)`,
+            inline: false,
+          }
         )
         .setTimestamp();
 
       return interaction.reply({ embeds: [embed], ephemeral: true });
+    }
+
+    if (subcommand === 'sync-non-inscrits') {
+      if (!GuildRegistry.isCommunityGuild(interaction.guild.id)) {
+        return interaction.reply({
+          content: '⚠️ Cette commande doit être exécutée sur le serveur communautaire Hyori RP.',
+          ephemeral: true,
+        });
+      }
+
+      await interaction.deferReply({ ephemeral: true });
+
+      const whitelistRoleId = discordConfig.roles.whitelist;
+      const noWhitelistRoleId = discordConfig.roles.noWhitelist;
+      const sanctionedRoleId = discordConfig.roles.sanctioned;
+
+      const members = await interaction.guild.members.fetch();
+      const humanMembers = members.filter(m => !m.user.bot);
+
+      let addedCount = 0;
+      let removedCount = 0;
+      let alreadyCompliantCount = 0;
+      let errorCount = 0;
+
+      for (const member of humanMembers.values()) {
+        if (sanctionedRoleId && member.roles.cache.has(sanctionedRoleId)) {
+          continue;
+        }
+
+        const hasWhitelist = member.roles.cache.has(whitelistRoleId);
+        const hasNoWhitelist = member.roles.cache.has(noWhitelistRoleId);
+
+        if (hasWhitelist && hasNoWhitelist) {
+          try {
+            await member.roles.remove(
+              noWhitelistRoleId,
+              'Harmonisation manuelle : membre whitelisté'
+            );
+            removedCount++;
+          } catch {
+            errorCount++;
+          }
+          continue;
+        }
+
+        if (!hasWhitelist && !hasNoWhitelist) {
+          try {
+            await member.roles.add(
+              noWhitelistRoleId,
+              'Harmonisation manuelle : membre non whitelisté'
+            );
+            addedCount++;
+          } catch {
+            errorCount++;
+          }
+          continue;
+        }
+
+        alreadyCompliantCount++;
+      }
+
+      const syncEmbed = new EmbedBuilder()
+        .setColor(errorCount > 0 ? 0xf1c40f : 0x2ecc71)
+        .setTitle('📊 Harmonisation des Rôles Non-inscrits')
+        .setDescription(
+          `La vérification et l'application des rôles sont terminées sur **${interaction.guild.name}** :`
+        )
+        .addFields(
+          { name: '👥 Membres vérifiés', value: `\`${humanMembers.size}\``, inline: true },
+          { name: '🟢 Non-inscrit attribués', value: `\`+${addedCount}\``, inline: true },
+          { name: '🔴 Non-inscrit retirés', value: `\`-${removedCount}\``, inline: true },
+          { name: '✅ Déjà conformes', value: `\`${alreadyCompliantCount}\``, inline: true },
+          {
+            name: '⚠️ Erreurs de permission',
+            value: errorCount > 0 ? `\`${errorCount}\`` : '`0`',
+            inline: true,
+          }
+        )
+        .setFooter({ text: 'Règle stricte : soit Whitelisté, soit Non-inscrit, jamais les deux.' })
+        .setTimestamp();
+
+      return interaction.editReply({ embeds: [syncEmbed] });
     }
 
     if (group === 'staff') {

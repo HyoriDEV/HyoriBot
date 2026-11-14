@@ -5,6 +5,7 @@ import { WelcomeCardService } from '../../services/welcomeCardService.js';
 import { configStore } from '../../storage/index.js';
 import { GuildRegistry } from '../services/guildRegistry.js';
 import { VillageGatekeeperService } from '../services/villageGatekeeperService.js';
+import { discordConfig } from '../../config/discordConfig.js';
 import { logger } from '../../logger/index.js';
 
 export async function handleGuildMemberAdd(member) {
@@ -34,6 +35,28 @@ export async function handleGuildMemberAdd(member) {
   if (GuildRegistry.isCommunityGuild(member.guild.id)) {
     // Contrôle Anti-Raid automatique
     await antiRaidService.handleMemberJoin(member);
+
+    // Règle d'exclusivité Whitelist vs Non-inscrit : attribution du rôle Non-inscrit (noWhitelist)
+    const whitelistRoleId = discordConfig.roles.whitelist;
+    const noWhitelistRoleId = discordConfig.roles.noWhitelist;
+
+    if (noWhitelistRoleId && !member.roles.cache.has(whitelistRoleId)) {
+      try {
+        await member.roles.add(
+          noWhitelistRoleId,
+          'Attribution automatique du rôle Non-inscrit à l’arrivée'
+        );
+        logger.info(
+          { memberId: member.id, roleId: noWhitelistRoleId },
+          'Rôle Non-inscrit attribué avec succès au nouvel arrivant'
+        );
+      } catch (err) {
+        logger.warn(
+          { error: err.message, memberId: member.id, roleId: noWhitelistRoleId },
+          "Impossible d'attribuer le rôle Non-inscrit au nouvel arrivant"
+        );
+      }
+    }
 
     // Auto-Role et Carte de bienvenue
     try {
