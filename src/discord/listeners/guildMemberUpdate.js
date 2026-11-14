@@ -4,10 +4,11 @@ import { logger } from '../../logger/index.js';
 
 /**
  * Gestionnaire d'événement GuildMemberUpdate.
- * Applique la règle d'exclusivité stricte entre le rôle "Whitelist" et le rôle "Non-inscrit"
+ * Applique la règle de non-cumul stricte entre le rôle "Whitelist" et le rôle "Non-inscrit" (noWhitelist)
  * sur le serveur communautaire Hyori RP :
- * - Si le joueur est whitelisté, il NE DOIT PAS avoir le rôle Non-inscrit.
- * - Si le joueur n'est pas whitelisté, il DOIT avoir le rôle Non-inscrit (sauf sanction/isolation).
+ * - Un membre ne doit JAMAIS avoir les deux rôles à la fois (si cumul, la Whitelist prime et noWhitelist est retiré).
+ * - En revanche, si un modérateur/administrateur retire manuellement l'un des rôles (ou les deux),
+ *   le bot N'INTERVIENT PAS pour réassigner quoi que ce soit, garantissant le plein contrôle humain.
  */
 export async function handleGuildMemberUpdate(oldMember, newMember) {
   if (newMember.user.bot) return;
@@ -15,53 +16,27 @@ export async function handleGuildMemberUpdate(oldMember, newMember) {
 
   const whitelistRoleId = discordConfig.roles.whitelist;
   const noWhitelistRoleId = discordConfig.roles.noWhitelist;
-  const sanctionedRoleId = discordConfig.roles.sanctioned;
 
   if (!whitelistRoleId || !noWhitelistRoleId) return;
-
-  // Si le joueur est sanctionné / isolé, on ne lui applique pas le rôle Non-inscrit
-  if (sanctionedRoleId && newMember.roles.cache.has(sanctionedRoleId)) {
-    return;
-  }
 
   const hasWhitelist = newMember.roles.cache.has(whitelistRoleId);
   const hasNoWhitelist = newMember.roles.cache.has(noWhitelistRoleId);
 
-  // Cas 1 : Le membre a les DEUX rôles -> Priorité absolue à la Whitelist, retrait immédiat de Non-inscrit
+  // Règle de non-cumul : si le membre possède les DEUX rôles à la fois, on lui retire le rôle Non-inscrit
   if (hasWhitelist && hasNoWhitelist) {
     try {
       await newMember.roles.remove(
         noWhitelistRoleId,
-        'Exclusivité stricte : joueur whitelisté, retrait automatique du rôle Non-inscrit'
+        'Règle de non-cumul : membre whitelisté, retrait automatique du rôle Non-inscrit'
       );
       logger.info(
         { userId: newMember.id, userTag: newMember.user.tag },
-        'Retrait automatique du rôle Non-inscrit (le membre est whitelisté)'
+        'Retrait automatique du rôle Non-inscrit (le membre possède la Whitelist)'
       );
     } catch (err) {
       logger.warn(
         { userId: newMember.id, error: err.message },
         'Impossible de retirer le rôle Non-inscrit (vérifier la hiérarchie des rôles)'
-      );
-    }
-    return;
-  }
-
-  // Cas 2 : Le membre n'a AUCUN des deux rôles -> Attribution automatique de Non-inscrit
-  if (!hasWhitelist && !hasNoWhitelist) {
-    try {
-      await newMember.roles.add(
-        noWhitelistRoleId,
-        'Exclusivité stricte : joueur non whitelisté, attribution automatique du rôle Non-inscrit'
-      );
-      logger.info(
-        { userId: newMember.id, userTag: newMember.user.tag },
-        "Attribution automatique du rôle Non-inscrit (le membre n'est pas whitelisté)"
-      );
-    } catch (err) {
-      logger.warn(
-        { userId: newMember.id, error: err.message },
-        "Impossible d'attribuer le rôle Non-inscrit (vérifier la hiérarchie des rôles)"
       );
     }
   }
